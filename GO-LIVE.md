@@ -43,16 +43,18 @@ Follow `web/SETUP.md` for the click-by-click on each (R2 bucket + token + `publi
 /mvp ETH   /mvp SOL   ...              # generate reports (Python pipeline)
 python scripts/export_content.py        # refresh catalog + track record + free assets into web/
 python scripts/publish.py               # push new Pro files to R2
+(cd web && npm run sync-db)             # load reports into Neon Postgres
 git add -A && git commit -m "edition: <date>" && git push   # ← site auto-updates
 ```
 
-## Scaling — what's already handled vs the next upgrade
-- **More users** scales automatically: Clerk (auth), Vercel (edge/serverless), and R2/CDN
-  (zero-egress downloads) all autoscale. 1,000 or 50,000 readers need no change.
-- **More reports** (hundreds+) is the one thing to upgrade later: move the catalog from the
-  committed JSON to **Supabase Postgres** (indexed full-text search) and store all report files
-  in R2. The reports browser already sits behind a clean data layer (`lib/search.ts`), so that
-  swap doesn't touch the UI. Do it when the catalog outgrows a few dozen reports.
+## Data architecture & scaling
+- **Report data → Neon Postgres** (`web/db/schema.sql`: `editions`, `open_calls`, `scored_results`).
+  **Files → R2.** **Users → Clerk.** **Payments → Lemon Squeezy.** Each service owns its own data.
+- The app reads Neon via `@neondatabase/serverless` (`lib/db.ts`, `lib/content.ts`) with a JSON
+  fallback. `npm run sync-db` (in `web/`) loads each new edition into Neon.
+- **Scales automatically**: Clerk, Vercel, R2/CDN and Neon all autoscale — 1k or 50k readers need
+  no change. When the catalog reaches hundreds of reports, add Postgres full-text search +
+  pagination (the reports browser already sits behind a clean data layer, `lib/search.ts`).
 
 ## Safety
 - Real secrets live only in Vercel env vars and your local `web/.env.local` (git-ignored). Never committed.

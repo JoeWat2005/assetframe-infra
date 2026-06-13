@@ -7,7 +7,7 @@ export const SITE = {
   checkoutUrl:
     process.env.NEXT_PUBLIC_CHECKOUT_URL ||
     "https://assetframe.lemonsqueezy.com/checkout/buy/2b3067fc-8b2c-4f45-b709-e2d28ae448d1",
-  proPrice: process.env.NEXT_PUBLIC_PRO_PRICE || "£9.99/year",
+  proPrice: process.env.NEXT_PUBLIC_PRO_PRICE || "£9.99/month",
   contactEmail: "hello@assetframe.co.uk",
   // Social links — fill in your handles (leave "" to hide an icon)
   socials: {
