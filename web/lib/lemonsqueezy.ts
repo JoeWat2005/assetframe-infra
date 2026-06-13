@@ -54,3 +54,37 @@ export function subscriptionStateFromEvent(
   if (status && INACTIVE_STATUSES.has(status)) return false;
   return null;
 }
+
+export type CancelResult =
+  | { ok: true; status: string }
+  | { ok: false; reason: "no-api-key" | "no-subscription" | "http-error" | "network" };
+
+/**
+ * Cancel a Lemon Squeezy subscription via the API (DELETE = cancel at period end —
+ * the user keeps access until their current billing period runs out, which is the
+ * standard, non-destructive cancellation). Requires LEMONSQUEEZY_API_KEY.
+ * Returns a typed result so the UI can fall back to the hosted portal when the key
+ * isn't configured.
+ */
+export async function cancelLemonSubscription(subscriptionId: string): Promise<CancelResult> {
+  const key = process.env.LEMONSQUEEZY_API_KEY;
+  if (!key) return { ok: false, reason: "no-api-key" };
+  if (!subscriptionId) return { ok: false, reason: "no-subscription" };
+  try {
+    const res = await fetch(`https://api.lemonsqueezy.com/v1/subscriptions/${subscriptionId}`, {
+      method: "DELETE",
+      headers: {
+        Accept: "application/vnd.api+json",
+        "Content-Type": "application/vnd.api+json",
+        Authorization: `Bearer ${key}`,
+      },
+    });
+    if (!res.ok) return { ok: false, reason: "http-error" };
+    const body = (await res.json().catch(() => null)) as
+      | { data?: { attributes?: { status?: string } } }
+      | null;
+    return { ok: true, status: body?.data?.attributes?.status ?? "cancelled" };
+  } catch {
+    return { ok: false, reason: "network" };
+  }
+}

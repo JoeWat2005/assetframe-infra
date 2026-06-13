@@ -1,95 +1,106 @@
 "use client";
 import { useMemo, useState } from "react";
 import type { Edition } from "@/lib/content";
-import { filterEditions } from "@/lib/search";
-import { Badge, Btn } from "@/components/ui";
+import { filterEditions, sortEditions, type SortKey } from "@/lib/search";
+import ReportCard from "@/components/ReportCard";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 
-const selectCls =
-  "w-full rounded-lg border border-line bg-white px-3 py-2 text-sm sm:w-auto";
+const PERIODS: [string, string][] = [
+  ["all", "All time"], ["7", "Last 7 days"], ["30", "Last 30 days"], ["90", "Last 90 days"],
+];
+const SORTS: [SortKey, string][] = [
+  ["newest", "Newest first"], ["oldest", "Oldest first"], ["instrument", "Instrument A–Z"],
+];
+
+function daysAgo(n: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().slice(0, 10);
+}
+
+function PickList({
+  value, onChange, placeholder, options,
+}: { value: string; onChange: (v: string) => void; placeholder: string; options: [string, string][] }) {
+  return (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger className="w-full sm:w-auto sm:min-w-[150px]">
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectGroup>
+          {options.map(([v, l]) => (
+            <SelectItem key={v} value={v}>{l}</SelectItem>
+          ))}
+        </SelectGroup>
+      </SelectContent>
+    </Select>
+  );
+}
 
 export default function ReportsBrowser({ editions }: { editions: Edition[] }) {
   const [q, setQ] = useState("");
-  const [assetClass, setAssetClass] = useState("");
-  const [status, setStatus] = useState("");
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
+  const [assetClass, setAssetClass] = useState("all");
+  const [status, setStatus] = useState("all");
+  const [period, setPeriod] = useState("all");
+  const [sort, setSort] = useState<SortKey>("newest");
 
-  const assetClasses = useMemo(
-    () => Array.from(new Set(editions.map((e) => e.assetClass).filter(Boolean))).sort(),
+  const assetOptions = useMemo<[string, string][]>(
+    () => [["all", "All asset classes"],
+      ...Array.from(new Set(editions.map((e) => e.assetClass).filter(Boolean))).sort().map((a) => [a, a] as [string, string])],
     [editions]
   );
-  const statuses = useMemo(
-    () => Array.from(new Set(editions.map((e) => e.status).filter(Boolean))).sort(),
+  const statusOptions = useMemo<[string, string][]>(
+    () => [["all", "Any status"],
+      ...Array.from(new Set(editions.map((e) => e.status).filter(Boolean))).sort().map((s) => [s, s] as [string, string])],
     [editions]
   );
-  const results = useMemo(
-    () => filterEditions(editions, { q, assetClass, status, from, to }),
-    [editions, q, assetClass, status, from, to]
-  );
-  const active = q || assetClass || status || from || to;
-  const clearAll = () => { setQ(""); setAssetClass(""); setStatus(""); setFrom(""); setTo(""); };
+
+  const results = useMemo(() => {
+    const from = period === "all" ? "" : daysAgo(Number(period));
+    const filtered = filterEditions(editions, {
+      q, assetClass: assetClass === "all" ? "" : assetClass,
+      status: status === "all" ? "" : status, from,
+    });
+    return sortEditions(filtered, sort);
+  }, [editions, q, assetClass, status, period, sort]);
+
+  const active = q || assetClass !== "all" || status !== "all" || period !== "all";
+  const clearAll = () => { setQ(""); setAssetClass("all"); setStatus("all"); setPeriod("all"); setSort("newest"); };
 
   return (
-    <div>
-      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-        <input
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2 rounded-xl border bg-card p-3 shadow-sm sm:flex-row sm:flex-wrap sm:items-center">
+        <Input
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search instrument or ticker…"
-          aria-label="Search reports"
-          className="w-full rounded-lg border border-line bg-white px-3 py-2 text-sm sm:max-w-xs"
+          className="sm:max-w-xs"
         />
-        <select value={assetClass} onChange={(e) => setAssetClass(e.target.value)} aria-label="Asset class" className={selectCls}>
-          <option value="">All asset classes</option>
-          {assetClasses.map((a) => <option key={a} value={a}>{a}</option>)}
-        </select>
-        <select value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Status" className={selectCls}>
-          <option value="">Any status</option>
-          {statuses.map((s) => <option key={s} value={s}>{s}</option>)}
-        </select>
-        <label className="flex items-center gap-1.5 text-sm text-muted">
-          From
-          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="From date" className={selectCls} />
-        </label>
-        <label className="flex items-center gap-1.5 text-sm text-muted">
-          To
-          <input type="date" value={to} onChange={(e) => setTo(e.target.value)} aria-label="To date" className={selectCls} />
-        </label>
+        <PickList value={assetClass} onChange={setAssetClass} placeholder="All asset classes" options={assetOptions} />
+        <PickList value={status} onChange={setStatus} placeholder="Any status" options={statusOptions} />
+        <PickList value={period} onChange={setPeriod} placeholder="All time" options={PERIODS} />
+        <PickList value={sort} onChange={(v) => setSort(v as SortKey)} placeholder="Sort" options={SORTS} />
         {active && (
-          <button onClick={clearAll} className="text-sm font-semibold text-muted hover:text-navy">
+          <Button variant="ghost" size="sm" onClick={clearAll} className="text-muted-foreground">
             Clear
-          </button>
+          </Button>
         )}
       </div>
 
-      <p className="mt-3 text-sm text-muted">
+      <p className="text-sm text-muted-foreground">
         {results.length} report{results.length === 1 ? "" : "s"}
         {active ? " match your filters" : ""}
       </p>
 
       {results.length === 0 ? (
-        <p className="mt-6 text-sm text-muted">No reports match — try clearing the filters.</p>
+        <p className="py-6 text-sm text-muted-foreground">No reports match — try clearing the filters.</p>
       ) : (
-        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {results.map((e) => (
-            <div key={`${e.date}/${e.slug}`} className="flex flex-col rounded-xl border border-line bg-white p-4">
-              <div className="text-lg font-bold">{e.instrument}</div>
-              <div className="text-[13px] font-semibold text-muted">{e.ticker}</div>
-              <div className="mt-0.5 text-xs text-[#8b949e]">{e.assetClass}</div>
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {e.status && <Badge label={e.status} kind="status" />}
-                {e.risk && <Badge label={e.risk} kind="risk" />}
-              </div>
-              <div className="mt-2 text-sm">{e.bias}</div>
-              <div className="mt-1 text-xs text-muted">Edition {e.reportDate} · window to {e.windowEnd}</div>
-              {e.dataQuality !== "" && <div className="text-xs text-muted">Data quality {e.dataQuality}/10</div>}
-              <div className="mt-3 flex flex-wrap gap-2 pt-1">
-                <Btn href={e.freeHtml} variant="primary" external sm>Read Snapshot</Btn>
-                <Btn href={e.freePdf} external sm>PDF</Btn>
-                <Btn href={`/reports/${e.date}/${e.slug}`} variant="pro" sm>🔒 Pro</Btn>
-              </div>
-            </div>
-          ))}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {results.map((e) => <ReportCard key={`${e.date}/${e.slug}`} e={e} />)}
         </div>
       )}
     </div>

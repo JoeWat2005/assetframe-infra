@@ -5,6 +5,9 @@ import ReportsBrowser from "@/components/ReportsBrowser";
 
 export const metadata: Metadata = { title: "Reports" };
 
+// Catalog changes only when an edition is published — cache + background-revalidate.
+export const revalidate = 300;
+
 export default async function ReportsPage() {
   const editions = await getCatalog();
   return (

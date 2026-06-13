@@ -6,6 +6,13 @@ export type Entitlement = {
   subscribed: boolean;
   admin: boolean;
   email?: string;
+  // Billing details mirrored from Lemon Squeezy by the webhook (all public-safe).
+  subscriptionId?: string;
+  portalUrl?: string;
+  subStatus?: string;
+  planName?: string;
+  renewsAt?: string;
+  endsAt?: string;
 };
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "")
@@ -24,9 +31,17 @@ export async function getEntitlement(): Promise<Entitlement> {
   if (!user) return { signedIn: false, subscribed: false, admin: false };
 
   const email = user.primaryEmailAddress?.emailAddress?.toLowerCase();
-  const meta = (user.publicMetadata || {}) as { subscribed?: boolean; role?: string };
+  const meta = (user.publicMetadata || {}) as {
+    subscribed?: boolean; role?: string; subscriptionId?: string; portalUrl?: string;
+    subStatus?: string; planName?: string; renewsAt?: string; endsAt?: string;
+  };
   const admin = meta.role === "admin" || (!!email && ADMIN_EMAILS.includes(email));
   const subscribed = meta.subscribed === true || admin;
 
-  return { signedIn: true, subscribed, admin, email };
+  return {
+    signedIn: true, subscribed, admin, email,
+    subscriptionId: meta.subscriptionId, portalUrl: meta.portalUrl,
+    subStatus: meta.subStatus, planName: meta.planName,
+    renewsAt: meta.renewsAt || undefined, endsAt: meta.endsAt || undefined,
+  };
 }

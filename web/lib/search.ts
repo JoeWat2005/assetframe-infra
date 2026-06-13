@@ -37,3 +37,17 @@ export function filterEditions<T extends Filterable>(editions: T[], opts: Filter
     return true;
   });
 }
+
+export type SortKey = "newest" | "oldest" | "instrument";
+
+export function sortEditions<T extends Filterable>(editions: T[], key: SortKey): T[] {
+  const out = [...editions];
+  if (key === "instrument") {
+    out.sort((a, b) => a.instrument.localeCompare(b.instrument));
+  } else {
+    out.sort((a, b) =>
+      key === "oldest" ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date)
+    );
+  }
+  return out;
+}

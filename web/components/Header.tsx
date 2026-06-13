@@ -11,15 +11,19 @@ const NAV = [
   { href: "/pricing", label: "Pricing" },
 ];
 
+// Brand link points at the canonical domain in production (so the logo never sends
+// people to the *.vercel.app host), but stays local during development.
+const HOME = process.env.NODE_ENV === "production" ? SITE.url : "/";
+
 export default function Header() {
   const [open, setOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-white">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-5">
-        <Link href="/" className="flex items-center" aria-label={SITE.brand}>
+        <a href={HOME} className="flex items-center" aria-label={SITE.brand}>
           <Image src="/logo.png" alt={SITE.brand} width={124} height={25} priority className="h-6 w-auto" />
-        </Link>
+        </a>
 
         {/* desktop nav */}
         <nav className="hidden items-center gap-5 sm:flex">

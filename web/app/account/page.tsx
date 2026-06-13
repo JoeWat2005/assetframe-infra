@@ -58,7 +58,12 @@ export default async function AccountPage() {
           ))}
         </div>
 
-        <Note>Manage or cancel your subscription from the receipt email Lemon Squeezy sent you. Access updates automatically.</Note>
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <Btn href="/account/subscription" variant="primary">Manage subscription</Btn>
+          <span className="text-sm text-muted">
+            {ent.subscribed ? "View your plan, billing and cancellation." : "View plans and upgrade."}
+          </span>
+        </div>
       </div>
     </>
   );

@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { clerkClient } from "@clerk/nextjs/server";
+import { ExternalLink, BarChart3, Gauge } from "lucide-react";
 import { getCatalog, getTrackRecord } from "@/lib/content";
 import { getEntitlement } from "@/lib/entitlements";
 import { Hero, Note } from "@/components/ui";
+import { Button } from "@/components/ui/button";
+import { SITE } from "@/site.config";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Admin", robots: { index: false, follow: false } };
@@ -51,6 +54,30 @@ export default async function AdminPage() {
           {stat(catalog.length, "Editions")}
           {stat(tr.stats.openCalls, "Open calls")}
           {stat(tr.stats.reportsScored, "Scored")}
+        </div>
+
+        <div className="mt-6 rounded-xl border border-line bg-white p-4">
+          <h2 className="text-base font-bold text-navy">Traffic &amp; performance</h2>
+          <p className="mt-1 text-sm text-muted">
+            Visitors, page views and Core Web Vitals are collected by Vercel Analytics &amp; Speed
+            Insights and shown in your Vercel dashboard (privacy-friendly, no cookie banner needed).
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button asChild size="sm" variant="outline">
+              <a href={SITE.analyticsUrl} target="_blank" rel="noopener noreferrer">
+                <BarChart3 data-icon="inline-start" />
+                Web Analytics
+                <ExternalLink data-icon="inline-end" />
+              </a>
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <a href={SITE.analyticsUrl} target="_blank" rel="noopener noreferrer">
+                <Gauge data-icon="inline-start" />
+                Speed Insights
+                <ExternalLink data-icon="inline-end" />
+              </a>
+            </Button>
+          </div>
         </div>
 
         <Note>
