@@ -11,6 +11,8 @@ export default function ReportsBrowser({ editions }: { editions: Edition[] }) {
   const [q, setQ] = useState("");
   const [assetClass, setAssetClass] = useState("");
   const [status, setStatus] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
 
   const assetClasses = useMemo(
     () => Array.from(new Set(editions.map((e) => e.assetClass).filter(Boolean))).sort(),
@@ -21,10 +23,11 @@ export default function ReportsBrowser({ editions }: { editions: Edition[] }) {
     [editions]
   );
   const results = useMemo(
-    () => filterEditions(editions, { q, assetClass, status }),
-    [editions, q, assetClass, status]
+    () => filterEditions(editions, { q, assetClass, status, from, to }),
+    [editions, q, assetClass, status, from, to]
   );
-  const active = q || assetClass || status;
+  const active = q || assetClass || status || from || to;
+  const clearAll = () => { setQ(""); setAssetClass(""); setStatus(""); setFrom(""); setTo(""); };
 
   return (
     <div>
@@ -44,8 +47,16 @@ export default function ReportsBrowser({ editions }: { editions: Edition[] }) {
           <option value="">Any status</option>
           {statuses.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
+        <label className="flex items-center gap-1.5 text-sm text-muted">
+          From
+          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} aria-label="From date" className={selectCls} />
+        </label>
+        <label className="flex items-center gap-1.5 text-sm text-muted">
+          To
+          <input type="date" value={to} onChange={(e) => setTo(e.target.value)} aria-label="To date" className={selectCls} />
+        </label>
         {active && (
-          <button onClick={() => { setQ(""); setAssetClass(""); setStatus(""); }} className="text-sm font-semibold text-muted hover:text-navy">
+          <button onClick={clearAll} className="text-sm font-semibold text-muted hover:text-navy">
             Clear
           </button>
         )}
