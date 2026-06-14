@@ -12,6 +12,7 @@ const LABEL: Record<string, string> = {
   grant_unresolved: "Unresolved grant", revoke_unresolved: "Unresolved revoke",
   billing_cancel_on_delete: "Cancel on delete", admin_tier: "Admin tier",
   unpublish_report: "Unpublish report", publish_report: "Restore report",
+  user_deleted: "Account deleted",
 };
 const label = (a: string) => LABEL[a] ?? a;
 

@@ -42,6 +42,8 @@ export async function POST(req: NextRequest) {
       [userId]
     )) as Record<string, unknown>[];
 
+    let cancelled = 0;
+    let failed = 0;
     for (const r of rows) {
       const subId = String(r.subscription_id);
       const res = await cancelLemonSubscription(subId); // cancel at period end; stops future billing
@@ -49,11 +51,31 @@ export async function POST(req: NextRequest) {
         actor: "clerk",
         action: "billing_cancel_on_delete",
         target: subId,
-        detail: res.ok ? `cancelled (${res.status})` : `cancel failed: ${res.reason}`,
+        detail: res.ok
+          ? `cancelled (${res.status})`
+          : `cancel FAILED: ${res.reason} — cancel manually in Lemon Squeezy`,
       });
+      if (res.ok) {
+        cancelled++;
+        // Drop the mapping only once the LS sub is actually cancelled, so a failed cancel
+        // (e.g. missing API key) isn't silently lost — the row stays, flagged in the audit
+        // log, so it can't quietly keep billing a user who deleted their account.
+        await sql.query(`DELETE FROM billing_subscriptions WHERE subscription_id = $1`, [subId]);
+      } else {
+        failed++;
+      }
     }
-    await sql.query(`DELETE FROM billing_subscriptions WHERE clerk_user_id = $1`, [userId]);
-    return NextResponse.json({ ok: true, cancelled: rows.length });
+
+    // Record every account deletion (incl. admins) so removals are auditable. Admin access
+    // via ADMIN_EMAILS survives deletion: re-signing-up with the same email restores it, so
+    // deleting an admin account never permanently locks you out of the dashboard.
+    await logAudit({
+      actor: "clerk",
+      action: "user_deleted",
+      target: userId,
+      detail: `account deleted; ${cancelled} subscription(s) cancelled${failed ? `, ${failed} FAILED — manual cancel needed` : ""}`,
+    });
+    return NextResponse.json({ ok: true, cancelled, failed });
   } catch {
     return new NextResponse("Cleanup failed", { status: 500 });
   }

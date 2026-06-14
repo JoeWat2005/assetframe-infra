@@ -1,5 +1,5 @@
 "use client";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useUser } from "@clerk/nextjs";
 import { getCheckoutUrl } from "@/lib/checkout-actions";
 
@@ -20,20 +20,33 @@ export default function BuyButton({
 }) {
   const { user, isSignedIn, isLoaded } = useUser();
   const [pending, start] = useTransition();
+  const [adminBlocked, setAdminBlocked] = useState(false);
   const gold = `inline-flex items-center justify-center rounded-lg bg-[#9a6700] px-4 py-2.5 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-60 ${
     full ? "w-full" : ""
   } ${className}`;
+  const calm = `inline-flex items-center justify-center rounded-lg border border-[#9a6700] bg-[#fff7e6] px-4 py-2.5 text-sm font-bold text-[#9a6700] transition hover:opacity-90 ${
+    full ? "w-full" : ""
+  } ${className}`;
 
-  const subscribed = (user?.publicMetadata as { subscribed?: boolean } | undefined)?.subscribed === true;
+  const meta = user?.publicMetadata as { subscribed?: boolean; role?: string } | undefined;
+  const subscribed = meta?.subscribed === true;
+  // Role-based admins are detectable client-side; email-allowlist admins are caught by the
+  // server guard in getCheckoutUrl() (which sets reason === "admin" → adminBlocked).
+  const isAdmin = meta?.role === "admin";
+
   if (subscribed) {
     return (
-      <a
-        href="/account/subscription"
-        className={`inline-flex items-center justify-center rounded-lg border border-[#9a6700] bg-[#fff7e6] px-4 py-2.5 text-sm font-bold text-[#9a6700] transition hover:opacity-90 ${
-          full ? "w-full" : ""
-        } ${className}`}
-      >
+      <a href="/account/subscription" className={calm}>
         You&apos;re on Pro — manage subscription
+      </a>
+    );
+  }
+
+  // Admins get Pro comped — never offer them a paid checkout.
+  if ((isLoaded && isSignedIn && isAdmin) || adminBlocked) {
+    return (
+      <a href="/account" className={calm}>
+        Admin access — Pro is on
       </a>
     );
   }
@@ -51,7 +64,8 @@ export default function BuyButton({
   const go = () =>
     start(async () => {
       try {
-        const { url } = await getCheckoutUrl();
+        const { url, reason } = await getCheckoutUrl();
+        if (reason === "admin") { setAdminBlocked(true); return; } // comped — show the admin note
         if (url) window.location.href = url;
       } catch {
         /* leave the button as-is; the user can retry */
