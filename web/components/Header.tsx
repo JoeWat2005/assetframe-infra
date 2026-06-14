@@ -37,8 +37,7 @@ export default function Header() {
       <div className="hidden border-b border-line/70 bg-tile/60 sm:block">
         <div className="mx-auto flex h-8 max-w-5xl items-center justify-between px-4 text-[12px] text-muted-foreground sm:px-5">
           <span>
-            Research published <b className="text-ink">before</b> the move, graded against the tape after —
-            general market research, not investment advice.
+            Research published <b className="text-ink">before</b> the move, graded against the tape after.
           </span>
           <Link href="/track-record" className="font-semibold text-navy hover:underline">
             See the track record →

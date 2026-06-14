@@ -34,7 +34,7 @@ export const SITE = {
   },
   disclaimer:
     "AssetFrame publishes general market research and decision-support analysis. It is " +
-    "not investment advice and not a personal recommendation — we do not tell anyone to " +
+    "not investment advice and not a personal recommendation. We do not tell anyone to " +
     "buy or sell. Markets are uncertain and you can lose money. No outcome is guaranteed. " +
     "Do your own research and consider an FCA-authorised adviser. AssetFrame never places trades.",
 };

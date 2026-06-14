@@ -36,9 +36,8 @@ export default async function Home() {
             Next-session market intelligence,{" "}
             <span className="text-[#7fb0ff]">scored after the fact.</span>
           </h1>
-          <p className="mt-5 max-w-xl text-lg text-[#c9d6e8]">
-            A free one-page Snapshot for everyone, plus a Pro report with conditional setups, a price
-            ladder and a scored ledger.
+          <p className="mt-5 max-w-md text-lg text-[#c9d6e8]">
+            A free Snapshot for everyone. Pro adds the full scored ledger.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild className="h-11 bg-white px-6 text-base text-navy shadow-sm hover:bg-white/90">

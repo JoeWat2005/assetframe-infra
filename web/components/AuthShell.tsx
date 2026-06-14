@@ -3,23 +3,16 @@ import Image from "next/image";
 import { ShieldCheck, LineChart, Lock } from "lucide-react";
 import { SITE } from "@/site.config";
 
-// Split layout shared by /sign-in and /sign-up: a navy brand panel (desktop) next
-// to the centred Clerk widget. The Clerk card carries the logo + theming via the
-// global appearance set in layout.tsx.
+// Full-screen auth layout (no marketing nav/footer): a navy brand panel on desktop
+// next to the centred Clerk widget. On mobile the brand panel collapses and a logo
+// sits above the form. Uses min-h-[100dvh] so it fills the screen and scrolls if the
+// form is taller than the viewport.
 export default function AuthShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="grid min-h-[calc(100vh-3.5rem)] md:grid-cols-2">
+    <div className="grid min-h-[100dvh] md:grid-cols-2">
       <div className="relative hidden flex-col justify-between overflow-hidden p-10 text-white md:flex">
-        <div
-          aria-hidden
-          className="absolute inset-0"
-          style={{ background: "linear-gradient(155deg, #0b2545 0%, #102f56 55%, #0a2140 100%)" }}
-        />
-        <div
-          aria-hidden
-          className="absolute inset-0"
-          style={{ background: "radial-gradient(42rem 26rem at 18% 4%, rgba(127,176,255,0.18), transparent 60%)" }}
-        />
+        <div aria-hidden className="absolute inset-0" style={{ background: "linear-gradient(155deg, #0b2545 0%, #102f56 55%, #0a2140 100%)" }} />
+        <div aria-hidden className="absolute inset-0" style={{ background: "radial-gradient(42rem 26rem at 18% 4%, rgba(127,176,255,0.18), transparent 60%)" }} />
         <div
           aria-hidden
           className="absolute inset-0 opacity-50"
@@ -29,7 +22,6 @@ export default function AuthShell({ children }: { children: React.ReactNode }) {
             backgroundSize: "44px 44px",
           }}
         />
-
         <Link href="/" className="relative z-10 inline-flex">
           <Image src="/logo-white.png" alt={SITE.brand} width={160} height={32} className="h-7 w-auto" />
         </Link>
@@ -48,7 +40,10 @@ export default function AuthShell({ children }: { children: React.ReactNode }) {
         </p>
       </div>
 
-      <div className="flex items-center justify-center bg-gradient-to-b from-white to-[#eef2f8] px-5 py-12">
+      <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-8 bg-gradient-to-b from-white to-[#eef2f8] px-5 py-10">
+        <Link href="/" className="md:hidden">
+          <Image src="/logo.png" alt={SITE.brand} width={140} height={28} className="h-7 w-auto" priority />
+        </Link>
         {children}
       </div>
     </div>

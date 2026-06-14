@@ -1,5 +1,5 @@
+import Link from "next/link";
 import Image from "next/image";
-import SmoothLink from "@/components/SmoothLink";
 import { SITE } from "@/site.config";
 
 // Minimal inline icons (no icon dependency). Add/remove by editing SITE.socials.
@@ -40,15 +40,16 @@ export default function Footer() {
             <div className="mt-4"><Social /></div>
           </div>
           <div className="grid grid-cols-2 gap-x-12 gap-y-2 text-sm">
-            <SmoothLink href="/reports" className="hover:text-white">Reports</SmoothLink>
-            <SmoothLink href="/pricing" className="hover:text-white">Pricing</SmoothLink>
-            <SmoothLink href="/track-record" className="hover:text-white">Track record</SmoothLink>
-            <SmoothLink href="/how-it-works" className="hover:text-white">How it works</SmoothLink>
-            <SmoothLink href="/faq" className="hover:text-white">FAQ</SmoothLink>
-            <SmoothLink href="/account" className="hover:text-white">Account</SmoothLink>
-            <SmoothLink href="/terms" className="hover:text-white">Terms</SmoothLink>
-            <SmoothLink href="/privacy" className="hover:text-white">Privacy</SmoothLink>
-            <a href={`mailto:${SITE.contactEmail}`} className="hover:text-white">Contact</a>
+            <Link href="/reports" className="hover:text-white">Reports</Link>
+            <Link href="/pricing" className="hover:text-white">Pricing</Link>
+            <Link href="/track-record" className="hover:text-white">Track record</Link>
+            <Link href="/how-it-works" className="hover:text-white">How it works</Link>
+            <Link href="/faq" className="hover:text-white">FAQ</Link>
+            <Link href="/about" className="hover:text-white">About</Link>
+            <Link href="/account" className="hover:text-white">Account</Link>
+            <Link href="/terms" className="hover:text-white">Terms</Link>
+            <Link href="/privacy" className="hover:text-white">Privacy</Link>
+            <Link href="/contact" className="hover:text-white">Contact</Link>
           </div>
         </div>
         <p className="mt-8 border-t border-navy-700 pt-6 text-xs leading-relaxed text-[#7e93b3]">

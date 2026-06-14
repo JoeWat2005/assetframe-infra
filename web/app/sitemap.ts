@@ -4,7 +4,7 @@ import { SITE } from "@/site.config";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = SITE.url.replace(/\/$/, "");
-  const staticRoutes = ["", "/reports", "/track-record", "/pricing", "/how-it-works", "/faq", "/terms", "/privacy"].map(
+  const staticRoutes = ["", "/reports", "/track-record", "/pricing", "/how-it-works", "/faq", "/about", "/contact", "/terms", "/privacy"].map(
     (p) => ({ url: `${base}${p}`, changeFrequency: "weekly" as const, priority: p === "" ? 1 : 0.7 })
   );
 
