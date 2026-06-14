@@ -1,8 +1,9 @@
-"""Upload locked Pro report files to a private Cloudflare R2 bucket.
+"""Upload report files to a private Cloudflare R2 bucket.
 
-Free Snapshots ship inside the public Cloudflare Pages deploy (built by
-build_site.py). Pro files do NOT — they live in private R2 and are served only
-through the gating Function in web/functions/pro/ after a licence check.
+ALL report files — free Snapshots AND Pro reports — live in private R2 and are served
+only through the auth-gated /api/report route in the Next.js app (free needs an account,
+Pro needs a subscription). Nothing is public/static, so there is no way to read a report
+without going through the gate.
 
 R2 is S3-compatible, so this uses boto3. Install once:  pip install boto3
 
@@ -13,11 +14,12 @@ Set these environment variables (from the Cloudflare dashboard - see LAUNCH.md):
   R2_BUCKET             the private bucket name (e.g. assetframe-pro)
 
 Usage:
-  python scripts/publish.py            upload every edition's pro.html + pro.pdf
+  python scripts/publish.py            upload every edition's free + Pro files
   python scripts/publish.py --dry-run  show what would upload, change nothing
   python scripts/publish.py --date 2026-06-13   only that edition date
 
-Object keys mirror the site paths the Function requests: <date>/<slug>/pro.html
+Object keys mirror the paths /api/report requests: <date>/<slug>/{free,pro}.{html,pdf}
+and <date>/<slug>/preview.png
 """
 import argparse
 import os
@@ -26,7 +28,15 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 REPORTS = ROOT / "reports"
-PRO_FILES = {"pro.html": "text/html; charset=utf-8", "pro.pdf": "application/pdf"}
+# Every report file is private in R2 now (free Snapshots AND Pro reports); the web app
+# serves them only through the auth-gated /api/report route. Keys mirror the request path.
+UPLOAD_FILES = {
+    "free.html": "text/html; charset=utf-8",
+    "free.pdf": "application/pdf",
+    "preview.png": "image/png",
+    "pro.html": "text/html; charset=utf-8",
+    "pro.pdf": "application/pdf",
+}
 
 
 def _load_local_env():
@@ -53,7 +63,7 @@ def discover(date_filter):
             continue
         if date_filter and date != date_filter:
             continue
-        for name, ctype in PRO_FILES.items():
+        for name, ctype in UPLOAD_FILES.items():
             f = meta.parent / name
             if f.exists():
                 items.append((f, f"{date}/{slug}/{name}", ctype))
@@ -68,7 +78,7 @@ def main():
 
     items = discover(a.date)
     if not items:
-        print("No Pro files found under reports/. Generate an edition first.")
+        print("No report files found under reports/. Generate an edition first.")
         return
 
     if a.dry_run:

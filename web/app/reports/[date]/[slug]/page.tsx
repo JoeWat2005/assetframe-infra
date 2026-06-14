@@ -88,7 +88,7 @@ export default async function ReaderPage(
               scorecard, the outcome ledger and the full source audit.
             </p>
             {ent.subscribed ? (
-              <ReportLinks html={`/api/pro/${e.date}/${e.slug}/pro.html`} pdf={`/api/pro/${e.date}/${e.slug}/pro.pdf`} />
+              <ReportLinks html={`/api/report/${e.date}/${e.slug}/pro.html`} pdf={`/api/report/${e.date}/${e.slug}/pro.pdf`} />
             ) : (
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <BuyButton>Subscribe to unlock</BuyButton>

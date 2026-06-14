@@ -13,9 +13,9 @@
     "windowEnd": "Sun 14 Jun 2026 03:00 UK",
     "reportDate": "2026-06-13",
     "catalystStatus": "US-Iran signing window: multiple-source, unsigned (Iran says Hormuz remains closed). SOL-specific - negative funding and ETF-inflow divergence sourced; token-unlock overhang single-source. Last checked 02:45 UK.",
-    "freeHtml": "/r/2026-06-13/SOL/free.html",
-    "freePdf": "/r/2026-06-13/SOL/free.pdf",
-    "preview": "/r/2026-06-13/SOL/preview.png",
+    "freeHtml": "/api/report/2026-06-13/SOL/free.html",
+    "freePdf": "/api/report/2026-06-13/SOL/free.pdf",
+    "preview": "/api/report/2026-06-13/SOL/preview.png",
     "hasPro": true
   },
   {
@@ -32,9 +32,9 @@
     "windowEnd": "Sun 14 Jun 2026 02:30 UK",
     "reportDate": "2026-06-13",
     "catalystStatus": "Multiple-source reports of an imminent US-Iran signing; unsigned as of writing; Iran says Hormuz remains closed; last checked 02:19 UK.",
-    "freeHtml": "/r/2026-06-13/ETH/free.html",
-    "freePdf": "/r/2026-06-13/ETH/free.pdf",
-    "preview": "/r/2026-06-13/ETH/preview.png",
+    "freeHtml": "/api/report/2026-06-13/ETH/free.html",
+    "freePdf": "/api/report/2026-06-13/ETH/free.pdf",
+    "preview": "/api/report/2026-06-13/ETH/preview.png",
     "hasPro": true
   },
   {
@@ -51,9 +51,9 @@
     "windowEnd": "Mon 15 Jun 2026 21:00 UK",
     "reportDate": "2026-06-13",
     "catalystStatus": "WWDC Siri-delay de-rating: multiple-source, confirmed by the week's tape. US-Iran signing window resolves pre-open (gap risk): multiple-source, unsigned. Last checked 03:00 UK.",
-    "freeHtml": "/r/2026-06-13/AAPL/free.html",
-    "freePdf": "/r/2026-06-13/AAPL/free.pdf",
-    "preview": "/r/2026-06-13/AAPL/preview.png",
+    "freeHtml": "/api/report/2026-06-13/AAPL/free.html",
+    "freePdf": "/api/report/2026-06-13/AAPL/free.pdf",
+    "preview": "/api/report/2026-06-13/AAPL/preview.png",
     "hasPro": true
   }
 ]

@@ -1,26 +1,22 @@
 """Bridge: Python report pipeline -> the Next.js app.
 
-Writes the catalog + track-record as JSON the web app reads, and copies the
-PUBLIC free assets (free.html, free.pdf, preview.png) into web/public/r/.
-Pro files are NOT copied here - they go to private R2 via scripts/publish.py.
+Writes the catalog + track-record as JSON the web app reads. Report files are NOT copied
+into the web app: every file (free Snapshots AND Pro reports) is private in R2 (pushed by
+scripts/publish.py) and served only through the auth-gated /api/report route.
 
 Usage:
   python scripts/export_content.py [--web web] [--include-dev]
 
 Outputs:
-  web/content/catalog.json        list of editions (metadata + public asset paths)
+  web/content/catalog.json        list of editions (metadata + /api/report asset paths)
   web/content/track-record.json   { stats, open[], scored[], calibration }
-  web/public/r/<date>/<slug>/...   copied free assets
 """
 import argparse
 import csv
 import json
-import shutil
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-PUBLIC_FILES = ["free.html", "free.pdf", "preview.png"]
-PRO_FILES = ["pro.html", "pro.pdf"]
 
 
 def load_catalog(reports_dir, include_dev):
@@ -34,7 +30,7 @@ def load_catalog(reports_dir, include_dev):
         except Exception:
             continue
         d = meta_path.parent
-        base = f"/r/{date}/{slug}"
+        base = f"/api/report/{date}/{slug}"
         editions.append({
             "date": date, "slug": slug,
             "instrument": m.get("instrument", slug),
@@ -124,7 +120,6 @@ def main():
     web = (ROOT / a.web) if not Path(a.web).is_absolute() else Path(a.web)
     reports_dir = (ROOT / a.reports) if not Path(a.reports).is_absolute() else Path(a.reports)
     content = web / "content"
-    public_r = web / "public" / "r"
     content.mkdir(parents=True, exist_ok=True)
 
     catalog = load_catalog(reports_dir, a.include_dev)
@@ -151,24 +146,18 @@ def main():
         "open": open_calls, "scored": scored, "calibration": calib,
     }
 
-    # copy public free assets
+    # Report files live in private R2 (run scripts/publish.py), not in the web app.
     for e in catalog:
-        dest = public_r / e["date"] / e["slug"]
-        dest.mkdir(parents=True, exist_ok=True)
-        for name in PUBLIC_FILES:
-            src = e["_dir"] / name
-            if src.exists():
-                shutil.copy(src, dest / name)
         del e["_dir"]
 
     (content / "catalog.json").write_text(json.dumps(catalog, indent=2), encoding="utf-8")
     (content / "track-record.json").write_text(json.dumps(track, indent=2), encoding="utf-8")
 
     print(f"Exported -> {content}")
-    print(f"  editions:    {len(catalog)}  (public free assets copied to {public_r})")
+    print(f"  editions:    {len(catalog)}")
     print(f"  open calls:  {len(open_calls)}")
     print(f"  scored rows: {total}" + ("  (calibration ready)" if calib else ""))
-    print("Pro files stay private - run scripts/publish.py to push them to R2.")
+    print("All report files (free + Pro) are private in R2 - run scripts/publish.py to push them.")
 
 
 if __name__ == "__main__":
