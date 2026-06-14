@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ShieldCheck, LineChart, Lock } from "lucide-react";
+import HeroBackdrop from "@/components/HeroBackdrop";
 import { SITE } from "@/site.config";
 
 // Full-screen auth layout (no marketing nav/footer): a navy brand panel on desktop
@@ -10,18 +11,8 @@ import { SITE } from "@/site.config";
 export default function AuthShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="grid min-h-[100dvh] md:grid-cols-2">
-      <div className="relative hidden flex-col justify-between overflow-hidden p-10 text-white md:flex">
-        <div aria-hidden className="absolute inset-0" style={{ background: "linear-gradient(155deg, #0b2545 0%, #102f56 55%, #0a2140 100%)" }} />
-        <div aria-hidden className="absolute inset-0" style={{ background: "radial-gradient(42rem 26rem at 18% 4%, rgba(127,176,255,0.18), transparent 60%)" }} />
-        <div
-          aria-hidden
-          className="absolute inset-0 opacity-50"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)",
-            backgroundSize: "44px 44px",
-          }}
-        />
+      <div className="relative hidden flex-col justify-between overflow-hidden bg-navy p-10 text-white md:flex">
+        <HeroBackdrop />
         <Link href="/" className="relative z-10 inline-flex">
           <Image src="/logo-white.png" alt={SITE.brand} width={160} height={32} className="h-7 w-auto" />
         </Link>

@@ -1,9 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, FileText, LineChart, BookOpen, HelpCircle } from "lucide-react";
+import { Menu, FileText, LineChart, BookOpen, HelpCircle, Building2, Mail } from "lucide-react";
 import HeaderAuth from "@/components/HeaderAuth";
 import { SITE } from "@/site.config";
 import {
@@ -14,43 +14,73 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "@/com
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-// Brand link points at the canonical domain in production (never the *.vercel.app host).
 const HOME = process.env.NODE_ENV === "production" ? SITE.url : "/";
 
 const RESEARCH = [
   { href: "/reports", label: "Reports", desc: "Browse the latest Snapshot + Pro editions.", icon: FileText },
   { href: "/track-record", label: "Track record", desc: "Every call, scored against the tape.", icon: LineChart },
   { href: "/how-it-works", label: "How it works", desc: "Published before the move, graded after.", icon: BookOpen },
-  { href: "/faq", label: "FAQ", desc: "Common questions, answered.", icon: HelpCircle },
 ];
-const FLAT = [{ href: "/pricing", label: "Pricing" }];
-const MOBILE_LINKS = [...RESEARCH.map(({ href, label }) => ({ href, label })), ...FLAT];
+const COMPANY = [
+  { href: "/about", label: "About", desc: "Who we are and what we stand for.", icon: Building2 },
+  { href: "/faq", label: "FAQ", desc: "Common questions, answered.", icon: HelpCircle },
+  { href: "/contact", label: "Contact", desc: "Reach us about anything.", icon: Mail },
+];
+const MOBILE = [...RESEARCH, ...COMPANY, { href: "/pricing", label: "Pricing", desc: "", icon: FileText }];
+
+function MenuGrid({ items }: { items: typeof RESEARCH }) {
+  return (
+    <ul className="grid w-[440px] gap-1 p-2">
+      {items.map((r) => (
+        <li key={r.href}>
+          <NavigationMenuLink asChild>
+            <Link href={r.href} className="flex gap-3 rounded-lg p-2.5 hover:bg-tile">
+              <r.icon className="mt-0.5 size-4 shrink-0 text-navy" />
+              <span className="block">
+                <span className="block text-sm font-semibold text-ink">{r.label}</span>
+                <span className="block text-xs text-muted-foreground">{r.desc}</span>
+              </span>
+            </Link>
+          </NavigationMenuLink>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export default function Header() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [shown, setShown] = useState(false);
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
 
-  return (
-    <header className="sticky top-0 z-30 border-b border-line bg-white/90 backdrop-blur supports-backdrop-filter:bg-white/75">
-      {/* compliance / utility strip (desktop) */}
-      <div className="hidden border-b border-line/70 bg-tile/60 sm:block">
-        <div className="mx-auto flex h-8 max-w-5xl items-center justify-between px-4 text-[12px] text-muted-foreground sm:px-5">
-          <span>
-            Research published <b className="text-ink">before</b> the move, graded against the tape after.
-          </span>
-          <Link href="/track-record" className="font-semibold text-navy hover:underline">
-            See the track record →
-          </Link>
-        </div>
-      </div>
+  // Reveal on scroll: header is hidden at the very top (so the hero is all you see),
+  // and slides in once scrolled past ~64px. IntersectionObserver, no scroll listener.
+  useEffect(() => {
+    const sentinel = document.createElement("div");
+    sentinel.setAttribute("aria-hidden", "true");
+    sentinel.style.cssText = "position:absolute;top:0;left:0;height:64px;width:1px;pointer-events:none";
+    document.body.appendChild(sentinel);
+    const io = new IntersectionObserver(([e]) => setShown(!e.isIntersecting), { threshold: 0 });
+    io.observe(sentinel);
+    return () => { io.disconnect(); sentinel.remove(); };
+  }, []);
 
+  return (
+    <header
+      className={cn(
+        "fixed inset-x-0 top-0 z-40 border-b transition-transform duration-300 motion-reduce:transition-none",
+        shown
+          ? "translate-y-0 border-line bg-white/90 shadow-sm backdrop-blur supports-backdrop-filter:bg-white/80"
+          : "-translate-y-full border-transparent"
+      )}
+    >
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-5">
         <a href={HOME} className="flex items-center" aria-label={SITE.brand}>
           <Image src="/logo.png" alt={SITE.brand} width={124} height={25} priority className="h-6 w-auto" />
         </a>
 
-        {/* desktop nav */}
+        {/* desktop */}
         <div className="hidden items-center gap-3 sm:flex">
           <NavigationMenu viewport={false}>
             <NavigationMenuList className="gap-1">
@@ -58,35 +88,23 @@ export default function Header() {
                 <NavigationMenuTrigger className="bg-transparent text-sm font-semibold text-ink hover:text-navy data-[state=open]:text-navy">
                   Research
                 </NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <ul className="grid w-[480px] grid-cols-2 gap-1 p-2">
-                    {RESEARCH.map((r) => (
-                      <li key={r.href}>
-                        <NavigationMenuLink asChild>
-                          <Link href={r.href} className="flex gap-3 rounded-lg p-2.5 hover:bg-tile">
-                            <r.icon className="mt-0.5 size-4 shrink-0 text-navy" />
-                            <span className="block">
-                              <span className="block text-sm font-semibold text-ink">{r.label}</span>
-                              <span className="block text-xs text-muted-foreground">{r.desc}</span>
-                            </span>
-                          </Link>
-                        </NavigationMenuLink>
-                      </li>
-                    ))}
-                  </ul>
-                </NavigationMenuContent>
+                <NavigationMenuContent><MenuGrid items={RESEARCH} /></NavigationMenuContent>
               </NavigationMenuItem>
-              {FLAT.map((n) => (
-                <NavigationMenuItem key={n.href}>
-                  <NavigationMenuLink
-                    asChild
-                    active={isActive(n.href)}
-                    className="px-3 py-1.5 text-sm font-semibold text-ink hover:text-navy data-active:bg-tile data-active:text-navy"
-                  >
-                    <Link href={n.href}>{n.label}</Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-              ))}
+              <NavigationMenuItem>
+                <NavigationMenuTrigger className="bg-transparent text-sm font-semibold text-ink hover:text-navy data-[state=open]:text-navy">
+                  Company
+                </NavigationMenuTrigger>
+                <NavigationMenuContent><MenuGrid items={COMPANY} /></NavigationMenuContent>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <NavigationMenuLink
+                  asChild
+                  active={isActive("/pricing")}
+                  className="px-3 py-1.5 text-sm font-semibold text-ink hover:text-navy data-active:bg-tile data-active:text-navy"
+                >
+                  <Link href="/pricing">Pricing</Link>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
           <div className="flex items-center gap-3 border-l border-line pl-3">
@@ -105,7 +123,7 @@ export default function Header() {
             <SheetContent side="right" className="w-72 gap-0">
               <SheetTitle className="px-4 pt-4 text-navy">Menu</SheetTitle>
               <nav className="mt-2 flex flex-col px-2">
-                {MOBILE_LINKS.map((n) => (
+                {MOBILE.map((n) => (
                   <SheetClose asChild key={n.href}>
                     <Link
                       href={n.href}
