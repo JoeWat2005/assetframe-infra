@@ -14,7 +14,6 @@
   --color-tile: #eef2f8;
 }
 
-html { scroll-behavior: smooth; }
 body { background: var(--color-bg); color: var(--color-ink); }
 
 /* GSAP reveal pre-hide — only active when JS is on and motion isn't reduced

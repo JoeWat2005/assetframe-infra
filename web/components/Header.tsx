@@ -68,7 +68,7 @@ export default function Header() {
     let ticking = false;
     const apply = () => {
       const y = window.scrollY;
-      if (isHome) setShown(y > 64);
+      if (isHome) setShown(y > window.innerHeight - 64); // reveal only after the full-screen hero, so the white navbar never sits over it
       else if (y <= 64) setShown(true); // near the top (within the reserved header zone): always shown
       else if (y > lastY + 4) setShown(false); // scrolling down past the fold: hide
       else if (y < lastY - 4) setShown(true); // scrolling up: show

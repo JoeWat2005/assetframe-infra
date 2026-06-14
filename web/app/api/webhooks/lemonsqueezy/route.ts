@@ -3,6 +3,7 @@ import { clerkClient } from "@clerk/nextjs/server";
 import { verifyLemonSignature, subscriptionStateFromEvent } from "@/lib/lemonsqueezy";
 import { sql } from "@/lib/db";
 import { logAudit } from "@/lib/audit";
+import { verifyCheckoutToken } from "@/lib/checkout-token";
 
 export const dynamic = "force-dynamic";
 
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
   }
 
   let event: {
-    meta?: { event_name?: string; custom_data?: { user_id?: string } };
+    meta?: { event_name?: string; custom_data?: { user_id?: string; token?: string } };
     data?: { id?: string | number; attributes?: Attrs };
   };
   try {
@@ -70,6 +71,7 @@ export async function POST(req: NextRequest) {
   const attrs = event.data?.attributes ?? {};
   const email = attrs.user_email?.toLowerCase();
   const hintUserId = event.meta?.custom_data?.user_id; // a hint only — must match the payer
+  const tokenUserId = verifyCheckoutToken(event.meta?.custom_data?.token); // our signed token → authenticated id
   const subscribed = subscriptionStateFromEvent(eventName, attrs.status);
   if (subscribed === null) return NextResponse.json({ ok: true, ignored: true });
 
@@ -125,6 +127,10 @@ export async function POST(req: NextRequest) {
     let user: ClerkUser | null = null;
     if (mappedUserId) {
       user = await cc.users.getUser(mappedUserId).catch(() => null);
+    } else if (tokenUserId) {
+      // Our own signed checkout token authenticates the account — bind directly, no email
+      // match needed. This is what makes the email entered at checkout irrelevant.
+      user = await cc.users.getUser(tokenUserId).catch(() => null);
     } else if (email) {
       if (hintUserId) {
         const u = await cc.users.getUser(hintUserId).catch(() => null);

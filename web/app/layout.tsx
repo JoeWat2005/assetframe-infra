@@ -3,7 +3,6 @@ import { ClerkProvider } from "@clerk/nextjs";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import AppFrame from "@/components/AppFrame";
-import SmoothNav from "@/components/SmoothNav";
 import Motion from "@/components/Motion";
 import ConsentAnalytics from "@/components/ConsentAnalytics";
 import { Analytics } from "@vercel/analytics/next";
@@ -97,7 +96,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             }}
           />
           <AppFrame header={<Header />} footer={<Footer />}>{children}</AppFrame>
-          <SmoothNav />
           <Motion />
           <Analytics />
           <SpeedInsights />
