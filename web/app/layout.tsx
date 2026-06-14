@@ -87,7 +87,7 @@ const clerkAppearance = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <ClerkProvider appearance={clerkAppearance}>
+    <ClerkProvider appearance={clerkAppearance} allowedRedirectOrigins={[SITE.url]}>
       <html lang="en" className={cn("h-full antialiased", "font-sans", geist.variable)}>
         <body className="flex min-h-full flex-col bg-bg">
           <script

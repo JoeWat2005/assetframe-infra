@@ -26,6 +26,8 @@ describe("classifyReportKey", () => {
     expect(classifyReportKey("2026-06-13/ETH/metadata.json")).toBeNull();
     expect(classifyReportKey("2026-06-13/ETH/preview.jpg")).toBeNull();
     expect(classifyReportKey("notadate/ETH/pro.html")).toBeNull();
+    expect(classifyReportKey("2026-13-99/SOL/free.html")).toBeNull(); // impossible month/day
+    expect(classifyReportKey("2026-00-10/SOL/free.html")).toBeNull();
     expect(classifyReportKey("2026-06-13/ETH/pro.html?x=1")).toBeNull();
     expect(classifyReportKey("2026-06-13/ETH/pro.html/x")).toBeNull();
     expect(classifyReportKey("2026-06-13/ETH/free.pdf.html")).toBeNull();

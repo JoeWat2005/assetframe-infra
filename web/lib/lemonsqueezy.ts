@@ -32,6 +32,12 @@ const SUBSCRIPTION_EVENTS = new Set([
   "subscription_plan_changed",
 ]);
 
+// Events that ALWAYS revoke access regardless of the reported status — a refund or
+// chargeback must pull Pro even if the subscription still reads "active" momentarily.
+const REVOKE_EVENTS = new Set([
+  "subscription_payment_refunded",
+]);
+
 // Access is decided by the subscription STATUS, which Lemon Squeezy sends on every
 // subscription event — more reliable than guessing from the event name.
 //  - active / on_trial         → paying or trialing: access
@@ -44,11 +50,13 @@ const INACTIVE_STATUSES = new Set(["expired", "unpaid", "paused"]);
 /**
  * Map a webhook (event name + subscription status) to a subscribed boolean, or
  * null when the event/status is irrelevant and access should be left unchanged.
+ * Refund/chargeback events force revocation.
  */
 export function subscriptionStateFromEvent(
   eventName: string,
   status: string | undefined
 ): boolean | null {
+  if (REVOKE_EVENTS.has(eventName)) return false;
   if (!SUBSCRIPTION_EVENTS.has(eventName)) return null;
   if (status && ACTIVE_STATUSES.has(status)) return true;
   if (status && INACTIVE_STATUSES.has(status)) return false;

@@ -48,6 +48,12 @@ describe("subscriptionStateFromEvent", () => {
     expect(subscriptionStateFromEvent("subscription_paused", "paused")).toBe(false);
   });
 
+  it("REVOKES on a refund / chargeback regardless of the reported status", () => {
+    expect(subscriptionStateFromEvent("subscription_payment_refunded", "active")).toBe(false);
+    expect(subscriptionStateFromEvent("subscription_payment_refunded", "paid")).toBe(false);
+    expect(subscriptionStateFromEvent("subscription_payment_refunded", undefined)).toBe(false);
+  });
+
   it("ignores unrelated events and unknown statuses", () => {
     expect(subscriptionStateFromEvent("order_created", "paid")).toBeNull();
     expect(subscriptionStateFromEvent("subscription_updated", "mystery")).toBeNull();

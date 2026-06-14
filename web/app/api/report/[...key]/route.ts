@@ -37,12 +37,20 @@ export async function GET(
   }
 
   // Best-effort Pro-download logging for the admin dashboard (never blocks the download).
+  // Deduped to one row per (user, report, kind) per hour so a logged-in caller can't
+  // inflate the table / KPIs by hammering the route.
   if (tier === "pro" && sql) {
     const reportId = objectKey.split("/").slice(0, 2).join("/");
     const kind = objectKey.endsWith(".pdf") ? "pdf" : "html";
     try {
       await sql.query(
-        `INSERT INTO download_log (report_id, kind, user_id) VALUES ($1,$2,$3)`,
+        `INSERT INTO download_log (report_id, kind, user_id)
+         SELECT $1,$2,$3
+         WHERE NOT EXISTS (
+           SELECT 1 FROM download_log
+           WHERE report_id = $1 AND kind = $2 AND user_id IS NOT DISTINCT FROM $3
+             AND ts > now() - interval '1 hour'
+         )`,
         [reportId, kind, ent.email ?? null]
       );
     } catch {

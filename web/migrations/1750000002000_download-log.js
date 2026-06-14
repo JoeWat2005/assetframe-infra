@@ -1,7 +1,7 @@
 /* eslint-disable camelcase */
 // Pro-download log — powers the admin dashboard's downloads charts.
-// One row per Pro file fetched through /api/pro (free files are served by the CDN
-// and not logged here).
+// One row per Pro file fetched through /api/report (free files go through the same
+// gated route but are not logged here). Writes are deduped per user/report/hour.
 
 exports.shorthands = undefined;
 

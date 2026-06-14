@@ -9,7 +9,10 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button";
 import { TrendChart, ClassBars, SplitDonut } from "@/components/admin/Charts";
 import AdminActions from "./AdminActions";
+import MemberSearch from "./MemberSearch";
+import AdminLog from "./AdminLog";
 import ProToggle from "./ProToggle";
+import { getAuditLog } from "@/lib/audit";
 import { SITE } from "@/site.config";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +23,7 @@ export default async function AdminPage() {
   if (!ent.signedIn) redirect("/sign-in");
   if (!ent.admin) redirect("/account");
 
-  const [stats, catalog] = await Promise.all([getAdminStats(), getCatalog()]);
+  const [stats, catalog, auditLog] = await Promise.all([getAdminStats(), getCatalog(), getAuditLog()]);
   const titleById = new Map(catalog.map((e) => [`${e.date}/${e.slug}`, e.instrument]));
 
   const priceNum = parseFloat((SITE.proPrice.match(/[\d.]+/) || ["0"])[0]) || 0;
@@ -152,6 +155,24 @@ export default async function AdminPage() {
 
         {/* Manage access */}
         <AdminActions />
+
+        {/* Member search */}
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle className="text-base">Find a member</CardTitle>
+            <CardDescription>Search by email or name, then grant or revoke Pro inline.</CardDescription>
+          </CardHeader>
+          <CardContent><MemberSearch /></CardContent>
+        </Card>
+
+        {/* Activity log */}
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle className="text-base">Activity log</CardTitle>
+            <CardDescription>Admin and billing actions, most recent first — searchable.</CardDescription>
+          </CardHeader>
+          <CardContent><AdminLog rows={auditLog} /></CardContent>
+        </Card>
 
         {/* External dashboards */}
         <Card className="mt-4">
