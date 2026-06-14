@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Menu, FileText, LineChart, BookOpen, HelpCircle, Building2, Mail } from "lucide-react";
+import { Menu, FileText, LineChart, BookOpen, HelpCircle, Building2, Mail, ShieldCheck, CreditCard } from "lucide-react";
 import HeaderAuth from "@/components/HeaderAuth";
 import { SITE } from "@/site.config";
 import {
@@ -25,8 +25,12 @@ const COMPANY = [
   { href: "/about", label: "About", desc: "Who we are and what we stand for.", icon: Building2 },
   { href: "/faq", label: "FAQ", desc: "Common questions, answered.", icon: HelpCircle },
   { href: "/contact", label: "Contact", desc: "Reach us about anything.", icon: Mail },
+  { href: "/terms", label: "Terms", desc: "The terms of using AssetFrame.", icon: FileText },
+  { href: "/privacy", label: "Privacy", desc: "How we handle your data.", icon: ShieldCheck },
 ];
-const MOBILE = [...RESEARCH, ...COMPANY];
+const PRICING = { href: "/pricing", label: "Pricing", desc: "Free Snapshots, and what Pro adds.", icon: CreditCard };
+// Mobile is a flat list of every page (the sheet scrolls if it overflows).
+const MOBILE = [...RESEARCH, PRICING, ...COMPANY];
 
 function MenuGrid({ items }: { items: typeof RESEARCH }) {
   return (
@@ -102,6 +106,15 @@ export default function Header() {
                 <NavigationMenuContent><MenuGrid items={RESEARCH} /></NavigationMenuContent>
               </NavigationMenuItem>
               <NavigationMenuItem>
+                <NavigationMenuLink
+                  asChild
+                  active={isActive("/pricing")}
+                  className="px-3 py-1.5 text-sm font-semibold text-ink hover:text-navy data-active:bg-tile data-active:text-navy"
+                >
+                  <Link href="/pricing">Pricing</Link>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
                 <NavigationMenuTrigger className="bg-transparent text-sm font-semibold text-ink hover:text-navy data-[state=open]:text-navy">
                   Company
                 </NavigationMenuTrigger>
@@ -122,7 +135,7 @@ export default function Header() {
                 <Menu />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-72 gap-0">
+            <SheetContent side="right" className="flex w-72 flex-col gap-0 overflow-y-auto">
               <SheetTitle className="px-4 pt-4 text-navy">Menu</SheetTitle>
               <nav className="mt-2 flex flex-col px-2">
                 {MOBILE.map((n) => (

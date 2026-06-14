@@ -18,9 +18,20 @@ html { scroll-behavior: smooth; }
 body { background: var(--color-bg); color: var(--color-ink); }
 
 /* GSAP reveal pre-hide — only active when JS is on and motion isn't reduced
-   (html.gsap-on is set before paint). Motion.tsx animates these to visible. */
+   (html.gsap-on is set before paint). Motion.tsx animates "up" nodes on scroll. */
 .gsap-on [data-animate="up"] { opacity: 0; }
-.gsap-on [data-animate="hero"] > * { opacity: 0; }
+
+/* Hero/title reveal is pure CSS (not JS-gated) so titles can NEVER be stranded
+   invisible if GSAP is slow, interrupted, or fails: children start hidden but a
+   forwards animation always lands them at full opacity. */
+@keyframes af-reveal { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+.gsap-on [data-animate="hero"] > * { opacity: 0; animation: af-reveal 0.6s ease-out forwards; }
+.gsap-on [data-animate="hero"] > *:nth-child(2) { animation-delay: 0.07s; }
+.gsap-on [data-animate="hero"] > *:nth-child(3) { animation-delay: 0.14s; }
+.gsap-on [data-animate="hero"] > *:nth-child(4) { animation-delay: 0.21s; }
+@media (prefers-reduced-motion: reduce) {
+  .gsap-on [data-animate="hero"] > * { opacity: 1; animation: none; }
+}
 
 /* Hero market-tape backdrop: a seamless sideways drift of the candlestick chart. */
 @keyframes af-drift { from { transform: translateX(0); } to { transform: translateX(-50%); } }

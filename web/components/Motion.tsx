@@ -40,12 +40,8 @@ export default function Motion() {
           gsap.to(els, { y: 0, opacity: 1, duration: 0.5, ease: "power2.out", stagger: 0.05, overwrite: true });
 
         ctx = gsap.context(() => {
-          gsap.utils.toArray<HTMLElement>('[data-animate="hero"]').forEach((el) => {
-            const kids = el.children;
-            gsap.set(kids, { y: 16, opacity: 0 });
-            gsap.to(kids, { y: 0, opacity: 1, duration: 0.7, ease: "power2.out", stagger: 0.08, delay: 0.05 });
-          });
-
+          // Hero/title reveal is handled by CSS (see globals.css) so it can't be
+          // stranded invisible if this runs late or gets reverted on navigation.
           const ups = gsap.utils.toArray<HTMLElement>('[data-animate="up"]');
           gsap.set(ups, { y: 22, opacity: 0 });
           ScrollTrigger.batch(ups, {
