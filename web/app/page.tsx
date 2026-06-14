@@ -4,6 +4,7 @@ import { getCatalog, getTrackRecord } from "@/lib/content";
 import { Section } from "@/components/ui";
 import ReportCard from "@/components/ReportCard";
 import Countdown from "@/components/Countdown";
+import HeroBackdrop from "@/components/HeroBackdrop";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -24,30 +25,22 @@ export default async function Home() {
 
   return (
     <>
-      <section className="relative overflow-hidden bg-navy text-white">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(55rem 28rem at 12% -10%, rgba(127,176,255,0.16), transparent 60%), radial-gradient(48rem 30rem at 100% 0%, rgba(20,58,100,0.55), transparent 55%)",
-          }}
-        />
-        <div className="relative mx-auto max-w-5xl px-4 py-14 sm:px-5 sm:py-20" data-animate="hero">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-white/80">
-            <ShieldCheck className="size-3.5" />
-            Published before the move · graded against the tape
+      <section className="relative isolate overflow-hidden bg-navy text-white">
+        <HeroBackdrop />
+        <div className="relative z-10 mx-auto max-w-5xl px-4 py-20 sm:px-5 sm:py-24" data-animate="hero">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-white/80 backdrop-blur">
+            <ShieldCheck className="size-3.5 text-[#7fb0ff]" />
+            Published before the move, graded after
           </span>
-          <h1 className="mt-5 max-w-3xl text-4xl font-extrabold leading-[1.1] tracking-tight sm:text-5xl">
+          <h1 className="mt-5 max-w-3xl text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
             Next-session market intelligence,{" "}
             <span className="text-[#7fb0ff]">scored after the fact.</span>
           </h1>
-          <p className="mt-5 max-w-2xl text-lg text-[#c9d6e8]">
-            Pre-session research on the instruments that matter — a free one-page Snapshot for
-            everyone, and a full Pro report with conditional setups, a price ladder and a scored
-            outcome ledger.
+          <p className="mt-5 max-w-xl text-lg text-[#c9d6e8]">
+            A free one-page Snapshot for everyone, plus a Pro report with conditional setups, a price
+            ladder and a scored ledger.
           </p>
-          <div className="mt-7 flex flex-wrap gap-3">
+          <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild className="h-11 bg-white px-6 text-base text-navy shadow-sm hover:bg-white/90">
               <Link href="/reports">Browse free reports</Link>
             </Button>
@@ -62,15 +55,16 @@ export default async function Home() {
               </Link>
             </Button>
           </div>
-
-          <div className="mt-10">
-            <p className="mb-2.5 text-xs font-semibold uppercase tracking-wide text-white/50">
-              Next edition drops in
-            </p>
-            <Countdown />
-          </div>
         </div>
       </section>
+
+      {/* slim next-edition strip — keeps the hero uncluttered */}
+      <div className="border-b border-line bg-white">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-5">
+          <span className="text-sm font-semibold text-ink">Next edition drops in</span>
+          <Countdown tone="light" showLabel={false} />
+        </div>
+      </div>
 
       <Section title="Latest editions" lead="Free Snapshots open in your browser. Pro reports unlock with a subscription.">
         {catalog.length === 0 ? (
@@ -92,7 +86,7 @@ export default async function Home() {
         </div>
       </Section>
 
-      <Section title="How accurate are we?" lead="Don't take our word for it — here's the running scorecard.">
+      <Section title="How accurate are we?" lead="Don't take our word for it. Here's the running scorecard.">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {stats.map(([n, l]) => (
             <Card key={l} data-animate="up">
@@ -105,12 +99,12 @@ export default async function Home() {
         </div>
         {tr.stats.reportsScored === 0 ? (
           <p className="mt-4 text-sm text-muted-foreground">
-            No reports scored yet — the first results post as the current open calls close.
+            No reports scored yet. The first results post as the current open calls close.
           </p>
         ) : (
           <p className="mt-4 text-sm text-muted-foreground">
             {tr.stats.currentStreak > 0 ? `Currently on a ${tr.stats.currentStreak}-report accurate streak. ` : ""}
-            Every prediction is registered before its window and graded after — the full append-only
+            Every prediction is registered before its window and graded after. The full append-only
             record is part of Pro.{" "}
             <Link className="font-semibold text-navy underline underline-offset-2" href="/track-record">
               See the full record →

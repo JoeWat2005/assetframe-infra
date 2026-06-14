@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { SITE } from "@/site.config";
+import { cn } from "@/lib/utils";
 
 // Next generation time, in UTC, derived from the configured cadence. Pure so it's testable.
 function nextTarget(now: Date): Date {
@@ -26,7 +27,7 @@ function split(ms: number) {
   };
 }
 
-export default function Countdown() {
+export default function Countdown({ tone = "dark", showLabel = true }: { tone?: "dark" | "light"; showLabel?: boolean }) {
   // null until mounted so server and client render the same markup (no hydration mismatch).
   const [ms, setMs] = useState<number | null>(null);
 
@@ -42,6 +43,7 @@ export default function Countdown() {
 
   const parts = ms === null ? null : split(ms);
   const tiles: ["Days" | "Hours" | "Mins" | "Secs"][] = [["Days"], ["Hours"], ["Mins"], ["Secs"]];
+  const light = tone === "light";
 
   return (
     <div>
@@ -49,16 +51,23 @@ export default function Countdown() {
         {tiles.map(([label]) => (
           <div
             key={label}
-            className="flex min-w-[58px] flex-col items-center rounded-xl border border-white/15 bg-white/5 px-3 py-2 backdrop-blur sm:min-w-[72px]"
+            className={cn(
+              "flex min-w-[54px] flex-col items-center rounded-xl border px-3 py-2 sm:min-w-[68px]",
+              light ? "border-line bg-white text-navy" : "border-white/15 bg-white/5 text-white backdrop-blur"
+            )}
           >
             <span className="font-mono text-2xl font-bold tabular-nums sm:text-3xl">
               {parts === null ? "––" : String(parts[label]).padStart(2, "0")}
             </span>
-            <span className="mt-0.5 text-[11px] uppercase tracking-wide text-white/60">{label}</span>
+            <span className={cn("mt-0.5 text-[11px] uppercase tracking-wide", light ? "text-muted-foreground" : "text-white/60")}>
+              {label}
+            </span>
           </div>
         ))}
       </div>
-      <p className="mt-2 text-xs text-white/60">{SITE.publish.label}</p>
+      {showLabel && (
+        <p className={cn("mt-2 text-xs", light ? "text-muted-foreground" : "text-white/60")}>{SITE.publish.label}</p>
+      )}
     </div>
   );
 }

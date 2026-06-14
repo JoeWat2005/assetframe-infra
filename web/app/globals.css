@@ -22,6 +22,11 @@ body { background: var(--color-bg); color: var(--color-ink); }
 .gsap-on [data-animate="up"] { opacity: 0; }
 .gsap-on [data-animate="hero"] > * { opacity: 0; }
 
+/* Hero market-tape backdrop: a seamless sideways drift of the candlestick chart. */
+@keyframes af-drift { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.af-drift { animation: af-drift 48s linear infinite; will-change: transform; }
+@media (prefers-reduced-motion: reduce) { .af-drift { animation: none; } }
+
 @theme inline {
   --font-heading: var(--font-sans);
   --font-sans: var(--font-sans);
