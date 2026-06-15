@@ -142,7 +142,7 @@ export default function ReportsBrowser({ editions }: { editions: Edition[] }) {
       ) : (
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {visible.map((e) => <ReportCard key={`${e.date}/${e.slug}`} e={e} />)}
+            {visible.map((e) => <ReportCard key={`${e.date}/${e.slug}`} e={e} animate={false} />)}
           </div>
           {results.length > visible.length && (
             <div className="flex justify-center pt-2">
