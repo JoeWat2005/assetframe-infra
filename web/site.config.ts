@@ -51,7 +51,7 @@ export const SITE = {
   gaUrl: process.env.NEXT_PUBLIC_GA_URL || "https://analytics.google.com/",
   // Social links — fill in your handles (leave "" to hide an icon)
   socials: {
-    x: "https://x.com/assetframe",
+    x: "https://x.com/AssetFrame",
     linkedin: "https://www.linkedin.com/company/assetframe",
     youtube: "",
     reddit: "",
