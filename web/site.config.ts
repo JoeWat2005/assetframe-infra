@@ -1,8 +1,31 @@
 // Central site config. Edit socials/brand here. Secrets come from env (never here).
+
+// Base URL for every ABSOLUTE link the app emits (canonical, OpenGraph, metadataBase,
+// sitemap, robots host, JSON-LD, Clerk redirect origins). In-app navigation uses relative
+// <Link href="/..."> and already resolves to whatever domain you're on, so this only governs
+// absolute URLs. Resolves per environment (NEXT_PUBLIC_VERCEL_* are re-exposed in next.config):
+//   production  -> NEXT_PUBLIC_SITE_URL override, else the project's production domain, else www.
+//   preview     -> the deployment's own Vercel URL (so previews never claim to be prod).
+//   local dev   -> NEXT_PUBLIC_SITE_URL (http://localhost:3000) or the localhost default.
+function resolveSiteUrl(): string {
+  const env = process.env.NEXT_PUBLIC_VERCEL_ENV;
+  const explicit = process.env.NEXT_PUBLIC_SITE_URL;
+  if (env === "production") {
+    if (explicit) return explicit;
+    const prod = process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL;
+    return prod ? `https://${prod}` : "https://www.assetframe.co.uk";
+  }
+  if (env === "preview") {
+    const u = process.env.NEXT_PUBLIC_VERCEL_BRANCH_URL || process.env.NEXT_PUBLIC_VERCEL_URL;
+    if (u) return `https://${u}`;
+  }
+  return explicit || "http://localhost:3000";
+}
+
 export const SITE = {
   brand: "AssetFrame",
   tagline: "Next-session market intelligence, scored after the fact.",
-  url: process.env.NEXT_PUBLIC_SITE_URL || "https://www.assetframe.co.uk",
+  url: resolveSiteUrl(),
   // Lemon Squeezy buy link + price label (public, safe to expose). Env overrides the default.
   checkoutUrl:
     process.env.NEXT_PUBLIC_CHECKOUT_URL ||
