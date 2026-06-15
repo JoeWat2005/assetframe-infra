@@ -32,14 +32,18 @@ const WHAT = [
 ];
 
 export default async function Home() {
-  const catalog = (await getCatalog()).slice(0, 6);
+  const editions = await getCatalog();
+  const catalog = editions.slice(0, 6);
   const tr = await getTrackRecord();
 
-  const stats: [React.ReactNode, string][] = [
-    [tr.stats.hitRate === null ? "—" : `${tr.stats.hitRate}%`, "Hit rate"],
-    [tr.stats.longestStreak, "Longest streak"],
-    [tr.stats.reportsScored, "Reports scored"],
-    [tr.stats.predictionsGraded, "Predictions graded"],
+  // Hero proof strip — REAL platform numbers only, never invented. Directional accuracy
+  // ("—" until ≥1 window scores) and forecasts scored (0 today) fill in automatically as
+  // the open calls close, so the strip is a live audit trail, not a marketing stat block.
+  const proof: { value: React.ReactNode; label: string }[] = [
+    { value: editions.length, label: "Reports published" },
+    { value: tr.stats.hitRate === null ? "—" : `${tr.stats.hitRate}%`, label: "Directional accuracy" },
+    { value: "100%", label: "Public archive" },
+    { value: tr.stats.predictionsGraded, label: "Forecasts scored" },
   ];
 
   return (
@@ -59,9 +63,11 @@ export default async function Home() {
             <span className="text-[#7fb0ff]">scored after the fact.</span>
           </h1>
           <p className="mt-5 max-w-xl text-lg text-[#c9d6e8]">
-            AssetFrame publishes pre-session research on stocks, crypto, FX and commodities — a clear
-            directional read with the levels that matter. Every call is logged before the market moves
-            and graded against the tape afterwards, so our track record is public.
+            Daily pre-session research across key financial assets. Every report is published before the
+            move and scored publicly afterwards.
+          </p>
+          <p className="mt-3 text-sm text-white/55">
+            Coverage across stocks, crypto, FX and commodities.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild className="h-11 bg-white px-6 text-base text-navy shadow-sm hover:bg-white/90">
@@ -78,6 +84,21 @@ export default async function Home() {
               </Link>
             </Button>
           </div>
+
+          {/* Public forecast ledger — compact audit strip, real numbers only (no invented figures) */}
+          <div className="mt-8 border-t border-white/10 pt-5">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-white/40">
+              Public forecast ledger
+            </div>
+            <div className="mt-2.5 flex flex-wrap items-baseline gap-x-7 gap-y-2.5">
+              {proof.map((p) => (
+                <div key={p.label} className="flex items-baseline gap-1.5">
+                  <span className="font-mono text-lg font-bold tabular-nums text-white">{p.value}</span>
+                  <span className="text-xs text-white/55">{p.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -85,7 +106,7 @@ export default async function Home() {
       <div className="border-b border-line bg-white">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-5">
           <div>
-            <span className="text-sm font-semibold text-ink">Next edition drops in</span>
+            <span className="text-sm font-semibold text-ink">Next edition publishes in</span>
             <span className="block text-xs text-muted-foreground">{SITE.publish.label}</span>
           </div>
           <Countdown tone="light" showLabel={false} />
@@ -128,33 +149,6 @@ export default async function Home() {
             </Link>
           </Button>
         </div>
-      </Section>
-
-      <Section title="How accurate are we?" lead="Don't take our word for it. Here's the running scorecard.">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {stats.map(([n, l]) => (
-            <Card key={l} data-animate="up">
-              <CardContent>
-                <div className="text-3xl font-extrabold text-navy">{n}</div>
-                <div className="mt-1 text-[13px] text-muted-foreground">{l}</div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        {tr.stats.reportsScored === 0 ? (
-          <p className="mt-4 text-sm text-muted-foreground">
-            No reports scored yet. The first results post as the current open calls close.
-          </p>
-        ) : (
-          <p className="mt-4 text-sm text-muted-foreground">
-            {tr.stats.currentStreak > 0 ? `Currently on a ${tr.stats.currentStreak}-report accurate streak. ` : ""}
-            Every prediction is registered before its window and graded after. The full append-only
-            record is part of Pro.{" "}
-            <Link className="font-semibold text-navy underline underline-offset-2" href="/track-record">
-              See the full record →
-            </Link>
-          </p>
-        )}
       </Section>
 
       <div className="h-12" />

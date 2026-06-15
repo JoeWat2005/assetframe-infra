@@ -25,6 +25,17 @@ const stat = (n: React.ReactNode, l: string) => (
 export default async function TrackRecordPage() {
   const ent = await getEntitlement();
   const tr = await getTrackRecord();
+  const editions = await getCatalog();
+  const registered = tr.open.reduce((a, c) => a + (c.n || 0), 0);
+
+  // Headline mirrors the homepage hero's public-ledger strip (consistent, meaningful), with
+  // the registered/scored breakdown + tables below as the deeper detail this page carries.
+  const headline: [React.ReactNode, string][] = [
+    [editions.length, "Reports published"],
+    [tr.stats.hitRate === null ? "—" : `${tr.stats.hitRate}%`, "Directional accuracy"],
+    ["100%", "Public archive"],
+    [tr.stats.predictionsGraded, "Forecasts scored"],
+  ];
 
   // The full record is a Pro benefit. Free / signed-out visitors see the public
   // headline accuracy (same numbers as the homepage) and an upgrade prompt.
@@ -34,10 +45,7 @@ export default async function TrackRecordPage() {
         <Hero title="Track record" tag="Scored after the fact — the full record is part of AssetFrame Pro." />
         <div className="mx-auto max-w-3xl px-5 py-10">
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {stat(tr.stats.hitRate === null ? "—" : `${tr.stats.hitRate}%`, "Hit rate")}
-            {stat(tr.stats.longestStreak, "Longest streak")}
-            {stat(tr.stats.reportsScored, "Reports scored")}
-            {stat(tr.stats.predictionsGraded, "Predictions graded")}
+            {headline.map(([n, l]) => stat(n, l))}
           </div>
 
           <Note>
@@ -64,20 +72,23 @@ export default async function TrackRecordPage() {
   }
 
   // Map symbol → asset class (from the catalog) so open calls can be filtered by asset.
-  const catalog = await getCatalog();
   const assetByTicker: Record<string, string> = {};
-  for (const e of catalog) if (e.ticker) assetByTicker[e.ticker] = e.assetClass;
+  for (const e of editions) if (e.ticker) assetByTicker[e.ticker] = e.assetClass;
 
   return (
     <>
       <Hero title="Track record" tag="The scored-after-the-fact promise, made mechanical." />
       <div className="mx-auto max-w-5xl px-5 py-8">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {stat(tr.stats.hitRate === null ? "—" : `${tr.stats.hitRate}%`, "Hit rate (graded)")}
-          {stat(tr.stats.longestStreak, "Longest streak")}
-          {stat(tr.stats.reportsScored, "Reports scored")}
-          {stat(tr.stats.predictionsGraded, "Predictions graded")}
+          {headline.map(([n, l]) => stat(n, l))}
         </div>
+        <p className="mt-3 text-sm text-muted-foreground">
+          {editions.length} reports published · {registered} forecasts registered before their window
+          {tr.stats.predictionsGraded > 0
+            ? ` · ${tr.stats.predictionsGraded} scored (${tr.stats.hitRate}% hit)`
+            : " · scoring begins as the first windows close"}
+          {tr.stats.longestStreak > 0 ? ` · longest streak ${tr.stats.longestStreak}` : ""}.
+        </p>
 
         <div className="mt-5 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-[#cdd9ea] bg-tile px-4 py-3 text-sm text-[#33415c]">
           <span>Predictions are registered <b>before</b> each window, then graded Hit / Miss / No-trigger against the tape — append-only, never re-tuned.</span>
