@@ -52,7 +52,7 @@ export const SITE = {
   // Social links — fill in your handles (leave "" to hide an icon)
   socials: {
     x: "https://x.com/AssetFrame",
-    linkedin: "https://www.linkedin.com/company/assetframe",
+    linkedin: "https://www.linkedin.com/company/129704266",
     youtube: "",
     reddit: "",
     instagram: "",
