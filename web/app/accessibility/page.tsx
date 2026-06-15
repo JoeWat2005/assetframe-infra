@@ -36,7 +36,7 @@ export default function AccessibilityPage() {
         </Clause>
 
         <Clause n="3" title="Known limitations">
-          <p>We're honest about the edges we're still improving:</p>
+          <p>We’re honest about the edges we’re still improving:</p>
           <ul className="ml-5 list-disc space-y-1">
             <li>Our sign-in and sign-up screens are provided by a third party (Clerk). We style them for visible focus, but we do not control their full markup.</li>
             <li>Downloadable report <b>PDFs</b> are not yet fully tagged for assistive technology. The same report is always available as an accessible <b>HTML</b> version (the “Read in browser” option), which is the recommended route for screen-reader users.</li>
