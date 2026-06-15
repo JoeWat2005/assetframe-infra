@@ -49,11 +49,13 @@ export default async function Home() {
   return (
     <>
       {/* -mt-14 cancels AppFrame's reserved header height so the hero is full-bleed to the
-          very top (the header is hidden here until you scroll past the fold). */}
-      <div className="-mt-14 flex min-h-[100dvh] flex-col">
+          very top (the header is hidden here until you scroll past the fold). min-h-[100dvh]
+          only on sm+ : on mobile the hero is content-height so the countdown strip sits right
+          beneath it instead of being pushed off the fold. */}
+      <div className="-mt-14 flex flex-col sm:min-h-[100dvh]">
       <section className="relative isolate flex flex-1 items-center overflow-hidden bg-navy text-white">
         <HeroBackdrop />
-        <div className="relative z-10 mx-auto w-full max-w-5xl px-4 py-14 sm:px-5" data-animate="hero">
+        <div className="relative z-10 mx-auto w-full max-w-5xl px-4 py-10 sm:px-5 sm:py-14" data-animate="hero">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-white/80 backdrop-blur">
             <ShieldCheck className="size-3.5 text-[#7fb0ff]" />
             Published before the move, graded after

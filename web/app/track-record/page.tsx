@@ -4,6 +4,7 @@ import { getCatalog, getTrackRecord } from "@/lib/content";
 import { getEntitlement } from "@/lib/entitlements";
 import { Hero, Note } from "@/components/ui";
 import OpenCallsBrowser from "@/components/OpenCallsBrowser";
+import ScoredResults from "@/components/ScoredResults";
 import BuyButton from "@/components/BuyButton";
 import { SITE } from "@/site.config";
 
@@ -103,30 +104,7 @@ export default async function TrackRecordPage() {
         {tr.scored.length === 0 ? (
           <Note>No reports scored yet — the first results land once the open calls above close. <b>Ledger starts here.</b></Note>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full overflow-hidden rounded-xl border border-line bg-white text-sm">
-              <thead className="bg-tile text-navy">
-                <tr>
-                  <th className="p-3 text-left">Instrument</th><th className="p-3 text-left">View</th>
-                  <th className="p-3 text-left">Conf.</th><th className="p-3 text-left">Results</th>
-                  <th className="p-3 text-left">Hit rate</th><th className="p-3 text-left">Window end</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tr.scored.map((r, i) => {
-                  const good = Number(r.hitRate) >= 50;
-                  return (
-                    <tr key={`${r.instrument}-${r.windowEnd}-${i}`} className="border-t border-line">
-                      <td className="p-3"><b>{r.instrument}</b></td><td className="p-3">{r.view}</td>
-                      <td className="p-3">{r.confidence}</td><td className="p-3">{r.results}</td>
-                      <td className="p-3"><span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${good ? "bg-[#dafbe1] text-[#1a7f37]" : "bg-[#ffebe9] text-[#cf222e]"}`}>{r.hitRate}%</span></td>
-                      <td className="p-3">{r.windowEnd}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <ScoredResults rows={tr.scored} />
         )}
 
         {tr.calibration && (

@@ -1,5 +1,5 @@
-import { PageSkeleton } from "@/components/Skeletons";
+import { TrackRecordSkeleton } from "@/components/Skeletons";
 
 export default function Loading() {
-  return <PageSkeleton />;
+  return <TrackRecordSkeleton />;
 }

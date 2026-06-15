@@ -1,7 +1,8 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { AuditRow } from "@/lib/audit";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -19,6 +20,7 @@ const label = (a: string) => LABEL[a] ?? a;
 const RANGES: [string, string][] = [
   ["all", "All time"], ["24h", "Last 24h"], ["7d", "Last 7 days"], ["30d", "Last 30 days"],
 ];
+const PAGE = 25; // rows per page
 const tsMs = (ts: string) => {
   const t = Date.parse(ts.replace(" ", "T") + ":00Z"); // "YYYY-MM-DD HH:MI" is UTC
   return Number.isNaN(t) ? 0 : t;
@@ -28,6 +30,7 @@ export default function AdminLog({ rows }: { rows: AuditRow[] }) {
   const [q, setQ] = useState("");
   const [action, setAction] = useState("all");
   const [range, setRange] = useState("all");
+  const [page, setPage] = useState(0);
   const actions = useMemo(() => Array.from(new Set(rows.map((r) => r.action))).sort(), [rows]);
 
   const cutoff = useMemo(() => {
@@ -49,6 +52,12 @@ export default function AdminLog({ rows }: { rows: AuditRow[] }) {
       }),
     [rows, q, action, cutoff]
   );
+
+  useEffect(() => { setPage(0); }, [q, action, range]);
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE));
+  const safePage = Math.min(page, pageCount - 1);
+  const pageRows = filtered.slice(safePage * PAGE, safePage * PAGE + PAGE);
 
   return (
     <div>
@@ -91,31 +100,45 @@ export default function AdminLog({ rows }: { rows: AuditRow[] }) {
       ) : filtered.length === 0 ? (
         <p className="text-sm text-muted-foreground">No matching activity.</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full overflow-hidden rounded-xl border border-line bg-white text-sm">
-            <thead className="bg-tile text-navy">
-              <tr>
-                <th className="p-3 text-left">When (UTC)</th>
-                <th className="p-3 text-left">Action</th>
-                <th className="p-3 text-left">Target</th>
-                <th className="p-3 text-left">By</th>
-                <th className="p-3 text-left">Detail</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => (
-                <tr key={r.id} className="border-t border-line">
-                  <td className="whitespace-nowrap p-3 font-mono text-[12px] text-muted-foreground">{r.ts}</td>
-                  <td className="whitespace-nowrap p-3 font-semibold text-navy">{label(r.action)}</td>
-                  <td className="p-3">{r.target}</td>
-                  <td className="p-3 text-muted-foreground">{r.actor || "—"}</td>
-                  <td className="p-3 text-muted-foreground">{r.detail}</td>
+        <>
+          <div className="overflow-x-auto">
+            <table className="w-full overflow-hidden rounded-xl border border-line bg-white text-sm">
+              <thead className="bg-tile text-navy">
+                <tr>
+                  <th className="p-3 text-left">When (UTC)</th>
+                  <th className="p-3 text-left">Action</th>
+                  <th className="p-3 text-left">Target</th>
+                  <th className="p-3 text-left">By</th>
+                  <th className="p-3 text-left">Detail</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="mt-2 text-xs text-muted-foreground">{filtered.length} of {rows.length} entries</p>
-        </div>
+              </thead>
+              <tbody>
+                {pageRows.map((r) => (
+                  <tr key={r.id} className="border-t border-line">
+                    <td className="whitespace-nowrap p-3 font-mono text-[12px] text-muted-foreground">{r.ts}</td>
+                    <td className="whitespace-nowrap p-3 font-semibold text-navy">{label(r.action)}</td>
+                    <td className="p-3">{r.target}</td>
+                    <td className="p-3 text-muted-foreground">{r.actor || "—"}</td>
+                    <td className="p-3 text-muted-foreground">{r.detail}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+            <span>
+              {safePage * PAGE + 1}–{safePage * PAGE + pageRows.length} of {filtered.length}
+              {filtered.length !== rows.length ? ` (filtered from ${rows.length})` : ""}
+            </span>
+            {pageCount > 1 && (
+              <span className="flex items-center gap-2">
+                <Button variant="outline" size="sm" disabled={safePage === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>Prev</Button>
+                <span>Page {safePage + 1} / {pageCount}</span>
+                <Button variant="outline" size="sm" disabled={safePage >= pageCount - 1} onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}>Next</Button>
+              </span>
+            )}
+          </div>
+        </>
       )}
     </div>
   );
