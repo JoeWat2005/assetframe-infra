@@ -1,185 +1,17 @@
 {
   "stats": {
     "reportsScored": 0,
-    "openCalls": 4,
+    "openCalls": 21,
     "predictionsGraded": 0,
     "hitRate": null
   },
   "open": [
     {
-      "reportId": "AF-20260613-ETH",
-      "instrument": "Ethereum / USD (aggregate spot)",
-      "symbol": "ETH-USD",
-      "view": "Bearish-lean (conditional, none active)",
-      "confidence": 47,
-      "windowEnd": "2026-06-14 01:00",
-      "n": 6,
-      "nManual": 1,
-      "hits": 0,
-      "scored": false,
-      "predictions": [
-        {
-          "id": "P1",
-          "type": "close_above",
-          "text": "Window settles below PP 1,668.0 (the laggard stays heavy)",
-          "manual": false,
-          "expect": false
-        },
-        {
-          "id": "P2",
-          "type": "range_inside",
-          "text": "Window stays inside the outer bands 1,582.3 - 1,748.3 (own 84.2% base rate)",
-          "manual": false,
-          "expect": true
-        },
-        {
-          "id": "P3",
-          "type": "touches",
-          "text": "S1 1,646.2 is NOT touched (own touch base rate 40.0%)",
-          "manual": false,
-          "expect": false
-        },
-        {
-          "id": "P4",
-          "type": "no_close_below",
-          "text": "No hourly close below the inner-band floor 1,623.8",
-          "manual": false,
-          "expect": true
-        },
-        {
-          "id": "P5",
-          "type": "no_close_above_after_touch",
-          "text": "First touch of R1 1,685.7 does not close an hour above R2 1,707.6 (NT if untouched)",
-          "manual": false,
-          "expect": true
-        },
-        {
-          "id": "P6",
-          "type": "manual",
-          "text": "If US + Iran confirm a SIGNED deal before Sun 2026-06-14 01:00 UTC, ETH prints an hourly close above PP 1668.0 within 6 hours of the announcement (catch-up bid). Resolve via announcement timestamp + chart; NT if no confirmed signing in-window.",
-          "manual": true,
-          "expect": null
-        }
-      ]
-    },
-    {
-      "reportId": "AF-20260613-ETH-2",
-      "instrument": "Ethereum / USD (aggregate spot)",
-      "symbol": "ETH-USD",
-      "view": "Bearish-lean (conditional, none active)",
-      "confidence": 47,
-      "windowEnd": "2026-06-14 01:30",
-      "n": 6,
-      "nManual": 1,
-      "hits": 0,
-      "scored": false,
-      "predictions": [
-        {
-          "id": "P1",
-          "type": "close_above",
-          "text": "Window settles below PP 1,668.0 (the laggard stays heavy)",
-          "manual": false,
-          "expect": false
-        },
-        {
-          "id": "P2",
-          "type": "range_inside",
-          "text": "Window stays inside the outer bands 1,582.3 - 1,748.3 (own 84.2% base rate)",
-          "manual": false,
-          "expect": true
-        },
-        {
-          "id": "P3",
-          "type": "touches",
-          "text": "S1 1,646.2 is not touched (own touch base rate 40.0%)",
-          "manual": false,
-          "expect": false
-        },
-        {
-          "id": "P4",
-          "type": "no_close_below",
-          "text": "No hourly close below the inner-band floor 1,623.8",
-          "manual": false,
-          "expect": true
-        },
-        {
-          "id": "P5",
-          "type": "no_close_above_after_touch",
-          "text": "First touch of R1 1,685.7 does not close an hour above R2 1,707.6 (NT if untouched)",
-          "manual": false,
-          "expect": true
-        },
-        {
-          "id": "P6",
-          "type": "manual",
-          "text": "If US + Iran confirm a signed deal before Sun 2026-06-14 01:30 UTC, ETH prints an hourly close above PP 1668.0 within 6 hours of the announcement (catch-up bid). Resolve via announcement timestamp + chart; NT if no confirmed signing in-window.",
-          "manual": true,
-          "expect": null
-        }
-      ]
-    },
-    {
-      "reportId": "AF-20260613-SOL",
-      "instrument": "Solana / USD (aggregate spot)",
-      "symbol": "SOL-USD",
-      "view": "Constructive-lean intraday inside a deep bear regime (conditional, none active)",
-      "confidence": 51,
-      "windowEnd": "2026-06-14 02:00",
-      "n": 6,
-      "nManual": 1,
-      "hits": 0,
-      "scored": false,
-      "predictions": [
-        {
-          "id": "P1",
-          "type": "close_above",
-          "text": "Window settles above PP 67.07 (the squeeze tape holds)",
-          "manual": false,
-          "expect": true
-        },
-        {
-          "id": "P2",
-          "type": "range_inside",
-          "text": "Window stays inside the outer bands 63.21 - 70.31 (own 83.3% base rate)",
-          "manual": false,
-          "expect": true
-        },
-        {
-          "id": "P3",
-          "type": "touches",
-          "text": "R1 68.29 is not touched (own touch base rate 40.0%)",
-          "manual": false,
-          "expect": false
-        },
-        {
-          "id": "P4",
-          "type": "no_close_below",
-          "text": "No hourly close below the long-zone floor 66.30",
-          "manual": false,
-          "expect": true
-        },
-        {
-          "id": "P5",
-          "type": "no_close_above_after_touch",
-          "text": "First touch of R1 68.29 does not close an hour above R2 69.96 (NT if untouched)",
-          "manual": false,
-          "expect": true
-        },
-        {
-          "id": "P6",
-          "type": "manual",
-          "text": "If US + Iran confirm a signed deal before Sun 2026-06-14 02:00 UTC, SOL prints an hourly close above R1 68.29 within 6 hours of the announcement (high-beta leads the catch-up). Resolve via announcement timestamp + chart; NT if no confirmed signing in-window.",
-          "manual": true,
-          "expect": null
-        }
-      ]
-    },
-    {
-      "reportId": "AF-20260613-AAPL",
+      "reportId": "AF-20260615-AAPL",
       "instrument": "Apple Inc. (Nasdaq)",
       "symbol": "AAPL",
-      "view": "Neutral - AI de-rating inside a long-term uptrend; conditional both ways",
-      "confidence": 54,
+      "view": "Neutral - AI de-rating inside a long-term uptrend, into a risk-on weekend and a pre-FOMC week; conditional both ways",
+      "confidence": 53,
       "windowEnd": "2026-06-15 20:00",
       "n": 6,
       "nManual": 1,
@@ -203,7 +35,7 @@
         {
           "id": "P3",
           "type": "touches",
-          "text": "R1 295.65 is not touched (own touch base rate 43.3%)",
+          "text": "R1 295.64 is not touched (own touch base rate 43.3%)",
           "manual": false,
           "expect": false
         },
@@ -224,7 +56,1127 @@
         {
           "id": "P6",
           "type": "manual",
-          "text": "If a mutually confirmed signed US-Iran deal is announced before Monday's 13:30 UTC open, AAPL's opening print is above Friday's 291.13 close. Resolve via news timestamp + Monday open; NT if no signed deal pre-open.",
+          "text": "On the weekend risk-on US-Iran de-escalation (framework deal reached Jun 14, formal signing scheduled Jun 20), AAPL's Monday opening print is above Friday's 291.13 close. Resolve via the Monday opening print vs 291.13.",
+          "manual": true,
+          "expect": null
+        }
+      ]
+    },
+    {
+      "reportId": "AF-20260615-AMZN",
+      "instrument": "Amazon.com Inc. (Nasdaq)",
+      "symbol": "AMZN",
+      "view": "Neutral - AI-capex de-rating inside a long-term uptrend; conditional both ways, none active",
+      "confidence": 52,
+      "windowEnd": "2026-06-15 20:00",
+      "n": 6,
+      "nManual": 1,
+      "hits": 0,
+      "scored": false,
+      "predictions": [
+        {
+          "id": "P1",
+          "type": "close_above",
+          "text": "Monday settles below the PP balance 238.50 (the capex de-rating persists)",
+          "manual": false,
+          "expect": false
+        },
+        {
+          "id": "P2",
+          "type": "range_inside",
+          "text": "Monday stays inside the outer bands 231.09 - 246.01 (own 90.8% containment base rate)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P3",
+          "type": "touches",
+          "text": "R1 243.41 is not touched (own touch base rate 44.2%)",
+          "manual": false,
+          "expect": false
+        },
+        {
+          "id": "P4",
+          "type": "no_close_below",
+          "text": "No hourly close below the long-zone floor / Friday low 233.59",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P5",
+          "type": "no_close_above_after_touch",
+          "text": "First touch of R1 243.41 does not close an hour above R2 248.27 (NT if R1 untouched)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P6",
+          "type": "manual",
+          "text": "Amazon underperforms QQQ on the day (AMZN day-change < QQQ day-change), extending the name-specific de-rating on the AMZN/QQQ ratio. Resolve via Monday closes for both vs Friday closes (AMZN 238.53, QQQ 721.34); No trigger if QQQ data unavailable for the session.",
+          "manual": true,
+          "expect": null
+        }
+      ]
+    },
+    {
+      "reportId": "AF-20260615-AVGO",
+      "instrument": "Broadcom Inc. (Nasdaq)",
+      "symbol": "AVGO",
+      "view": "Neutral - a sharp post-earnings de-rating inside a long-term uptrend; conditional both ways",
+      "confidence": 56,
+      "windowEnd": "2026-06-15 20:00",
+      "n": 6,
+      "nManual": 0,
+      "hits": 0,
+      "scored": false,
+      "predictions": [
+        {
+          "id": "P1",
+          "type": "close_above",
+          "text": "Monday settles above PP 381.28 (the steadying holds)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P2",
+          "type": "range_inside",
+          "text": "Monday stays inside the outer bands 360.03 - 403.69 (own ~96% base rate)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P3",
+          "type": "touches",
+          "text": "R3 393.54 is not touched",
+          "manual": false,
+          "expect": false
+        },
+        {
+          "id": "P4",
+          "type": "no_close_below",
+          "text": "No hourly close below the long invalidation 373.30 (S2)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P5",
+          "type": "no_close_above_after_touch",
+          "text": "First touch of R2 389.26 does not close an hour above R3 393.54 (NT if R2 untouched)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P6",
+          "type": "touches",
+          "text": "The long zone 377.00 trades (Friday's low is retested intraday)",
+          "manual": false,
+          "expect": true
+        }
+      ]
+    },
+    {
+      "reportId": "AF-20260615-BRKB",
+      "instrument": "Berkshire Hathaway Inc. (Class B) (NYSE)",
+      "symbol": "BRK-B",
+      "view": "Neutral - a low-volatility coil pinned to the 200-day average; conditional both ways",
+      "confidence": 51,
+      "windowEnd": "2026-06-15 20:00",
+      "n": 6,
+      "nManual": 1,
+      "hits": 0,
+      "scored": false,
+      "predictions": [
+        {
+          "id": "P1",
+          "type": "close_above",
+          "text": "Monday settles above PP 487.88 (the coil holds its balance)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P2",
+          "type": "range_inside",
+          "text": "Monday stays inside the outer bands 482.74 - 495.76 (own outer containment ~89%)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P3",
+          "type": "no_close_above",
+          "text": "R1 491.25 is not closed above on an hourly basis",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P4",
+          "type": "no_close_below",
+          "text": "No hourly close below the long-zone floor S1 485.77",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P5",
+          "type": "no_close_below_after_touch",
+          "text": "If the 200-day 490.36 is reclaimed on an hourly close, price does not then close an hour back below PP 487.88 (NT if the average is not reclaimed)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P6",
+          "type": "manual",
+          "text": "If a broad risk-off Fed-week lead develops Monday (SPY closes red on the day), BRK.B closes the window below Friday's 489.14. Resolve via SPY day-change sign + BRK.B window-close vs 489.14; NT if SPY closes green.",
+          "manual": true,
+          "expect": null
+        }
+      ]
+    },
+    {
+      "reportId": "AF-20260615-GOOGL",
+      "instrument": "Alphabet Inc. Class A (Nasdaq)",
+      "symbol": "GOOGL",
+      "view": "Neutral - a dilution/capex overhang inside a long-term uptrend; conditional both ways",
+      "confidence": 52,
+      "windowEnd": "2026-06-15 20:00",
+      "n": 6,
+      "nManual": 0,
+      "hits": 0,
+      "scored": false,
+      "predictions": [
+        {
+          "id": "P1",
+          "type": "close_above",
+          "text": "Monday settles below PP 360.40 (the dilution overhang persists)",
+          "manual": false,
+          "expect": false
+        },
+        {
+          "id": "P2",
+          "type": "range_inside",
+          "text": "Monday stays inside the outer bands 348.88 - 370.48 (own ~92% base rate)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P3",
+          "type": "touches",
+          "text": "R1 365.85 is not touched (own touch base rate ~44%)",
+          "manual": false,
+          "expect": false
+        },
+        {
+          "id": "P4",
+          "type": "no_close_below",
+          "text": "No hourly close below the long-zone floor 354.22",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P5",
+          "type": "no_close_above_after_touch",
+          "text": "First touch of Friday's high 366.57 does not close an hour above the upper tail 370.48 (NT if untouched)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P6",
+          "type": "no_close_below",
+          "text": "Alphabet holds at or above the Berkshire Class A reference 351.81 through the session (no in-window hourly close below it)",
+          "manual": false,
+          "expect": true
+        }
+      ]
+    },
+    {
+      "reportId": "AF-20260615-LLY",
+      "instrument": "Eli Lilly and Co. (NYSE)",
+      "symbol": "LLY",
+      "view": "Neutral - one-day obesity-coverage wobble inside a powerful uptrend, against a bullish weekend oncology read; conditional both ways",
+      "confidence": 52,
+      "windowEnd": "2026-06-15 20:00",
+      "n": 6,
+      "nManual": 1,
+      "hits": 0,
+      "scored": false,
+      "predictions": [
+        {
+          "id": "P1",
+          "type": "close_above",
+          "text": "Monday settles below PP 1145.27 (the wobble holds price down)",
+          "manual": false,
+          "expect": false
+        },
+        {
+          "id": "P2",
+          "type": "range_inside",
+          "text": "Monday stays inside the outer bands 1096.89 - 1169.11 (own ~89% base rate)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P3",
+          "type": "touches",
+          "text": "R1 1157.72 is not touched (own touch base rate ~43%)",
+          "manual": false,
+          "expect": false
+        },
+        {
+          "id": "P4",
+          "type": "no_close_below",
+          "text": "No hourly close below the long-zone floor 1108.09",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P5",
+          "type": "no_close_below",
+          "text": "S1 1120.54 holds as the in-window floor (no hourly close below it)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P6",
+          "type": "manual",
+          "text": "If the weekend oncology read-outs (Jaypirca CLL/SLL Phase 3, type II JAK2 Phase 1) are net positive into the open, LLY's opening print is above Friday's 1133.00 close. Resolve via weekend-news read + Monday open; NT if the reaction is not net positive pre-open.",
+          "manual": true,
+          "expect": null
+        }
+      ]
+    },
+    {
+      "reportId": "AF-20260615-META",
+      "instrument": "Meta Platforms Inc. (Nasdaq)",
+      "symbol": "META",
+      "view": "Modestly bearish (conditional) - an oversold downtrend into an ex-dividend open; conditional both ways",
+      "confidence": 50,
+      "windowEnd": "2026-06-15 20:00",
+      "n": 6,
+      "nManual": 1,
+      "hits": 0,
+      "scored": false,
+      "predictions": [
+        {
+          "id": "P1",
+          "type": "close_above",
+          "text": "Monday settles below PP 567.89 (the de-rating persists)",
+          "manual": false,
+          "expect": false
+        },
+        {
+          "id": "P2",
+          "type": "range_inside",
+          "text": "Monday stays inside the outer bands 547.70 - 585.70 (own ~88% base rate)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P3",
+          "type": "touches",
+          "text": "R1 574.88 is not touched (own touch base rate ~41%)",
+          "manual": false,
+          "expect": false
+        },
+        {
+          "id": "P4",
+          "type": "no_close_below",
+          "text": "No hourly close below the long-zone floor 557.01",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P5",
+          "type": "no_close_below_after_touch",
+          "text": "First touch of S2 552.72 does not close an hour below the lower tail 547.70 (NT if untouched)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P6",
+          "type": "manual",
+          "text": "META trades ex-dividend today ($0.525; record 15 Jun, confirmed by Meta IR). Claim: Monday's opening print is below Friday's 566.70 cum-dividend close. Resolve via the Monday open vs 566.70; the ~$0.53 ex-div step alone clears this barring a gap-up. NT only if an ex-div adjustment did not apply.",
+          "manual": true,
+          "expect": null
+        }
+      ]
+    },
+    {
+      "reportId": "AF-20260615-MSFT",
+      "instrument": "Microsoft Corp. (Nasdaq)",
+      "symbol": "MSFT",
+      "view": "Neutral-to-bearish - confirmed AI-capex de-rating below every major average; conditional both ways",
+      "confidence": 50,
+      "windowEnd": "2026-06-15 20:00",
+      "n": 6,
+      "nManual": 1,
+      "hits": 0,
+      "scored": false,
+      "predictions": [
+        {
+          "id": "P1",
+          "type": "close_above",
+          "text": "Monday settles below PP 388.19 (the de-rating persists)",
+          "manual": false,
+          "expect": false
+        },
+        {
+          "id": "P2",
+          "type": "range_inside",
+          "text": "Monday stays inside the outer bands 378.84 - 402.49 (own 87.5% base rate)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P3",
+          "type": "touches",
+          "text": "R1 394.10 is not touched (own touch base rate 40.8%)",
+          "manual": false,
+          "expect": false
+        },
+        {
+          "id": "P4",
+          "type": "no_close_below",
+          "text": "No hourly close below the long-zone floor 382.27",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P5",
+          "type": "no_close_above_after_touch",
+          "text": "First touch of R2 397.54 does not close an hour above the upper tail 402.49 (NT if untouched)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P6",
+          "type": "manual",
+          "text": "If a mutually confirmed signed US-Iran deal is announced before Monday's 13:30 UTC open, MSFT's opening print is above Friday's 390.67 close. Resolve via news timestamp + Monday open; NT if no signed deal pre-open.",
+          "manual": true,
+          "expect": null
+        }
+      ]
+    },
+    {
+      "reportId": "AF-20260615-NVDA",
+      "instrument": "NVIDIA Corp. (Nasdaq)",
+      "symbol": "NVDA",
+      "view": "Neutral - a coiled balance at the pivot inside a long-term uptrend; conditional both ways, none active",
+      "confidence": 52,
+      "windowEnd": "2026-06-15 20:00",
+      "n": 6,
+      "nManual": 0,
+      "hits": 0,
+      "scored": false,
+      "predictions": [
+        {
+          "id": "P1",
+          "type": "range_inside",
+          "text": "Monday settles within 1% of the pivot 205.23 (the balance holds); last in-window hourly close in 203.18 - 207.28",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P2",
+          "type": "range_inside",
+          "text": "Monday stays inside the outer bands 197.16 - 213.22 (own outer-band base rate ~83%)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P3",
+          "type": "no_close_above",
+          "text": "The swing high 208.28 is not closed above on an hourly basis (short invalidation holds)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P4",
+          "type": "no_close_below",
+          "text": "No hourly close below the long invalidation 199.34",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P5",
+          "type": "no_close_above_after_touch",
+          "text": "First touch of R1 207.03 does not close an hour above the swing high 208.28 (NT if R1 untouched)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P6",
+          "type": "close_above",
+          "text": "NVDA does not close below S1 203.40 on the day (the bond-sale bid holds the floor); last in-window hourly close >= 203.40",
+          "manual": false,
+          "expect": true
+        }
+      ]
+    },
+    {
+      "reportId": "AF-20260615-TSLA",
+      "instrument": "Tesla Inc. (Nasdaq)",
+      "symbol": "TSLA",
+      "view": "Neutral - hourly recovery momentum inside a long-term downtrend; conditional both ways",
+      "confidence": 52,
+      "windowEnd": "2026-06-15 20:00",
+      "n": 6,
+      "nManual": 1,
+      "hits": 0,
+      "scored": false,
+      "predictions": [
+        {
+          "id": "P1",
+          "type": "close_above",
+          "text": "Monday settles below R1 413.15 (the bounce does not reclaim the pivot/200-day zone)",
+          "manual": false,
+          "expect": false
+        },
+        {
+          "id": "P2",
+          "type": "range_inside",
+          "text": "Monday stays inside the outer bands 388.33 - 424.53 (own ~92% base rate)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P3",
+          "type": "touches",
+          "text": "R2 419.88 is not touched (own touch base rate ~48%)",
+          "manual": false,
+          "expect": false
+        },
+        {
+          "id": "P4",
+          "type": "no_close_below",
+          "text": "No hourly close below the long invalidation 393.23",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P5",
+          "type": "no_close_above_after_touch",
+          "text": "First touch of R1 413.15 does not close an hour above R2 419.88 (NT if untouched)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P6",
+          "type": "manual",
+          "text": "If a market-moving weekend robotaxi/deal headline is mutually confirmed before Monday's 13:30 UTC open, TSLA's opening print is above Friday's 406.45 close. Resolve via news timestamp + Monday open; NT if no qualifying headline pre-open.",
+          "manual": true,
+          "expect": null
+        }
+      ]
+    },
+    {
+      "reportId": "AF-20260615-DXY",
+      "instrument": "US Dollar Index (DXY) - cash index (ICE future DX=F not Yahoo-served)",
+      "symbol": "DX-Y.NYB",
+      "view": "Neutral with a mild bearish lean - dollar sold to a ~1-week low on the Iran de-escalation, hourly oversold below the Friday pivots, daily uptrend intact, FOMC two days out; conditional both ways",
+      "confidence": 46,
+      "windowEnd": "2026-06-15 21:00",
+      "n": 6,
+      "nManual": 1,
+      "hits": 0,
+      "scored": false,
+      "predictions": [
+        {
+          "id": "P1",
+          "type": "no_close_above",
+          "text": "DXY stays below R1 99.893 through the session (the pullback holds under the pivots)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P2",
+          "type": "range_inside",
+          "text": "DXY stays inside the outer bands 98.818 - 100.682 (own 80.8% base rate)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P3",
+          "type": "touches",
+          "text": "The 100.00 round level is not touched",
+          "manual": false,
+          "expect": false
+        },
+        {
+          "id": "P4",
+          "type": "no_close_below",
+          "text": "No hourly close below the 99.15 June-4/5 shelf (the long-zone floor holds)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P5",
+          "type": "no_close_above_after_touch",
+          "text": "If S1 99.623 is reclaimed, the hour does not close above R1 99.893 (NT if untouched)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P6",
+          "type": "manual",
+          "text": "Pre-decision drift: DXY closes the window within ~0.30 index points of the 99.425 anchor. Resolve via last in-window hourly close vs 99.425 +/- 0.30 on the cash DXY index.",
+          "manual": true,
+          "expect": null
+        }
+      ]
+    },
+    {
+      "reportId": "AF-20260615-ES",
+      "instrument": "S&P 500 E-mini Future (CME Globex)",
+      "symbol": "ES=F",
+      "view": "Cautiously constructive but on hold - trend-aligned risk-on gap inside a daily uptrend, stretched into a pre-FOMC week and the Jun->Sep roll; conditional both ways, none active",
+      "confidence": 52,
+      "windowEnd": "2026-06-15 21:00",
+      "n": 6,
+      "nManual": 1,
+      "hits": 0,
+      "scored": false,
+      "predictions": [
+        {
+          "id": "P1",
+          "type": "no_close_below",
+          "text": "The session holds above R1 7475.67 (the gap does not fail)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P2",
+          "type": "range_inside",
+          "text": "Monday stays inside the outer bands 7389.21 - 7611.29 (own 95.0% base rate)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P3",
+          "type": "touches",
+          "text": "The upper tail 7611.29 is not touched",
+          "manual": false,
+          "expect": false
+        },
+        {
+          "id": "P4",
+          "type": "no_close_below",
+          "text": "No hourly close below the long-zone floor 7500.25 (Sunday Globex open)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P5",
+          "type": "no_close_above_after_touch",
+          "text": "First touch of R3 7570.92 does not close an hour above the upper tail 7611.29 (NT if R3 untouched)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P6",
+          "type": "manual",
+          "text": "On the weekend risk-on de-escalation (US-Iran peace deal declared complete), ES holds the gap: the last in-window hourly close settles above Friday's 7435.00 CME close. Resolve via the in-window close vs 7435.00; the weekend gap is already in the price at the pre-market anchor.",
+          "manual": true,
+          "expect": null
+        }
+      ]
+    },
+    {
+      "reportId": "AF-20260615-GOLD",
+      "instrument": "Gold (COMEX front-month future) (GC=F, Aug 2026)",
+      "symbol": "GC=F",
+      "view": "Neutral - overbought hourly bounce inside a multi-week daily downtrend, stalling at a pivot/band ceiling; conditional both ways",
+      "confidence": 48,
+      "windowEnd": "2026-06-15 21:00",
+      "n": 6,
+      "nManual": 1,
+      "hits": 0,
+      "scored": false,
+      "predictions": [
+        {
+          "id": "P1",
+          "type": "close_above",
+          "text": "Gold settles the window below R3 4350.73 (the bounce stalls at the ceiling)",
+          "manual": false,
+          "expect": false
+        },
+        {
+          "id": "P2",
+          "type": "range_inside",
+          "text": "Gold stays inside the outer bands 4228.40 - 4422.80 (own outer-band base rate 74.2%)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P3",
+          "type": "no_close_above",
+          "text": "The inner band high 4374.20 is not closed above on an hourly basis (short invalidation holds)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P4",
+          "type": "no_close_below",
+          "text": "No hourly close below the long-zone floor R2 4309.27",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P5",
+          "type": "no_close_above_after_touch",
+          "text": "First tag of the session high 4356.80 does not close an hour above the inner band high 4374.20 (NT if untouched)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P6",
+          "type": "manual",
+          "text": "On the weekend US-Iran framework de-escalation, gold holds the bounce and stays above Friday's 4215.00 daily close through the window (no in-window hourly close < 4215.00). Resolve via the in-window hourly closes vs 4215.00; NT only if the series is unavailable.",
+          "manual": true,
+          "expect": null
+        }
+      ]
+    },
+    {
+      "reportId": "AF-20260615-NQ",
+      "instrument": "Nasdaq 100 E-mini future (CME Globex, front-month NQM26)",
+      "symbol": "NQ=F",
+      "view": "Long-leaning but conditional - a strong aligned uptrend gapped ~1.9% higher on a risk-on weekend into a pre-FOMC week and front-month expiry; pullback-buy is the better-R:R side, the short is a low-quality counter-trend fade",
+      "confidence": 51,
+      "windowEnd": "2026-06-15 21:00",
+      "n": 6,
+      "nManual": 1,
+      "hits": 0,
+      "scored": false,
+      "predictions": [
+        {
+          "id": "P1",
+          "type": "close_above",
+          "text": "NQ holds above the R2 / session-open shelf 30,080.67 (the gap holds) - last in-window hourly close at or above 30,080.67",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P2",
+          "type": "range_inside",
+          "text": "NQ stays inside the outer bands 29,372.26 - 30,775.74 (own outer containment ~96.7%)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P3",
+          "type": "touches",
+          "text": "The inner-band ceiling 30,424.87 is tagged in-window (extended trend, hourly RSI 72.4)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P4",
+          "type": "no_close_below",
+          "text": "No hourly close below the R1 long-invalidation 29,871.33 (the gap does not fill)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P5",
+          "type": "no_close_above_after_touch",
+          "text": "First tag of the inner-band ceiling 30,424.87 does not close an hour above the outer band 30,775.74 (NT if the ceiling is untagged)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P6",
+          "type": "manual",
+          "text": "On the weekend risk-on US-Iran de-escalation, NQ holds its gap and stays above Friday's 29,662.00 Globex close for the whole window. Resolve via in-window hourly closes vs 29,662.00; Hit if no in-window hourly close is below 29,662.00, else Miss.",
+          "manual": true,
+          "expect": null
+        }
+      ]
+    },
+    {
+      "reportId": "AF-20260615-USDJPY",
+      "instrument": "US Dollar / Japanese Yen (spot FX)",
+      "symbol": "USDJPY",
+      "view": "Neutral - an hourly pullback inside a carry-driven uptrend, drifting into a near-fully-priced BoJ hike tomorrow; conditional both ways, none active",
+      "confidence": 48,
+      "windowEnd": "2026-06-15 21:00",
+      "n": 6,
+      "nManual": 1,
+      "hits": 0,
+      "scored": false,
+      "predictions": [
+        {
+          "id": "P1",
+          "type": "close_above",
+          "text": "USD/JPY stays below R1 160.342 through the session (the pullback holds under resistance) - no in-window hourly close at or above 160.342",
+          "manual": false,
+          "expect": false
+        },
+        {
+          "id": "P2",
+          "type": "range_inside",
+          "text": "USD/JPY stays inside the outer bands 159.524 - 160.738 (no in-window bar beyond either bound)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P3",
+          "type": "touches",
+          "text": "The 52-week-high cluster 160.738 is not touched (no in-window bar high at or above 160.738)",
+          "manual": false,
+          "expect": false
+        },
+        {
+          "id": "P4",
+          "type": "no_close_below",
+          "text": "No hourly close below S2 159.761 (the long-zone floor holds)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P5",
+          "type": "no_close_above_after_touch",
+          "text": "If R1 160.342 is touched, the hour does not close above R2 160.553 (NT if R1 untouched)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P6",
+          "type": "manual",
+          "text": "Pre-decision drift: USD/JPY closes the window within ~40 pips of the 160.047 pre-market anchor. Resolve via the last in-window hourly close vs 160.047 +/- 0.40.",
+          "manual": true,
+          "expect": null
+        }
+      ]
+    },
+    {
+      "reportId": "AF-20260615-WTI",
+      "instrument": "WTI Crude Oil (NYMEX front-month future, CL=F continuous)",
+      "symbol": "CL=F",
+      "view": "Bearish-leaning but post-gap caution - war risk-premium unwinding on the US-Iran deal; conditional both ways, none active at 80.53",
+      "confidence": 44,
+      "windowEnd": "2026-06-15 21:00",
+      "n": 6,
+      "nManual": 1,
+      "hits": 0,
+      "scored": false,
+      "predictions": [
+        {
+          "id": "P1",
+          "type": "close_above",
+          "text": "WTI stays below the 81.07 supply-shelf floor (the war-premium unwind holds)",
+          "manual": false,
+          "expect": false
+        },
+        {
+          "id": "P2",
+          "type": "range_inside",
+          "text": "WTI stays inside the outer ATR bands 75.32 - 86.58 (own outer containment ~89%)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P3",
+          "type": "touches",
+          "text": "The full gap-fill at Friday's 84.88 settle is not reached",
+          "manual": false,
+          "expect": false
+        },
+        {
+          "id": "P4",
+          "type": "no_close_below",
+          "text": "No hourly close below the long invalidation 78.95 (S3)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P5",
+          "type": "no_close_above_after_touch",
+          "text": "If the 81.07 - 81.69 supply shelf is retested, the first touch does not close an hour above 82.30 (NT if shelf untouched)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P6",
+          "type": "manual",
+          "text": "On the weekend US-Iran de-escalation, WTI's in-window low prints below the round $80.00. Resolve via the in-window session low vs 80.00; NT if no clean read.",
+          "manual": true,
+          "expect": null
+        }
+      ]
+    },
+    {
+      "reportId": "AF-20260615-BTC",
+      "instrument": "Bitcoin / USD (aggregate spot)",
+      "symbol": "BTC-USD",
+      "view": "Neutral (counter-trend relief squeeze inside a downtrend; conditional both ways, none active)",
+      "confidence": 46,
+      "windowEnd": "2026-06-16 05:05",
+      "n": 6,
+      "nManual": 1,
+      "hits": 0,
+      "scored": false,
+      "predictions": [
+        {
+          "id": "P1",
+          "type": "close_above",
+          "text": "The window settles above PP 64,825.30 (the reclaim holds)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P2",
+          "type": "range_inside",
+          "text": "The window stays inside the outer bands 63,185.86 - 67,766.60 (own ~86% base rate)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P3",
+          "type": "touches",
+          "text": "R2 66,733.38 is not touched (own touch base rate near R1 ~40%)",
+          "manual": false,
+          "expect": false
+        },
+        {
+          "id": "P4",
+          "type": "no_close_below",
+          "text": "No hourly close below the long invalidation 64,099.55 (S1)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P5",
+          "type": "no_close_above_after_touch",
+          "text": "First touch of R1 66,007.63 does not close an hour above the upper tail 67,766.60 (NT if R1 untouched)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P6",
+          "type": "manual",
+          "text": "On the weekend risk-on de-escalation, BTC holds above the pre-cutoff 24h high 65,953.54 by the window close (Tue 2026-06-16 05:05 UTC). Resolve via the window-close print vs 65,953.54; manual review.",
+          "manual": true,
+          "expect": null
+        }
+      ]
+    },
+    {
+      "reportId": "AF-20260615-ETH",
+      "instrument": "Ethereum / USD (aggregate spot)",
+      "symbol": "ETH-USD",
+      "view": "Constructive-lean (conditional, none active)",
+      "confidence": 49,
+      "windowEnd": "2026-06-16 05:05",
+      "n": 6,
+      "nManual": 1,
+      "hits": 0,
+      "scored": false,
+      "predictions": [
+        {
+          "id": "P1",
+          "type": "close_above",
+          "text": "Window settles above PP 1,700.32 (the bounce bid holds)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P2",
+          "type": "range_inside",
+          "text": "Window stays inside the outer bands 1,638.89 - 1,800.83 (own 83.3% base rate)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P3",
+          "type": "touches",
+          "text": "R1 1,746.57 is not touched (own touch base rate 41.7%)",
+          "manual": false,
+          "expect": false
+        },
+        {
+          "id": "P4",
+          "type": "no_close_below",
+          "text": "No hourly close below the long-zone roof 1,709.04",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P5",
+          "type": "no_close_above_after_touch",
+          "text": "First touch of R1 1,746.57 does not close an hour above R2 1,775.30 (NT if untouched)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P6",
+          "type": "manual",
+          "text": "On the weekend risk-on bid (US-Iran framework deal reported), ETH holds above S1 1,671.59 across the window - the bounce structure survives. Resolve via the lowest in-window hourly close vs 1,671.59; Hit if no hourly close below 1,671.59, Miss otherwise.",
+          "manual": true,
+          "expect": null
+        }
+      ]
+    },
+    {
+      "reportId": "AF-20260615-SOL",
+      "instrument": "Solana / USD (aggregate spot)",
+      "symbol": "SOL-USD",
+      "view": "Neutral - a sharp risk-on bounce into pivot resistance with a stretched hourly RSI, inside a deep daily downtrend, two days before the FOMC (conditional both ways, none active)",
+      "confidence": 48,
+      "windowEnd": "2026-06-16 05:05",
+      "n": 6,
+      "nManual": 1,
+      "hits": 0,
+      "scored": false,
+      "predictions": [
+        {
+          "id": "P1",
+          "type": "close_above",
+          "text": "Window settles below PP 69.18 (the bounce gives back)",
+          "manual": false,
+          "expect": false
+        },
+        {
+          "id": "P2",
+          "type": "range_inside",
+          "text": "Window stays inside the outer bands 66.58 - 73.96 (own outer-band base rate ~86%)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P3",
+          "type": "no_close_below",
+          "text": "No hourly close below the long-zone floor 67.85",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P4",
+          "type": "no_close_above_after_touch",
+          "text": "First touch of R1 71.43 does not close an hour above R2 72.76 (the bounce caps at the pivot; NT if R1 untouched)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P5",
+          "type": "no_close_above_after_touch",
+          "text": "First touch of R2 72.76 does not close an hour above R3 75.01 (NT if R2 untouched)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P6",
+          "type": "manual",
+          "text": "If the US-Iran deal is confirmed signed before Tue 2026-06-16 05:05 UTC, SOL prints an hourly close above R1 71.43 within 6 hours of the headline (high-beta catch-up). Resolve via the announcement timestamp + chart; NT if no confirmed signing in-window.",
+          "manual": true,
+          "expect": null
+        }
+      ]
+    },
+    {
+      "reportId": "AF-20260615-EURUSD",
+      "instrument": "Euro / US Dollar (EUR/USD)",
+      "symbol": "EURUSD=X",
+      "view": "Neutral - a risk-on, safe-haven-dollar-unwind bounce inside a daily downtrend, stretched into the band top ahead of a hawkish-risk Fed dot plot; conditional both ways, none active",
+      "confidence": 48,
+      "windowEnd": "2026-06-19 21:00",
+      "n": 6,
+      "nManual": 1,
+      "hits": 0,
+      "scored": false,
+      "predictions": [
+        {
+          "id": "P1",
+          "type": "close_above",
+          "text": "EUR/USD does not close the window above the inner band high 1.16422",
+          "manual": false,
+          "expect": false
+        },
+        {
+          "id": "P2",
+          "type": "range_inside",
+          "text": "Spot stays inside the outer bands 1.15507 - 1.16727 (own outer containment 82.5%)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P3",
+          "type": "no_close_above_after_touch",
+          "text": "After tagging R3 1.16223, no hour closes above 1.16600 (the ceiling holds); NT if R3 untouched",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P4",
+          "type": "no_close_below",
+          "text": "No hourly close below the long-zone floor 1.15812 (inner band low)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P5",
+          "type": "touches",
+          "text": "PP 1.15754 is not touched (the risk-on gap is not fully retraced); own PP touch base rate 54.2%",
+          "manual": false,
+          "expect": false
+        },
+        {
+          "id": "P6",
+          "type": "manual",
+          "text": "If the US-Iran signing proceeds on Fri 19 Jun in Switzerland as scheduled, the FX week closes above PP 1.15754. Resolve via signing-news timestamp + the last in-window Friday close vs 1.15754; NT (No trigger) if the signing slips beyond the window.",
+          "manual": true,
+          "expect": null
+        }
+      ]
+    },
+    {
+      "reportId": "AF-20260615-GBPUSD",
+      "instrument": "British Pound / US Dollar (FX spot)",
+      "symbol": "GBPUSD=X",
+      "view": "Neutral-to-constructive - softer-dollar gap up running into the R2/R3 pivot shelf ahead of a double central-bank week; conditional both ways",
+      "confidence": 50,
+      "windowEnd": "2026-06-19 21:00",
+      "n": 6,
+      "nManual": 1,
+      "hits": 0,
+      "scored": false,
+      "predictions": [
+        {
+          "id": "P1",
+          "type": "no_close_above",
+          "text": "GBP/USD does not close the window above the inner band high 1.34924",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P2",
+          "type": "range_inside",
+          "text": "Spot stays inside the outer bands 1.33688 - 1.35336 (own 81.7% base rate)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P3",
+          "type": "no_close_above_after_touch",
+          "text": "After tagging R3 1.34729, no hour closes above 1.34924 (the ceiling holds; NT if R3 untouched)",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P4",
+          "type": "no_close_below",
+          "text": "No hourly close below the long-invalidation PP 1.34085",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P5",
+          "type": "touches",
+          "text": "R1 1.34317 (broken-pivot support) is touched at least once",
+          "manual": false,
+          "expect": true
+        },
+        {
+          "id": "P6",
+          "type": "manual",
+          "text": "On the softer-dollar weekend gap, GBP/USD holds above Friday's 1.34138 daily close through the window. Resolve via the window-end (Fri 21:00 UTC) close vs 1.34138.",
           "manual": true,
           "expect": null
         }
