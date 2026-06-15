@@ -28,11 +28,11 @@ function fmtDate(iso: string): string {
 }
 
 function PickList({
-  value, onChange, options,
-}: { value: string; onChange: (v: string) => void; options: [string, string][] }) {
+  label, value, onChange, options,
+}: { label: string; value: string; onChange: (v: string) => void; options: [string, string][] }) {
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-full sm:w-auto sm:min-w-[150px]">
+      <SelectTrigger aria-label={label} className="w-full sm:w-auto sm:min-w-[150px]">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
@@ -113,17 +113,18 @@ export default function ReportsBrowser({ editions }: { editions: Edition[] }) {
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2 rounded-xl border bg-card p-3 shadow-sm sm:flex-row sm:flex-wrap sm:items-center">
         <Input
+          aria-label="Search instrument or ticker"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search instrument or ticker…"
           className="sm:max-w-xs"
         />
-        <PickList value={category} onChange={setCategory} options={categoryOptions} />
-        <PickList value={direction} onChange={setDirection} options={directionOptions} />
-        <PickList value={confidence} onChange={onConfidence} options={confidenceOptions} />
-        <PickList value={risk} onChange={setRisk} options={riskOptions} />
-        <PickList value={date} onChange={setDate} options={dateOptions} />
-        <PickList value={sort} onChange={(v) => setSort(v as SortKey)} options={SORTS} />
+        <PickList label="Asset class" value={category} onChange={setCategory} options={categoryOptions} />
+        <PickList label="Direction" value={direction} onChange={setDirection} options={directionOptions} />
+        <PickList label="Confidence" value={confidence} onChange={onConfidence} options={confidenceOptions} />
+        <PickList label="Risk" value={risk} onChange={setRisk} options={riskOptions} />
+        <PickList label="Date" value={date} onChange={setDate} options={dateOptions} />
+        <PickList label="Sort by" value={sort} onChange={(v) => setSort(v as SortKey)} options={SORTS} />
         {active && (
           <Button variant="ghost" size="sm" onClick={clearAll} className="text-muted-foreground">
             Clear

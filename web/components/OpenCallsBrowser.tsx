@@ -22,11 +22,11 @@ const SORTS: [string, string][] = [
 ];
 
 function PickList({
-  value, onChange, options,
-}: { value: string; onChange: (v: string) => void; options: [string, string][] }) {
+  label, value, onChange, options,
+}: { label: string; value: string; onChange: (v: string) => void; options: [string, string][] }) {
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-full sm:w-auto sm:min-w-[150px]">
+      <SelectTrigger aria-label={label} className="w-full sm:w-auto sm:min-w-[150px]">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
@@ -122,15 +122,16 @@ export default function OpenCallsBrowser({
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
         <Input
+          aria-label="Search calls or predictions"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search calls or predictions…"
           className="sm:max-w-xs"
         />
-        <PickList value={category} onChange={setCategory} options={categoryOptions} />
-        <PickList value={confidence} onChange={setConfidence} options={confidenceOptions} />
-        <PickList value={date} onChange={setDate} options={dateOptions} />
-        <PickList value={sort} onChange={setSort} options={SORTS} />
+        <PickList label="Asset class" value={category} onChange={setCategory} options={categoryOptions} />
+        <PickList label="Confidence" value={confidence} onChange={setConfidence} options={confidenceOptions} />
+        <PickList label="Date" value={date} onChange={setDate} options={dateOptions} />
+        <PickList label="Sort by" value={sort} onChange={setSort} options={SORTS} />
         {active && (
           <Button variant="ghost" size="sm" onClick={clearAll} className="text-muted-foreground">Clear</Button>
         )}
@@ -157,6 +158,7 @@ export default function OpenCallsBrowser({
                   onClick={() => toggle(c.reportId)}
                   aria-expanded={isOpen}
                   aria-controls={panelId}
+                  aria-label={`${isOpen ? "Collapse" : "Expand"} prediction details for ${c.instrument}`}
                   className="flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-tile/60"
                 >
                   <ChevronDown className={cn("size-4 shrink-0 text-muted-foreground transition-transform", isOpen && "rotate-180")} />

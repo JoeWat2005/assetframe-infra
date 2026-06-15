@@ -74,13 +74,14 @@ export default function AdminLog({ rows }: { rows: AuditRow[] }) {
     <div>
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         <Input
+          aria-label="Search the activity log"
           placeholder="Search actor, member, detail…"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           className="sm:max-w-xs"
         />
         <Select value={action} onValueChange={setAction}>
-          <SelectTrigger className="w-full sm:w-auto sm:min-w-[170px]">
+          <SelectTrigger aria-label="Action" className="w-full sm:w-auto sm:min-w-[170px]">
             <SelectValue placeholder="All actions" />
           </SelectTrigger>
           <SelectContent>
@@ -93,7 +94,7 @@ export default function AdminLog({ rows }: { rows: AuditRow[] }) {
           </SelectContent>
         </Select>
         <Select value={range} onValueChange={setRange}>
-          <SelectTrigger className="w-full sm:w-auto sm:min-w-[140px]">
+          <SelectTrigger aria-label="Time range" className="w-full sm:w-auto sm:min-w-[140px]">
             <SelectValue placeholder="All time" />
           </SelectTrigger>
           <SelectContent>
@@ -105,7 +106,7 @@ export default function AdminLog({ rows }: { rows: AuditRow[] }) {
           </SelectContent>
         </Select>
         <Select value={sort} onValueChange={setSort}>
-          <SelectTrigger className="w-full sm:w-auto sm:min-w-[150px]">
+          <SelectTrigger aria-label="Sort by" className="w-full sm:w-auto sm:min-w-[150px]">
             <SelectValue placeholder="Newest first" />
           </SelectTrigger>
           <SelectContent>
@@ -155,9 +156,9 @@ export default function AdminLog({ rows }: { rows: AuditRow[] }) {
             </span>
             {pageCount > 1 && (
               <span className="flex items-center gap-2">
-                <Button variant="outline" size="sm" disabled={safePage === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>Prev</Button>
+                <Button aria-label="Previous page" variant="outline" size="sm" disabled={safePage === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>Prev</Button>
                 <span>Page {safePage + 1} / {pageCount}</span>
-                <Button variant="outline" size="sm" disabled={safePage >= pageCount - 1} onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}>Next</Button>
+                <Button aria-label="Next page" variant="outline" size="sm" disabled={safePage >= pageCount - 1} onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}>Next</Button>
               </span>
             )}
           </div>

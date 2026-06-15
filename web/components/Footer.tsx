@@ -11,15 +11,22 @@ const ICONS: Record<string, string> = {
   instagram: "M12 2.2c3.2 0 3.6 0 4.9.07 3.3.15 4.8 1.7 4.96 4.96.06 1.3.07 1.7.07 4.9s0 3.6-.07 4.9c-.15 3.25-1.66 4.8-4.96 4.96-1.3.06-1.7.07-4.9.07s-3.6 0-4.9-.07c-3.3-.15-4.8-1.71-4.96-4.96C2.04 15.6 2.03 15.2 2.03 12s0-3.6.07-4.9C2.25 3.85 3.76 2.3 7.06 2.14 8.36 2.08 8.76 2.07 12 2.07Zm0 3.13A6.86 6.86 0 1 0 12 18.9a6.86 6.86 0 0 0 0-13.72Zm0 11.32a4.46 4.46 0 1 1 0-8.92 4.46 4.46 0 0 1 0 8.92Zm7.13-11.6a1.6 1.6 0 1 1-3.2 0 1.6 1.6 0 0 1 3.2 0Z",
 };
 
+const SOCIAL_LABELS: Record<string, string> = {
+  x: "AssetFrame on X", linkedin: "AssetFrame on LinkedIn", youtube: "AssetFrame on YouTube",
+  reddit: "AssetFrame on Reddit", instagram: "AssetFrame on Instagram",
+};
+
 function Social() {
   const entries = Object.entries(SITE.socials).filter(([, url]) => url);
   if (!entries.length) return null;
   return (
-    <div className="flex gap-3">
+    <div className="flex gap-1">
       {entries.map(([key, url]) => (
+        // size-9 gives a ≥24px hit area (WCAG 2.5.8); aria-label names the link (svg hidden).
         <a key={key} href={url} target="_blank" rel="noopener noreferrer"
-           aria-label={key} className="text-[#aebfd6] hover:text-white">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+           aria-label={SOCIAL_LABELS[key] ?? `AssetFrame on ${key}`}
+           className="inline-flex size-9 items-center justify-center rounded-md text-[#aebfd6] hover:bg-white/5 hover:text-white">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
             <path d={ICONS[key] ?? ""} />
           </svg>
         </a>
@@ -49,6 +56,7 @@ export default function Footer() {
             <Link href="/account" className="hover:text-white">Account</Link>
             <Link href="/terms" className="hover:text-white">Terms</Link>
             <Link href="/privacy" className="hover:text-white">Privacy</Link>
+            <Link href="/accessibility" className="hover:text-white">Accessibility</Link>
             <Link href="/contact" className="hover:text-white">Contact</Link>
           </div>
         </div>

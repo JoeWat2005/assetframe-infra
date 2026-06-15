@@ -6,12 +6,13 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
+// White text on these, so each must clear WCAG AA 4.5:1 (sell/high/very-high darkened).
 const STATUS: Record<string, string> = {
-  buy: "#1a7f37", sell: "#cf222e", wait: "#9a6700",
+  buy: "#1a7f37", sell: "#b91c1c", wait: "#9a6700",
   "stand aside": "#57606a", neutral: "#0969da", hold: "#0969da",
 };
 const RISK: Record<string, string> = {
-  low: "#1a7f37", medium: "#9a6700", high: "#bc4c00", "very high": "#cf222e",
+  low: "#1a7f37", medium: "#9a6700", high: "#9a3d00", "very high": "#b91c1c",
 };
 
 function ColorBadge({ label, color }: { label: string; color: string }) {

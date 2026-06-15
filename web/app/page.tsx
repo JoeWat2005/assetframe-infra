@@ -68,7 +68,7 @@ export default async function Home() {
             Daily pre-session research across key financial assets. Every report is published before the
             move and scored publicly afterwards.
           </p>
-          <p className="mt-3 text-sm text-white/55">
+          <p className="mt-3 text-sm text-white/70">
             Coverage across stocks, crypto, FX and commodities.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
@@ -89,14 +89,14 @@ export default async function Home() {
 
           {/* Public forecast ledger — compact audit strip, real numbers only (no invented figures) */}
           <div className="mt-8 border-t border-white/10 pt-5">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-white/40">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-white/70">
               Public forecast ledger
             </div>
             <div className="mt-2.5 flex flex-wrap items-baseline gap-x-7 gap-y-2.5">
               {proof.map((p) => (
                 <div key={p.label} className="flex items-baseline gap-1.5">
                   <span className="font-mono text-lg font-bold tabular-nums text-white">{p.value}</span>
-                  <span className="text-xs text-white/55">{p.label}</span>
+                  <span className="text-xs text-white/70">{p.label}</span>
                 </div>
               ))}
             </div>

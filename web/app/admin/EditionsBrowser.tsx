@@ -66,25 +66,26 @@ export default function EditionsBrowser({ editions }: { editions: Edition[] }) {
     <div>
       <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         <Input
+          aria-label="Search editions by instrument, ticker or class"
           placeholder="Search instrument, ticker, class…"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           className="sm:max-w-xs"
         />
         <Select value={category} onValueChange={setCategory}>
-          <SelectTrigger className="w-full sm:w-auto sm:min-w-[160px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger aria-label="Asset class" className="w-full sm:w-auto sm:min-w-[160px]"><SelectValue /></SelectTrigger>
           <SelectContent><SelectGroup>
             {categoryOptions.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
           </SelectGroup></SelectContent>
         </Select>
         <Select value={vis} onValueChange={setVis}>
-          <SelectTrigger className="w-full sm:w-auto sm:min-w-[130px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger aria-label="Visibility" className="w-full sm:w-auto sm:min-w-[130px]"><SelectValue /></SelectTrigger>
           <SelectContent><SelectGroup>
             {VIS.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
           </SelectGroup></SelectContent>
         </Select>
         <Select value={sort} onValueChange={setSort}>
-          <SelectTrigger className="w-full sm:w-auto sm:min-w-[170px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger aria-label="Sort by" className="w-full sm:w-auto sm:min-w-[170px]"><SelectValue /></SelectTrigger>
           <SelectContent><SelectGroup>
             {SORTS.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
           </SelectGroup></SelectContent>
@@ -126,9 +127,9 @@ export default function EditionsBrowser({ editions }: { editions: Edition[] }) {
           </span>
           {pageCount > 1 && (
             <span className="flex items-center gap-2">
-              <Button variant="outline" size="sm" disabled={safePage === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>Prev</Button>
+              <Button aria-label="Previous page" variant="outline" size="sm" disabled={safePage === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>Prev</Button>
               <span>Page {safePage + 1} / {pageCount}</span>
-              <Button variant="outline" size="sm" disabled={safePage >= pageCount - 1} onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}>Next</Button>
+              <Button aria-label="Next page" variant="outline" size="sm" disabled={safePage >= pageCount - 1} onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}>Next</Button>
             </span>
           )}
         </div>

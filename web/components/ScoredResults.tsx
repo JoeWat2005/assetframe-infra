@@ -42,7 +42,7 @@ export default function ScoredResults({ rows }: { rows: ScoredRow[] }) {
     <>
       <div className="mb-3 flex justify-end">
         <Select value={sort} onValueChange={setSort}>
-          <SelectTrigger className="w-full sm:w-auto sm:min-w-[190px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger aria-label="Sort scored results" className="w-full sm:w-auto sm:min-w-[190px]"><SelectValue /></SelectTrigger>
           <SelectContent><SelectGroup>
             {SORTS.map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
           </SelectGroup></SelectContent>
@@ -76,9 +76,9 @@ export default function ScoredResults({ rows }: { rows: ScoredRow[] }) {
         <span>{safePage * PAGE + 1}–{safePage * PAGE + pageRows.length} of {sorted.length} scored</span>
         {pageCount > 1 && (
           <span className="flex items-center gap-2">
-            <Button variant="outline" size="sm" disabled={safePage === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>Prev</Button>
+            <Button aria-label="Previous page" variant="outline" size="sm" disabled={safePage === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>Prev</Button>
             <span>Page {safePage + 1} / {pageCount}</span>
-            <Button variant="outline" size="sm" disabled={safePage >= pageCount - 1} onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}>Next</Button>
+            <Button aria-label="Next page" variant="outline" size="sm" disabled={safePage >= pageCount - 1} onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}>Next</Button>
           </span>
         )}
       </div>
