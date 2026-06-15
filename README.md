@@ -132,3 +132,5 @@ GO-LIVE.md                   end-to-end launch & publishing runbook
 ## Role & limits
 
 AssetFrame publishes **general market research and decision support**. It is **not** investment advice, **not** a personal recommendation, and it **executes no trades** — there is no order-placement path. No outcome is guaranteed; markets are uncertain and capital is at risk. Do your own research and consider an FCA-authorised adviser.
+
+**Copyright.** The reports, site, brand and code are © AssetFrame and protected by copyright. Pro and Snapshot reports are licensed for the subscriber's personal, non-commercial use — redistribution, resale or public sharing is prohibited (Terms §8–9). Report files are served only through the auth-gated `/api/report` route as short-lived signed URLs, never as public objects.

@@ -100,6 +100,11 @@ export default async function ReaderPage(
       )}
 
       <Note>{SITE.disclaimer}</Note>
+      <p className="mt-3 text-center text-xs text-muted-foreground">
+        © {SITE.brand}. This report is protected by copyright and licensed for your personal,
+        non-commercial use — redistributing, reselling or publicly sharing it is prohibited.{" "}
+        <Link href="/terms" className="underline underline-offset-2 hover:text-navy">Terms</Link>.
+      </p>
     </div>
   );
 }
