@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Lock } from "lucide-react";
 import type { Edition } from "@/lib/content";
+import { assetCategory } from "@/lib/taxonomy";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,10 +50,16 @@ export default function ReportCard({ e }: { e: Edition }) {
         <div className="mt-2 flex flex-wrap gap-1.5">
           {e.status && <ColorBadge label={e.status} color={sc} />}
           {e.risk && <ColorBadge label={`Risk: ${e.risk}`} color={rc} />}
+          <Badge variant="outline" className="font-medium text-muted-foreground">
+            {assetCategory(e.assetClass)}
+          </Badge>
         </div>
       </CardHeader>
       <CardContent className="flex-1">
         <p className="text-sm">{e.bias}</p>
+        {e.confidence != null && (
+          <p className="mt-1 text-xs font-semibold text-navy">Confidence {e.confidence}/100</p>
+        )}
         <p className="mt-2 text-xs text-muted-foreground">
           Edition {e.reportDate} · window to {e.windowEnd}
         </p>

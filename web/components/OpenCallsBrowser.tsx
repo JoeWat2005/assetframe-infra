@@ -2,6 +2,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import type { OpenCall } from "@/lib/content";
+import {
+  ASSET_CATEGORIES, CONFIDENCE_BANDS, CONFIDENCE_BAND_LABEL,
+  assetCategory, confidenceBand,
+} from "@/lib/taxonomy";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,13 +14,15 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
+const PAGE = 15; // rows before "Show more"
+
 function PickList({
-  value, onChange, placeholder, options,
-}: { value: string; onChange: (v: string) => void; placeholder: string; options: [string, string][] }) {
+  value, onChange, options,
+}: { value: string; onChange: (v: string) => void; options: [string, string][] }) {
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger className="w-full sm:w-auto sm:min-w-[150px]">
-        <SelectValue placeholder={placeholder} />
+        <SelectValue />
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
@@ -31,17 +37,23 @@ export default function OpenCallsBrowser({
   open, assetClass = {},
 }: { open: OpenCall[]; assetClass?: Record<string, string> }) {
   const [q, setQ] = useState("");
-  const [asset, setAsset] = useState("all");
+  const [category, setCategory] = useState("all");
+  const [confidence, setConfidence] = useState("all");
   const [date, setDate] = useState("all");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [shown, setShown] = useState(PAGE);
 
-  const assetOf = (c: OpenCall) => assetClass[c.symbol] || "Other";
+  const categoryOf = (c: OpenCall) => assetCategory(assetClass[c.symbol] || "");
   const dateOf = (c: OpenCall) => (c.windowEnd || "").slice(0, 10);
 
-  const assetOptions = useMemo<[string, string][]>(
-    () => [["all", "All assets"], ...Array.from(new Set(open.map(assetOf))).filter(Boolean).sort().map((a) => [a, a] as [string, string])],
-    [open] // eslint-disable-line react-hooks/exhaustive-deps
-  );
+  const categoryOptions = useMemo<[string, string][]>(() => {
+    const seen = new Set(open.map(categoryOf));
+    return [["all", "All asset classes"], ...ASSET_CATEGORIES.filter((x) => seen.has(x)).map((x) => [x, x] as [string, string])];
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  const confidenceOptions = useMemo<[string, string][]>(() => {
+    const seen = new Set(open.map((c) => confidenceBand(c.confidence)));
+    return [["all", "Any confidence"], ...CONFIDENCE_BANDS.filter((b) => seen.has(b)).map((b) => [b, CONFIDENCE_BAND_LABEL[b]] as [string, string])];
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
   const dateOptions = useMemo<[string, string][]>(
     () => [["all", "All dates"], ...Array.from(new Set(open.map(dateOf))).filter(Boolean).sort().reverse().map((d) => [d, d] as [string, string])],
     [open] // eslint-disable-line react-hooks/exhaustive-deps
@@ -50,7 +62,8 @@ export default function OpenCallsBrowser({
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return open.filter((c) => {
-      if (asset !== "all" && assetOf(c) !== asset) return false;
+      if (category !== "all" && categoryOf(c) !== category) return false;
+      if (confidence !== "all" && confidenceBand(c.confidence) !== confidence) return false;
       if (date !== "all" && dateOf(c) !== date) return false;
       if (needle) {
         const hay = `${c.instrument} ${c.symbol} ${c.view} ${(c.predictions || []).map((p) => p.text).join(" ")}`.toLowerCase();
@@ -58,7 +71,9 @@ export default function OpenCallsBrowser({
       }
       return true;
     });
-  }, [open, q, asset, date]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [open, q, category, confidence, date]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { setShown(PAGE); }, [q, category, confidence, date]);
 
   // Drop expanded rows that are no longer visible (so they don't reopen on return).
   useEffect(() => {
@@ -77,12 +92,14 @@ export default function OpenCallsBrowser({
       return next;
     });
 
-  const active = q || asset !== "all" || date !== "all";
-  const clearAll = () => { setQ(""); setAsset("all"); setDate("all"); };
+  const active = q || category !== "all" || confidence !== "all" || date !== "all";
+  const clearAll = () => { setQ(""); setCategory("all"); setConfidence("all"); setDate("all"); };
 
   if (open.length === 0) {
     return <p className="text-sm text-muted-foreground">No prediction calls yet — the next edition opens the next set.</p>;
   }
+
+  const visible = filtered.slice(0, shown);
 
   return (
     <div className="flex flex-col gap-3">
@@ -93,8 +110,9 @@ export default function OpenCallsBrowser({
           placeholder="Search calls or predictions…"
           className="sm:max-w-xs"
         />
-        <PickList value={asset} onChange={setAsset} placeholder="All assets" options={assetOptions} />
-        <PickList value={date} onChange={setDate} placeholder="All dates" options={dateOptions} />
+        <PickList value={category} onChange={setCategory} options={categoryOptions} />
+        <PickList value={confidence} onChange={setConfidence} options={confidenceOptions} />
+        <PickList value={date} onChange={setDate} options={dateOptions} />
         {active && (
           <Button variant="ghost" size="sm" onClick={clearAll} className="text-muted-foreground">Clear</Button>
         )}
@@ -102,14 +120,15 @@ export default function OpenCallsBrowser({
 
       <p className="text-sm text-muted-foreground">
         {filtered.length} call{filtered.length === 1 ? "" : "s"}
-        {active ? " match your filters" : ""} · the badge shows predictions that came true (hits/total)
+        {active ? " match your filters" : ""}
+        {filtered.length > visible.length ? ` · showing ${visible.length}` : ""} · the badge shows predictions that came true (hits/total)
       </p>
 
       <div className="overflow-hidden rounded-xl border border-line bg-white">
         {filtered.length === 0 ? (
           <p className="p-4 text-sm text-muted-foreground">No open calls match — try clearing the filters.</p>
         ) : (
-          filtered.map((c) => {
+          visible.map((c) => {
             const isOpen = expanded.has(c.reportId);
             const panelId = `call-${c.reportId}`;
             const won = c.scored && c.hits * 2 > c.n; // strict majority → counts to the streak
@@ -126,7 +145,7 @@ export default function OpenCallsBrowser({
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-bold text-ink">{c.instrument}</div>
                     <div className="truncate text-xs text-muted-foreground">
-                      {c.symbol} · {assetOf(c)} · {c.view}
+                      {c.symbol} · {categoryOf(c)} · {c.view}
                     </div>
                   </div>
                   <div className="hidden shrink-0 text-right sm:block">
@@ -184,6 +203,14 @@ export default function OpenCallsBrowser({
           })
         )}
       </div>
+
+      {filtered.length > visible.length && (
+        <div className="flex justify-center">
+          <Button variant="outline" onClick={() => setShown((n) => n + PAGE)}>
+            Show more ({filtered.length - visible.length} more)
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

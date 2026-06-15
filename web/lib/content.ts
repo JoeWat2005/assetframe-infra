@@ -10,6 +10,7 @@ export type Edition = {
   lastPrice: string; dataQuality: string | number; windowEnd: string;
   reportDate: string; catalystStatus: string;
   freeHtml: string; freePdf: string; preview: string; hasPro: boolean; hidden: boolean;
+  confidence?: number | null; // research confidence (0–100), joined from the open call
 };
 
 export type SubCall = {
@@ -75,12 +76,20 @@ function rowToEdition(r: Row): Edition {
     windowEnd: s(r.window_end), reportDate: date, catalystStatus: s(r.catalyst_status),
     freeHtml: s(r.free_html_key), freePdf: s(r.free_pdf_key), preview: s(r.preview_key),
     hasPro: Boolean(r.has_pro), hidden: Boolean(r.hidden),
+    confidence: r.confidence == null || r.confidence === "" ? null : Number(r.confidence),
   };
 }
 
-const EDITION_COLS = `id, report_date::text AS report_date, slug, instrument, ticker,
-  asset_class, status, risk, bias, data_quality, window_end, catalyst_status, has_pro,
-  free_html_key, free_pdf_key, preview_key, coalesce(hidden, false) AS hidden`;
+const EDITION_COLS = `e.id, e.report_date::text AS report_date, e.slug, e.instrument, e.ticker,
+  e.asset_class, e.status, e.risk, e.bias, e.data_quality, e.window_end, e.catalyst_status, e.has_pro,
+  e.free_html_key, e.free_pdf_key, e.preview_key, coalesce(e.hidden, false) AS hidden,
+  oc.confidence AS confidence`;
+// Confidence isn't on the editions table — join the open call by its derived report_id
+// (edition id "2026-06-15/AAPL" -> "AF-20260615-AAPL"). LEFT JOIN so editions without a
+// registered call still return.
+const EDITION_FROM = `FROM editions e
+  LEFT JOIN open_calls oc
+    ON oc.report_id = 'AF-' || replace(e.report_date::text, '-', '') || '-' || e.slug`;
 
 // ------------------------------------------------------------------ public API (DB-first)
 // Wrapped in unstable_cache below so reloads serve from Next's Data Cache (no re-query).
@@ -88,7 +97,7 @@ async function _getCatalog(): Promise<Edition[]> {
   if (sql) {
     try {
       const rows = await sql.query(
-        `SELECT ${EDITION_COLS} FROM editions WHERE coalesce(hidden, false) = false ORDER BY report_date DESC, slug DESC`
+        `SELECT ${EDITION_COLS} ${EDITION_FROM} WHERE coalesce(e.hidden, false) = false ORDER BY e.report_date DESC, e.slug DESC`
       );
       return (rows as Row[]).map(rowToEdition);
     } catch {
@@ -104,7 +113,7 @@ export async function getAllEditions(): Promise<Edition[]> {
   if (sql) {
     try {
       const rows = await sql.query(
-        `SELECT ${EDITION_COLS} FROM editions ORDER BY report_date DESC, slug DESC`
+        `SELECT ${EDITION_COLS} ${EDITION_FROM} ORDER BY e.report_date DESC, e.slug DESC`
       );
       return (rows as Row[]).map(rowToEdition);
     } catch {
@@ -118,7 +127,7 @@ export async function getEdition(date: string, slug: string): Promise<Edition | 
   if (sql) {
     try {
       const rows = await sql.query(
-        `SELECT ${EDITION_COLS} FROM editions WHERE id = $1 AND coalesce(hidden, false) = false LIMIT 1`,
+        `SELECT ${EDITION_COLS} ${EDITION_FROM} WHERE e.id = $1 AND coalesce(e.hidden, false) = false LIMIT 1`,
         [`${date}/${slug}`]
       );
       const r = (rows as Row[])[0];
