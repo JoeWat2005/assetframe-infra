@@ -31,7 +31,7 @@ export const SITE = {
     process.env.NEXT_PUBLIC_CHECKOUT_URL ||
     "https://assetframe.lemonsqueezy.com/checkout/buy/2b3067fc-8b2c-4f45-b709-e2d28ae448d1",
   proPrice: process.env.NEXT_PUBLIC_PRO_PRICE || "£9.99/month",
-  contactEmail: "hello@assetframe.co.uk",
+  contactEmail: "contact@assetframe.co.uk",
   // Lemon Squeezy Customer Portal — universal self-serve cancel/billing via an email
   // magic-link. Always works (no API key needed); used when we don't yet have a
   // per-subscription portal URL from the webhook.
