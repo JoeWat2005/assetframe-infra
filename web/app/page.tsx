@@ -1,5 +1,6 @@
+import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, ShieldCheck, Layers, Clock, BadgeCheck } from "lucide-react";
+import { ArrowRight, ShieldCheck, Layers, Clock, BadgeCheck, Flame, Target } from "lucide-react";
 import { getCatalog, getTrackRecord } from "@/lib/content";
 import { Section } from "@/components/ui";
 import ReportCard from "@/components/ReportCard";
@@ -8,6 +9,15 @@ import HeroBackdrop from "@/components/HeroBackdrop";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { SITE } from "@/site.config";
+
+// Title/description are inherited from the root layout (the brand default); set only the
+// canonical so the homepage resolves to the site root rather than any query-string variant.
+export const metadata: Metadata = { alternates: { canonical: "/" } };
+
+// Social links surfaced under the proof section (only the ones filled in site.config).
+const SOCIAL_LABELS: Record<string, string> = {
+  x: "X", linkedin: "LinkedIn", youtube: "YouTube", reddit: "Reddit", instagram: "Instagram",
+};
 
 // Publishing model: editions change only when a new one is published, so serve a
 // cached static render and revalidate in the background. Fast for everyone, light on the DB.
@@ -45,6 +55,13 @@ export default async function Home() {
     { value: "100%", label: "Public archive" },
     { value: tr.stats.predictionsGraded, label: "Forecasts scored" },
   ];
+
+  // Social-proof inputs (real platform data only). The scored-calls teaser shows the most
+  // recent graded rows; everything degrades gracefully when nothing has scored yet.
+  const latestScored = [...tr.scored]
+    .sort((a, b) => (b.windowEnd || "").localeCompare(a.windowEnd || ""))
+    .slice(0, 3);
+  const socials = Object.entries(SITE.socials).filter(([, url]) => url);
 
   return (
     <>
@@ -157,6 +174,77 @@ export default async function Home() {
               <ArrowRight data-icon="inline-end" />
             </Link>
           </Button>
+        </div>
+      </Section>
+
+      {/* Social proof — REAL platform numbers only. The ledger strip and scored-calls teaser
+          fill in as open calls close; before then they read "—"/"scoring begins…", never an
+          invented stat. */}
+      <Section
+        title="A public, scored track record"
+        lead="No cherry-picking. Every call is registered before its window and graded against the tape afterwards — the record is the product."
+      >
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <Card data-animate="up">
+            <CardContent>
+              <Target className="size-5 text-navy" />
+              <div className="mt-3 font-mono text-3xl font-extrabold tabular-nums text-navy">
+                {tr.stats.hitRate === null ? "—" : `${tr.stats.hitRate}%`}
+              </div>
+              <div className="mt-1 text-sm text-muted-foreground">
+                Overall hit rate across {tr.stats.predictionsGraded} scored forecast{tr.stats.predictionsGraded === 1 ? "" : "s"}.
+              </div>
+            </CardContent>
+          </Card>
+          <Card data-animate="up">
+            <CardContent>
+              <Flame className="size-5 text-navy" />
+              <div className="mt-3 font-mono text-3xl font-extrabold tabular-nums text-navy">
+                {tr.stats.currentStreak}
+              </div>
+              <div className="mt-1 text-sm text-muted-foreground">
+                Current winning streak{tr.stats.longestStreak > 0 ? ` · longest ${tr.stats.longestStreak}` : ""}.
+              </div>
+            </CardContent>
+          </Card>
+          <Card data-animate="up">
+            <CardContent>
+              <BadgeCheck className="size-5 text-navy" />
+              <div className="mt-3 text-sm font-bold text-ink">Latest scored calls</div>
+              {latestScored.length === 0 ? (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Scoring begins as the first windows close. Until then, every open call is public.
+                </p>
+              ) : (
+                <ul className="mt-2 space-y-1.5">
+                  {latestScored.map((r, i) => (
+                    <li key={`${r.instrument}-${r.windowEnd}-${i}`} className="flex items-baseline justify-between gap-3 text-sm">
+                      <span className="truncate font-medium text-ink">{r.instrument}</span>
+                      <span className="shrink-0 text-muted-foreground">{r.results || (r.hitRate === "" ? "" : `${r.hitRate}%`)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+        <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-3">
+          <Button asChild variant="outline">
+            <Link href="/track-record">
+              See the full track record
+              <ArrowRight data-icon="inline-end" />
+            </Link>
+          </Button>
+          {socials.length > 0 && (
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <span>Follow along:</span>
+              {socials.map(([key, url]) => (
+                <a key={key} href={url} target="_blank" rel="noopener noreferrer" className="font-semibold text-navy hover:underline">
+                  {SOCIAL_LABELS[key] ?? key}
+                </a>
+              ))}
+            </div>
+          )}
         </div>
       </Section>
 

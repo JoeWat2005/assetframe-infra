@@ -21,6 +21,20 @@ const SORTS: [string, string][] = [
   ["az", "Instrument A–Z"],
 ];
 
+// Per-prediction outcome (merged from the ledger's packed results). Hidden until scored.
+const VERDICTS: Record<string, { label: string; cls: string }> = {
+  Y: { label: "Hit", cls: "bg-[#dafbe1] text-[#1a7f37]" },
+  N: { label: "Miss", cls: "bg-[#ffebe9] text-[#cf222e]" },
+  NT: { label: "No-trigger", cls: "bg-tile text-[#57606a]" },
+  MANUAL: { label: "Awaiting", cls: "bg-[#fff7e6] text-[#9a6700]" },
+};
+function VerdictBadge({ verdict }: { verdict?: string }) {
+  const v = (verdict || "").trim().toUpperCase();
+  if (!v) return null;
+  const m = VERDICTS[v] ?? { label: v, cls: "bg-tile text-[#57606a]" };
+  return <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${m.cls}`}>{m.label}</span>;
+}
+
 function PickList({
   label, value, onChange, options,
 }: { label: string; value: string; onChange: (v: string) => void; options: [string, string][] }) {
@@ -206,6 +220,7 @@ export default function OpenCallsBrowser({
                                   {p.type.replace(/_/g, " ")}
                                 </span>
                                 {p.manual && <Badge variant="secondary" className="text-[10px]">manual</Badge>}
+                                <VerdictBadge verdict={p.verdict} />
                               </div>
                               <p className="mt-0.5">{p.text}</p>
                             </div>

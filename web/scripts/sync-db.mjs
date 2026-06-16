@@ -25,6 +25,9 @@ try {
 
 const readJson = (f) => JSON.parse(readFileSync(path.join(web, "content", f), "utf-8"));
 const toInt = (v) => (v === "" || v == null || Number.isNaN(Number(v)) ? null : parseInt(v, 10));
+// T12 additive columns: pass through only when present (guard undefined/empty -> null).
+const orNull = (v) => (v === undefined || v === "" || v === null ? null : v);
+const toJson = (v) => (v === undefined || v === null ? null : JSON.stringify(v));
 
 // Targets: primary (prod) + optional dev branch. Dedupe identical URLs.
 const primary =
@@ -52,18 +55,26 @@ async function syncOne(label, url) {
     await sql.query(
       `INSERT INTO editions (id, report_date, slug, instrument, ticker, asset_class, status, risk, bias,
          data_quality, window_end, catalyst_status, has_pro, free_html_key, free_pdf_key, preview_key,
-         pro_html_key, pro_pdf_key)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+         pro_html_key, pro_pdf_key,
+         asset_class_key, direction_view, prediction_type, market_regime, confidence_band, social_context)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,
+         $19,$20,$21,$22,$23,$24)
        ON CONFLICT (id) DO UPDATE SET
          report_date=excluded.report_date, slug=excluded.slug, instrument=excluded.instrument,
          ticker=excluded.ticker, asset_class=excluded.asset_class, status=excluded.status,
          risk=excluded.risk, bias=excluded.bias, data_quality=excluded.data_quality,
          window_end=excluded.window_end, catalyst_status=excluded.catalyst_status, has_pro=excluded.has_pro,
          free_html_key=excluded.free_html_key, free_pdf_key=excluded.free_pdf_key,
-         preview_key=excluded.preview_key, pro_html_key=excluded.pro_html_key, pro_pdf_key=excluded.pro_pdf_key`,
+         preview_key=excluded.preview_key, pro_html_key=excluded.pro_html_key, pro_pdf_key=excluded.pro_pdf_key,
+         asset_class_key=excluded.asset_class_key, direction_view=excluded.direction_view,
+         prediction_type=excluded.prediction_type, market_regime=excluded.market_regime,
+         confidence_band=excluded.confidence_band, social_context=excluded.social_context`,
       [id, e.date, e.slug, e.instrument, e.ticker, e.assetClass, e.status, e.risk, e.bias,
        toInt(e.dataQuality), e.windowEnd, e.catalystStatus, !!e.hasPro, e.freeHtml, e.freePdf, e.preview,
-       e.hasPro ? `${e.date}/${e.slug}/pro.html` : null, e.hasPro ? `${e.date}/${e.slug}/pro.pdf` : null]
+       e.hasPro ? `${e.date}/${e.slug}/pro.html` : null, e.hasPro ? `${e.date}/${e.slug}/pro.pdf` : null,
+       // T12 (additive) — pass through when export_content includes them, else null.
+       orNull(e.assetClassKey), orNull(e.directionView), orNull(e.predictionType),
+       orNull(e.marketRegime), orNull(e.confidenceBand), toJson(e.socialContext)]
     );
   }
 
@@ -82,13 +93,17 @@ async function syncOne(label, url) {
     for (let i = 0; i < preds.length; i++) {
       const p = preds[i];
       await sql.query(
-        `INSERT INTO open_call_predictions (report_id, seq, pred_id, type, text, manual, expect)
-         VALUES ($1,$2,$3,$4,$5,$6,$7)
+        `INSERT INTO open_call_predictions (report_id, seq, pred_id, type, text, manual, expect,
+           pred_type, verdict, setup_side)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
          ON CONFLICT (report_id, pred_id) DO UPDATE SET
            seq=excluded.seq, type=excluded.type, text=excluded.text,
-           manual=excluded.manual, expect=excluded.expect`,
+           manual=excluded.manual, expect=excluded.expect,
+           pred_type=excluded.pred_type, verdict=excluded.verdict, setup_side=excluded.setup_side`,
         [c.reportId, i + 1, p.id || `P${i + 1}`, p.type || "", p.text || "",
-         !!p.manual, typeof p.expect === "boolean" ? p.expect : null]
+         !!p.manual, typeof p.expect === "boolean" ? p.expect : null,
+         // T12 (additive) — verdict + predType are emitted by export_content; setup_side is reserved.
+         orNull(p.predType), orNull(p.verdict), orNull(p.setupSide)]
       );
       predCount++;
     }
@@ -96,10 +111,13 @@ async function syncOne(label, url) {
   await sql.query("DELETE FROM scored_results");
   for (const r of track.scored || []) {
     await sql.query(
-      `INSERT INTO scored_results (report_id, instrument, view, confidence, results, hits, misses, hit_rate, window_end)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+      `INSERT INTO scored_results (report_id, instrument, view, confidence, results, hits, misses, hit_rate, window_end,
+         conf_version, confidence_components)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
       [r.reportId || null, r.instrument, r.view, String(r.confidence), r.results,
-       toInt(r.hits), toInt(r.misses), String(r.hitRate), r.windowEnd]
+       toInt(r.hits), toInt(r.misses), String(r.hitRate), r.windowEnd,
+       // T12 (additive) — present only when export_content emits them.
+       toInt(r.confVersion), toJson(r.confidenceComponents)]
     );
   }
   console.log(`  [${label}] editions: ${catalog.length}, open_calls: ${(track.open || []).length} (${predCount} predictions), scored_results: ${(track.scored || []).length}`);

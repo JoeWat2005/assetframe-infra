@@ -15,6 +15,9 @@ export type Edition = {
 
 export type SubCall = {
   id: string; type: string; text: string; manual: boolean; expect?: boolean | null;
+  // Per-prediction outcome merged from the ledger's packed results ("Y"|"N"|"NT"|""),
+  // and the edition-level prediction archetype. Optional so DB + JSON shapes both satisfy.
+  verdict?: string; predType?: string;
 };
 export type OpenCall = {
   reportId: string; instrument: string; symbol: string; view: string;
@@ -28,7 +31,37 @@ export type ScoredRow = {
   // Present in the JSON-fallback rows (written by export_content.py) and read by sync-db;
   // not selected on the DB path. Optional so both shapes satisfy the type.
   reportId?: string; hits?: string | number; misses?: string | number;
+  // Normalized taxonomy fields (JSON-fallback + DB where columns exist).
+  assetClass?: string; predType?: string;
 };
+
+// ---- Derived track-record analytics (Task T12). All additive; empty arrays when the
+// ledger is empty, so consumers must tolerate [] / undefined and never assume presence.
+export type InstrumentPerf = {
+  instrument: string; ticker: string; assetClass: string;
+  reportsScored: number; hits: number; misses: number; hitRate: number | null;
+};
+export type AssetClassPerf = {
+  assetClass: string; reportsScored: number; hits: number; misses: number; hitRate: number | null;
+};
+export type PredTypePerf = {
+  predType: string; reportsScored: number; hits: number; misses: number; hitRate: number | null;
+};
+export type RegimePerf = {
+  regime: string; reportsScored: number; hits: number; misses: number; hitRate: number | null;
+};
+export type TimelinePoint = {
+  reportId: string; instrument: string; windowEnd: string;
+  perReportHitRate: number | null; cumulativeHitRate: number | null;
+};
+export type CalibrationBin = {
+  bucket: string; confLo: number; confHi: number;
+  reports: number; hits: number; misses: number; hitRate: number | null;
+};
+export type ComponentOutcome = {
+  band: string; reports: number; avgConfidence: number | null; hitRate: number | null;
+};
+
 export type TrackRecord = {
   stats: {
     reportsScored: number; openCalls: number; predictionsGraded: number; hitRate: number | null;
@@ -36,6 +69,14 @@ export type TrackRecord = {
   };
   open: OpenCall[]; scored: ScoredRow[];
   calibration: Record<string, { hitRate: number | null; n: number }> | null;
+  // Derived analytics — optional everywhere so older JSON / a DB without the columns degrades.
+  byInstrument?: InstrumentPerf[];
+  byAssetClass?: AssetClassPerf[];
+  byPredictionType?: PredTypePerf[];
+  byRegime?: RegimePerf[];
+  timeline?: TimelinePoint[];
+  calibrationCurve?: CalibrationBin[];
+  componentVsOutcome?: ComponentOutcome[];
 };
 
 // Longest and current run of scored calls where a strict majority of the call's
@@ -157,32 +198,61 @@ export async function getEditionProKeys(date: string, slug: string): Promise<{ p
   }
 }
 
+// Open-call predictions, with the T12 verdict + pred_type columns when they exist.
+// Tried first; if those columns aren't migrated yet the query throws and we retry the
+// original (pre-T12) projection so the DB path keeps working.
+const OPEN_CALLS_FROM = `FROM open_calls oc
+   LEFT JOIN open_call_predictions p ON p.report_id = oc.report_id
+   GROUP BY oc.report_id, oc.instrument, oc.symbol, oc.view, oc.confidence,
+            oc.window_end, oc.n, oc.n_manual, oc.hits, oc.scored
+   ORDER BY oc.window_end`;
+const OPEN_CALLS_HEAD = `SELECT oc.report_id, oc.instrument, oc.symbol, oc.view, oc.confidence,
+          oc.window_end, oc.n, oc.n_manual, oc.hits, oc.scored,`;
+const predAgg = (extra: string) => `coalesce(
+    json_agg(
+      json_build_object('id', p.pred_id, 'type', p.type, 'text', p.text,
+                        'manual', p.manual, 'expect', p.expect${extra})
+      order by p.seq
+    ) filter (where p.id is not null), '[]'
+  ) AS predictions`;
+
 async function _getTrackRecord(): Promise<TrackRecord> {
   if (sql) {
     try {
-      const openRows = (await sql.query(
-        `SELECT oc.report_id, oc.instrument, oc.symbol, oc.view, oc.confidence,
-                oc.window_end, oc.n, oc.n_manual, oc.hits, oc.scored,
-                coalesce(
-                  json_agg(
-                    json_build_object('id', p.pred_id, 'type', p.type, 'text', p.text,
-                                      'manual', p.manual, 'expect', p.expect)
-                    order by p.seq
-                  ) filter (where p.id is not null),
-                  '[]'
-                ) AS predictions
-         FROM open_calls oc
-         LEFT JOIN open_call_predictions p ON p.report_id = oc.report_id
-         GROUP BY oc.report_id, oc.instrument, oc.symbol, oc.view, oc.confidence,
-                  oc.window_end, oc.n, oc.n_manual, oc.hits, oc.scored
-         ORDER BY oc.window_end`
-      )) as Row[];
-      const scoredRows = (await sql.query(
-        // Order by the serial id (insert order = ledger/CSV order) rather than
-        // scored_at (a now() stamp that re-sync rewrites), so streaks match the JSON path.
-        `SELECT instrument, view, confidence, results, hits, misses, hit_rate, window_end
-         FROM scored_results ORDER BY id`
-      )) as Row[];
+      let openRows: Row[];
+      try {
+        openRows = (await sql.query(
+          `${OPEN_CALLS_HEAD} ${predAgg(", 'verdict', coalesce(p.verdict, ''), 'predType', coalesce(p.pred_type, '')")} ${OPEN_CALLS_FROM}`
+        )) as Row[];
+      } catch {
+        // pred_type / verdict columns not present yet — fall back to the base projection.
+        openRows = (await sql.query(`${OPEN_CALLS_HEAD} ${predAgg("")} ${OPEN_CALLS_FROM}`)) as Row[];
+      }
+
+      // Scored rows, enriched with edition taxonomy (asset_class_key / prediction_type /
+      // market_regime) via the same report_id derivation used elsewhere. Best-effort: if
+      // those columns aren't migrated, retry without them so scoring data still loads.
+      const SCORED_BASE = `SELECT sr.report_id, sr.instrument, sr.view, sr.confidence, sr.results,
+                sr.hits, sr.misses, sr.hit_rate, sr.window_end`;
+      const SCORED_JOIN = `FROM scored_results sr
+         LEFT JOIN editions e
+           ON sr.report_id = 'AF-' || replace(e.report_date::text, '-', '') || '-' || e.slug
+         ORDER BY sr.id`;
+      let scoredRows: Row[];
+      try {
+        scoredRows = (await sql.query(
+          `${SCORED_BASE}, e.ticker AS ticker,
+              coalesce(e.asset_class_key, '') AS asset_class_key,
+              coalesce(e.prediction_type, '') AS prediction_type,
+              coalesce(e.market_regime, '')  AS market_regime
+           ${SCORED_JOIN}`
+        )) as Row[];
+      } catch {
+        scoredRows = (await sql.query(
+          `SELECT report_id, instrument, view, confidence, results, hits, misses, hit_rate, window_end
+           FROM scored_results ORDER BY id`
+        )) as Row[];
+      }
 
       const open: OpenCall[] = openRows.map((r) => ({
         reportId: s(r.report_id), instrument: s(r.instrument), symbol: s(r.symbol),
@@ -194,17 +264,25 @@ async function _getTrackRecord(): Promise<TrackRecord> {
       const scored: ScoredRow[] = scoredRows.map((r) => ({
         instrument: s(r.instrument), view: s(r.view), confidence: s(r.confidence),
         results: s(r.results), hitRate: s(r.hit_rate), windowEnd: s(r.window_end),
+        assetClass: s(r.asset_class_key), predType: s(r.prediction_type),
       }));
       const hits = scoredRows.reduce((a, r) => a + (Number(r.hits) || 0), 0);
       const misses = scoredRows.reduce((a, r) => a + (Number(r.misses) || 0), 0);
       const graded = hits + misses;
+      // Build the derived analytics from the enriched scored rows (taxonomy keys present
+      // only where the join + columns resolved; missing ones just drop out of the groupings).
+      const aggregates = buildAggregates(scoredRows.map((r) => ({
+        reportId: s(r.report_id), instrument: s(r.instrument), confidence: r.confidence,
+        hits: r.hits, misses: r.misses, windowEnd: s(r.window_end), ticker: s(r.ticker),
+        assetClass: s(r.asset_class_key), predType: s(r.prediction_type), regime: s(r.market_regime),
+      })));
       return {
         stats: {
           reportsScored: scored.length, openCalls: open.length, predictionsGraded: graded,
           hitRate: graded ? Math.round((1000 * hits) / graded) / 10 : null,
           ...streaks(open),
         },
-        open, scored, calibration: computeCalibration(scoredRows),
+        open, scored, calibration: computeCalibration(scoredRows), ...aggregates,
       };
     } catch {
       /* fall through */
@@ -214,7 +292,16 @@ async function _getTrackRecord(): Promise<TrackRecord> {
     stats: { reportsScored: 0, openCalls: 0, predictionsGraded: 0, hitRate: null, longestStreak: 0, currentStreak: 0 },
     open: [], scored: [], calibration: null,
   });
-  return { ...fallback, stats: { ...fallback.stats, ...streaks(fallback.open || []) } };
+  // The export writes the aggregates; if an older JSON lacks them, derive from scored rows so
+  // the page still has data. Prefer the file's own arrays when present.
+  const derived = fallback.byInstrument === undefined
+    ? buildAggregates((fallback.scored || []).map((r) => ({
+        reportId: r.reportId, instrument: r.instrument, confidence: r.confidence,
+        hits: r.hits, misses: r.misses, windowEnd: r.windowEnd,
+        assetClass: r.assetClass, predType: r.predType,
+      })))
+    : {};
+  return { ...derived, ...fallback, stats: { ...fallback.stats, ...streaks(fallback.open || []) } };
 }
 
 function computeCalibration(rows: Row[]): TrackRecord["calibration"] {
@@ -233,6 +320,141 @@ function computeCalibration(rows: Row[]): TrackRecord["calibration"] {
     out[k] = { hitRate: v.length ? Math.round((10 * v.reduce((a, b) => a + b, 0)) / v.length) / 10 : null, n: v.length };
   }
   return out;
+}
+
+// ---- Derived analytics computed in TS, mirroring export_content.py `_build_aggregates`,
+// so the DB path produces the same shapes as the JSON fallback. `rows` are scored rows with
+// numeric-ish hits/misses/confidence; taxonomy (assetClass/predType/regime) is optional per
+// row (filled by a best-effort editions join on the DB path) and missing keys just yield
+// empty groupings — never throws.
+type ScoredLike = {
+  reportId?: string; instrument?: string; confidence?: unknown; hits?: unknown;
+  misses?: unknown; windowEnd?: string; ticker?: string;
+  assetClass?: string; predType?: string; regime?: string;
+};
+const round1 = (x: number) => Math.round(x * 10) / 10;
+const numOr = (v: unknown, d = 0) => { const n = Number(v); return Number.isFinite(n) ? n : d; };
+function rate(hits: number, misses: number): number | null {
+  const g = hits + misses;
+  return g ? round1((100 * hits) / g) : null;
+}
+const NEG = -1; // sort sentinel for null hitRate (pushes to the bottom)
+
+function groupPerf<T extends string>(
+  rows: ScoredLike[], keyOf: (r: ScoredLike) => string, label: T
+): (Record<T, string> & { reportsScored: number; hits: number; misses: number; hitRate: number | null })[] {
+  const g = new Map<string, { reportsScored: number; hits: number; misses: number }>();
+  for (const r of rows) {
+    const key = (keyOf(r) || "").trim();
+    if (!key) continue;
+    const e = g.get(key) || { reportsScored: 0, hits: 0, misses: 0 };
+    e.reportsScored += 1; e.hits += numOr(r.hits); e.misses += numOr(r.misses);
+    g.set(key, e);
+  }
+  const out = [...g.entries()].map(([key, e]) => ({
+    [label]: key, reportsScored: e.reportsScored, hits: e.hits, misses: e.misses,
+    hitRate: rate(e.hits, e.misses),
+  })) as (Record<T, string> & { reportsScored: number; hits: number; misses: number; hitRate: number | null })[];
+  out.sort((a, b) =>
+    (b.hitRate ?? NEG) - (a.hitRate ?? NEG) || b.reportsScored - a.reportsScored ||
+    (a as Record<T, string>)[label].localeCompare((b as Record<T, string>)[label]));
+  return out;
+}
+
+function buildAggregates(rows: ScoredLike[]): Required<Pick<TrackRecord,
+  "byInstrument" | "byAssetClass" | "byPredictionType" | "byRegime" | "timeline" |
+  "calibrationCurve" | "componentVsOutcome">> {
+  const empty = {
+    byInstrument: [], byAssetClass: [], byPredictionType: [], byRegime: [],
+    timeline: [], calibrationCurve: [], componentVsOutcome: [],
+  };
+  if (!rows.length) return empty;
+
+  // byInstrument carries ticker + normalized assetClass.
+  const inst = new Map<string, { ticker: string; assetClass: string; reportsScored: number; hits: number; misses: number }>();
+  for (const r of rows) {
+    const name = (r.instrument || "").trim();
+    if (!name) continue;
+    const e = inst.get(name) || { ticker: "", assetClass: "", reportsScored: 0, hits: 0, misses: 0 };
+    e.reportsScored += 1; e.hits += numOr(r.hits); e.misses += numOr(r.misses);
+    if (!e.ticker && r.ticker) e.ticker = r.ticker;
+    if (!e.assetClass && r.assetClass) e.assetClass = r.assetClass;
+    inst.set(name, e);
+  }
+  const byInstrument: InstrumentPerf[] = [...inst.entries()].map(([instrument, e]) => ({
+    instrument, ticker: e.ticker, assetClass: e.assetClass, reportsScored: e.reportsScored,
+    hits: e.hits, misses: e.misses, hitRate: rate(e.hits, e.misses),
+  }));
+  byInstrument.sort((a, b) =>
+    (b.hitRate ?? NEG) - (a.hitRate ?? NEG) || b.reportsScored - a.reportsScored ||
+    a.instrument.localeCompare(b.instrument));
+
+  const byAssetClass = groupPerf(rows, (r) => r.assetClass || "", "assetClass") as AssetClassPerf[];
+  const byPredictionType = groupPerf(rows, (r) => r.predType || "", "predType") as PredTypePerf[];
+  const byRegime = groupPerf(rows, (r) => r.regime || "", "regime") as RegimePerf[];
+
+  // timeline: chronological by windowEnd, cumulative + per-report hit rate.
+  const ordered = [...rows].sort((a, b) =>
+    (a.windowEnd || "").localeCompare(b.windowEnd || "") ||
+    (a.reportId || "").localeCompare(b.reportId || ""));
+  let cumH = 0, cumM = 0;
+  const timeline: TimelinePoint[] = ordered.map((r) => {
+    const h = numOr(r.hits), m = numOr(r.misses);
+    cumH += h; cumM += m;
+    return {
+      reportId: r.reportId || "", instrument: r.instrument || "", windowEnd: r.windowEnd || "",
+      perReportHitRate: rate(h, m), cumulativeHitRate: rate(cumH, cumM),
+    };
+  });
+
+  // calibrationCurve: 10-point confidence bins, gated to overall n>=10 (mirrors Python).
+  const calibrationCurve: CalibrationBin[] = [];
+  if (rows.length >= 10) {
+    const bins = new Map<number, { reports: number; hits: number; misses: number }>();
+    for (const r of rows) {
+      const c = Number(r.confidence);
+      if (!Number.isFinite(c)) continue;
+      const lo = Math.max(0, Math.min(90, Math.floor(c / 10) * 10));
+      const b = bins.get(lo) || { reports: 0, hits: 0, misses: 0 };
+      b.reports += 1; b.hits += numOr(r.hits); b.misses += numOr(r.misses);
+      bins.set(lo, b);
+    }
+    for (const lo of [...bins.keys()].sort((a, b) => a - b)) {
+      const b = bins.get(lo)!;
+      calibrationCurve.push({
+        bucket: `${lo}-${lo + 9}`, confLo: lo, confHi: lo + 9,
+        reports: b.reports, hits: b.hits, misses: b.misses, hitRate: rate(b.hits, b.misses),
+      });
+    }
+  }
+
+  // componentVsOutcome: realised hit rate vs mean stated confidence, by display band.
+  const band = (score: unknown): string | null => {
+    const sNum = Number(score);
+    if (!Number.isFinite(sNum)) return null;
+    if (sNum < 50) return "Low";
+    if (sNum < 65) return "Moderate";
+    if (sNum < 80) return "Elevated";
+    return "High";
+  };
+  const cb = new Map<string, { reports: number; hits: number; misses: number; confSum: number; confN: number }>();
+  for (const r of rows) {
+    const bnd = band(r.confidence);
+    if (!bnd) continue;
+    const e = cb.get(bnd) || { reports: 0, hits: 0, misses: 0, confSum: 0, confN: 0 };
+    e.reports += 1; e.hits += numOr(r.hits); e.misses += numOr(r.misses);
+    const c = Number(r.confidence);
+    if (Number.isFinite(c)) { e.confSum += c; e.confN += 1; }
+    cb.set(bnd, e);
+  }
+  const componentVsOutcome: ComponentOutcome[] = ["Low", "Moderate", "Elevated", "High"]
+    .filter((b) => cb.has(b))
+    .map((b) => {
+      const e = cb.get(b)!;
+      return { band: b, reports: e.reports, avgConfidence: e.confN ? round1(e.confSum / e.confN) : null, hitRate: rate(e.hits, e.misses) };
+    });
+
+  return { byInstrument, byAssetClass, byPredictionType, byRegime, timeline, calibrationCurve, componentVsOutcome };
 }
 
 // Cached reads: the catalog and track record aren't user-specific, so serve them

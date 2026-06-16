@@ -18,6 +18,19 @@ data/predictions/*
 reports/*
 !reports/.gitkeep
 
+# V2 working artifacts — per-run inputs (research/social packs, ledger context, briefs) and
+# distribution drafts. Like data/payloads, these are working state, not versioned.
+data/briefs/*
+data/research/*
+data/social/*
+data/ledger_context/*
+data/social_posts/*
+
+# Derived ledger products — rebuilt by calibrate.py / research_memory.py.
+# The source-of-truth outcome_ledger.csv stays tracked.
+ledger/calibration_map.json
+ledger/research_memory.json
+
 # Generated static site — rebuilt by scripts/build_site.py (deploy by running the build, not committing it)
 site/
 

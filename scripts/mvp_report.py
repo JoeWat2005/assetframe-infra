@@ -35,6 +35,12 @@ except Exception:
 sys.path.insert(0, str(Path(__file__).parent))
 import report_pdf as rp
 
+try:
+    from taxonomy import PREDICTION_TYPES
+except Exception:  # taxonomy is stdlib-only; fall back so the generator stays runnable
+    PREDICTION_TYPES = ("breakout", "rejection", "continuation",
+                        "mean_reversion", "range_hold", "volatility_expansion")
+
 BRAND = "AssetFrame"
 TAGLINE = "Next-session market intelligence, scored after the fact."
 LOGO = Path(__file__).parent.parent / "logo" / "logo_trimmed.png"
@@ -949,6 +955,39 @@ def run_qa(p):
     if not bar_complete and "(live bar)" not in blob and "live" not in str(meta.get("last_price", "")).lower():
         warns.append("incomplete last bar not labelled 'live' in header")
 
+    # --- prediction-type enum (taxonomy is the single vocabulary across the pipeline)
+    pt = meta.get("prediction_type")
+    prediction_type_valid = True
+    if pt is None:
+        warns.append("meta.prediction_type missing (older payload) - cannot tag edition archetype")
+    elif pt not in PREDICTION_TYPES:
+        prediction_type_valid = False
+        errs.append(f"meta.prediction_type='{pt}' not in taxonomy.PREDICTION_TYPES {list(PREDICTION_TYPES)}")
+
+    # --- confidence vs breakdown: the gauge and scorecard must agree on one number
+    confidence_matches_breakdown = True
+    cb = p.get("confidence_breakdown")
+    if cb is not None:
+        try:
+            if int(p["confidence"]) != int(cb["published"]):
+                confidence_matches_breakdown = False
+                errs.append("payload.confidence != confidence_breakdown.published")
+        except (KeyError, TypeError, ValueError):
+            confidence_matches_breakdown = False
+            errs.append("payload.confidence != confidence_breakdown.published")
+
+    # --- social must read as market conversation, never as fact (light heuristic).
+    # Trigger only on social-as-signal language, NOT the scorecard's "Social adj." label.
+    social_labelled_soft = True
+    SOFT_PHRASES = ("market conversation", "not a fact", "sentiment context", "soft signal")
+    SOCIAL_SIGNAL = ("social sentiment", "social media", "social chatter", "stocktwits",
+                     "reddit", "retail chatter", "crowd sentiment", "hype")
+    pro_blob = json.dumps(p.get("pro", {}), ensure_ascii=False).lower()
+    if any(t in pro_blob for t in SOCIAL_SIGNAL) and not any(ph in pro_blob for ph in SOFT_PHRASES):
+        social_labelled_soft = False
+        warns.append("social sentiment appears in pro sections but is not framed as market "
+                     "conversation (add 'market conversation' / 'sentiment context' / 'soft signal')")
+
     qa = {
         "logo_present": LOGO.exists(),
         "header_price_matches_chart": ok_price,
@@ -965,6 +1004,9 @@ def run_qa(p):
                                  and all(RR_OK.match(s.get("rr", "")) for s in setups),
         "chart_abbreviations_explained": bool(_glossary_rows(p)),
         "ladder_size_ok": len(c.get("ladder", [])) <= 12,
+        "prediction_type_valid": prediction_type_valid,
+        "confidence_matches_breakdown": confidence_matches_breakdown,
+        "social_labelled_soft": social_labelled_soft,
         "visual_inspection_passed": False,
     }
     return qa, errs, warns

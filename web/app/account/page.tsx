@@ -6,6 +6,7 @@ import { getWatchlist } from "@/lib/social";
 import { Btn, Hero } from "@/components/ui";
 import BuyButton from "@/components/BuyButton";
 import FollowingList from "./FollowingList";
+import PushToggle from "@/components/PushToggle";
 import { SITE } from "@/site.config";
 
 export const dynamic = "force-dynamic";
@@ -81,6 +82,15 @@ export default async function AccountPage() {
             Instruments you follow — we email you when a new edition publishes for them.
           </p>
           <FollowingList initial={follows} />
+        </div>
+
+        <div className="mt-6 rounded-xl border border-line bg-white p-5">
+          <h2 className="text-lg font-bold text-navy">Notifications</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Get a push notification the moment a new edition publishes — including instruments you
+            follow. If push isn&rsquo;t available, we fall back to email.
+          </p>
+          <PushToggle />
         </div>
 
         {showManage && (

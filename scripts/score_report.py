@@ -45,10 +45,25 @@ import csv, json, sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+try:
+    from taxonomy import confidence_bucket
+except Exception:                       # standalone fallback
+    def confidence_bucket(score):
+        try:
+            c = float(score)
+        except (TypeError, ValueError):
+            return None
+        return "<=60" if c <= 60 else ("61-75" if c <= 75 else ">75")
+
 LEDGER = Path("ledger/outcome_ledger.csv")
+# The first 13 columns are the original schema (never reordered - append-only).
+# The trailing columns (Confidence V2 + prediction taxonomy) are additive; older
+# rows simply lack them and read back as "" via DictReader.
 LEDGER_COLS = ["scored_at_utc", "report_id", "instrument", "view", "confidence",
                "window_end_utc", "results", "hits", "misses", "hit_rate_pct",
-               "setup_filled", "setup_outcome", "partial"]
+               "setup_filled", "setup_outcome", "partial",
+               "conf_version", "conf_raw", "asset_class", "pred_type",
+               "direction", "horizon", "market_regime"]
 TAIL_TOLERANCE_MIN = 75  # one hourly bar (stamped at bar-open) + slack
 VALID_MANUAL = {"Y", "N", "NT"}
 
@@ -180,11 +195,10 @@ def calibration(rows):
         return None
     buckets = {"<=60": [0, 0, 0], "61-75": [0, 0, 0], ">75": [0, 0, 0]}  # reports, hits, misses
     for r in rows:
-        try:
-            c = float(r["confidence"])
-        except (ValueError, TypeError):
+        key = confidence_bucket(r.get("confidence"))  # shared with taxonomy.py + web/lib/content.ts
+        if key is None:
             continue
-        b = buckets["<=60" if c <= 60 else ("61-75" if c <= 75 else ">75")]
+        b = buckets[key]
         b[0] += 1
         b[1] += int(r["hits"] or 0)
         b[2] += int(r["misses"] or 0)
@@ -243,10 +257,14 @@ def main():
     filled, outcome = score_setup(p.get("setup"), bars)
     unresolved = sorted(k for k, v in results.items() if v == "MANUAL")
 
+    tax = p.get("taxonomy") or {}
     row = [now.strftime("%Y-%m-%d %H:%M"), p["report_id"], p["instrument"],
            p.get("view", ""), p.get("confidence", ""), p["window_end_utc"],
            " ".join(f"{k}={v}" for k, v in results.items()), hits, misses,
-           rate, filled, outcome, "yes" if partial else "no"]
+           rate, filled, outcome, "yes" if partial else "no",
+           p.get("conf_version", ""), p.get("conf_raw", ""), tax.get("asset_class", ""),
+           tax.get("prediction_type", ""), tax.get("direction", ""),
+           tax.get("horizon", ""), tax.get("market_regime", "")]
     if not opts["dry_run"]:
         LEDGER.parent.mkdir(parents=True, exist_ok=True)
         new_file = not LEDGER.exists()

@@ -13,14 +13,26 @@
 - After the window closes, the engine grades each prediction Hit / Miss / No-trigger against the price tape and appends a row that is never edited.
 - The running hit rate, streaks and calibration are published, so the track record can be checked rather than taken on trust.
 
-## Key pages
+## Research
 - [Reports](https://www.assetframe.co.uk/reports) — the latest published editions.
 - [Track record](https://www.assetframe.co.uk/track-record) — every call, scored against the market.
+- [Reviews](https://www.assetframe.co.uk/reviews) — verified Google reviews.
+
+## Product
 - [How it works](https://www.assetframe.co.uk/how-it-works) — published before the move, graded after.
 - [Pricing](https://www.assetframe.co.uk/pricing) — free Snapshot vs Pro (£9.99/month).
 - [FAQ](https://www.assetframe.co.uk/faq)
+
+## Developers
+- [Developers overview](https://www.assetframe.co.uk/developers) — bring AssetFrame research into your tools and agents.
+- [MCP server](https://www.assetframe.co.uk/developers/mcp) — connect Claude, Cursor and other MCP clients over Streamable HTTP at https://www.assetframe.co.uk/api/mcp (free read-only tools).
+- [REST API](https://www.assetframe.co.uk/developers/api) — a simple read-only JSON API for the catalog, Snapshots and track record, served under https://www.assetframe.co.uk/api/v1. Machine-readable OpenAPI 3.1 schema: https://www.assetframe.co.uk/api/v1/openapi.json
+
+## Company
 - [About](https://www.assetframe.co.uk/about)
-- [Terms](https://www.assetframe.co.uk/terms) and [Privacy](https://www.assetframe.co.uk/privacy)
+- [Feedback](https://www.assetframe.co.uk/feedback)
+- [Contact](https://www.assetframe.co.uk/contact)
+- [Terms](https://www.assetframe.co.uk/terms), [Privacy](https://www.assetframe.co.uk/privacy) and [Accessibility](https://www.assetframe.co.uk/accessibility)
 
 ## Important
 - Not investment advice, not a personal recommendation, not FCA-regulated advice. Markets are uncertain, you can lose money, and no outcome is guaranteed. Do your own research and consider an FCA-authorised adviser.

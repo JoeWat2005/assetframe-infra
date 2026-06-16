@@ -3,7 +3,20 @@
 Usage:
   python scripts/intraday.py SYMBOL [--name NAME] [--datadir data]
          [--hrange 10d] [--drange 1y] [--roll-utc 22] [--related "SYM1,SYM2,SYM3"]
-         [--provider yahoo|eodhd]
+         [--provider yahoo|eodhd] [--anchor live|prior-completed|friday]
+
+--anchor re-derives floor pivots + ATR day-bands on a CHOSEN COMPLETED daily session
+instead of the live/in-progress one (the pre-market case), replacing the old hand-built
+*_anchored.json step:
+  live (default)   current behavior: pivots from the prior completed session, bands
+                   anchored on TODAY'S session open.
+  prior-completed  pivots from the last COMPLETED daily session's HLC, bands anchored
+                   on that session's CLOSE (even if a live session is forming).
+  friday           like prior-completed but the most recent completed Friday session
+                   (weekend / Monday pre-market). Falls back to last completed if none.
+When != live, pivots_classic / atr_day_bands are OVERWRITTEN with the anchored values
+(so scaffold_payload.py uses them transparently), the live values are kept under
+pivots_classic_live / atr_day_bands_live, and an "anchor" block documents the choice.
 
 NAME defaults to the symbol stripped of '=' and '^' (GC=F -> GCF). Pass --name
 explicitly for the canonical instrument prefixes (XAUUSD, GBPJPY, BTC, ES, ...).
@@ -382,6 +395,37 @@ def swings(rows, k=2):
     return hi[-5:], lo[-5:]
 
 
+def compute_pivots_bands(prior_hlc, anchor_close, atr_daily):
+    """Shared floor-pivots + ATR day-band math for both the live and anchored paths.
+
+    prior_hlc    dict/mapping with "h","l","c" of the session the pivots derive from
+                 (live path: prior completed session; anchored path: chosen session).
+    anchor_close band anchor: the live path passes TODAY'S session open; the anchored
+                 paths pass the chosen completed session's close. None => no bands.
+    atr_daily    daily ATR(14); None/0 => no bands.
+
+    Returns (pivots_dict | None, bands_dict | None), UNROUNDED — callers round/tag
+    exactly as before. Math is identical to the original inline block so swapping the
+    live path to this helper is byte-for-byte (see the golden-file tests).
+    """
+    pivots = None
+    if prior_hlc:
+        pp = (prior_hlc["h"] + prior_hlc["l"] + prior_hlc["c"]) / 3
+        rng = prior_hlc["h"] - prior_hlc["l"]
+        pivots = {"PP": pp, "R1": 2 * pp - prior_hlc["l"], "S1": 2 * pp - prior_hlc["h"],
+                  "R2": pp + rng, "S2": pp - rng,
+                  "R3": prior_hlc["h"] + 2 * (pp - prior_hlc["l"]),
+                  "S3": prior_hlc["l"] - 2 * (prior_hlc["h"] - pp)}
+    bands = None
+    if atr_daily and anchor_close is not None:
+        bands = {"open": anchor_close,
+                 "inner_hi": anchor_close + 0.5 * atr_daily,
+                 "inner_lo": anchor_close - 0.5 * atr_daily,
+                 "outer_hi": anchor_close + 1.0 * atr_daily,
+                 "outer_lo": anchor_close - 1.0 * atr_daily}
+    return pivots, bands
+
+
 def main():
     symbol = sys.argv[1]
     args = dict(zip(sys.argv[2::2], sys.argv[3::2]))
@@ -392,6 +436,11 @@ def main():
     roll = int(args.get("--roll-utc", "0"))
     provider = args.get("--provider")
     rel_syms = [s.strip() for s in args.get("--related", "").split(",") if s.strip()]
+    anchor_mode = args.get("--anchor", "live")
+    if anchor_mode not in ("live", "prior-completed", "friday"):
+        print(f"ERROR: --anchor must be one of live|prior-completed|friday (got {anchor_mode!r})",
+              file=sys.stderr)
+        sys.exit(2)
 
     # Warm-up extension: fetch extra lookback BEFORE the display window so the
     # largest chart indicators (hourly SMA50, daily SMA200) are fully warmed at the
@@ -492,17 +541,7 @@ def main():
         basis = "daily_bars_fallback"
         anchor, anchor_tag = tb["c"], "prior_close_fallback"
 
-    pivots = None
-    if prior:
-        pp = (prior["h"] + prior["l"] + prior["c"]) / 3
-        rng = prior["h"] - prior["l"]
-        pivots = {"PP": pp, "R1": 2 * pp - prior["l"], "S1": 2 * pp - prior["h"],
-                  "R2": pp + rng, "S2": pp - rng, "R3": prior["h"] + 2 * (pp - prior["l"]),
-                  "S3": prior["l"] - 2 * (prior["h"] - pp)}
-    bands = {"open": anchor,
-             "inner_hi": anchor + 0.5 * atr_d, "inner_lo": anchor - 0.5 * atr_d,
-             "outer_hi": anchor + 1.0 * atr_d, "outer_lo": anchor - 1.0 * atr_d} \
-        if (atr_d and anchor is not None) else None
+    pivots, bands = compute_pivots_bands(prior, anchor, atr_d)
 
     # hourly trend read (normal path only)
     if not degraded:
@@ -571,6 +610,50 @@ def main():
     if bands_out and anchor_tag:
         bands_out["anchor"] = anchor_tag
 
+    # --- anchored override (--anchor prior-completed|friday) ------------------
+    # Re-derive pivots + ATR day-bands on a CHOSEN COMPLETED daily session instead
+    # of the live/in-progress one (the pre-market case). We OVERWRITE pivots_classic
+    # and atr_day_bands with the anchored values so downstream scaffold_payload.py
+    # transparently consumes them, keep the live values under *_live, and document
+    # the choice in an "anchor" block. Uses the daily series (the spec's
+    # "prior completed daily session HLC" + that session's close as band anchor).
+    anchor_meta = {"mode": anchor_mode}
+    pivots_live_out = bands_live_out = None
+    if anchor_mode != "live":
+        # session day of the live/forming daily bar under the roll convention
+        def _sess_date(ts):
+            return datetime.fromtimestamp(ts - roll * 3600, tz=timezone.utc).date()
+        today_sess = _sess_date(datetime.now(timezone.utc).timestamp())
+        # candidates = daily bars whose session day is already completed (< today's)
+        completed = [(i, r) for i, r in enumerate(daily) if _sess_date(r["ts"]) < today_sess]
+        if not completed:  # clock/data edge: treat all-but-last as completed
+            completed = list(enumerate(daily))[:-1]
+        chosen = None
+        if anchor_mode == "prior-completed":
+            chosen = completed[-1][1] if completed else None
+        elif anchor_mode == "friday":
+            fri = [(i, r) for i, r in completed if _sess_date(r["ts"]).weekday() == 4]
+            chosen = fri[-1][1] if fri else (completed[-1][1] if completed else None)
+            if not fri and completed:
+                anchor_meta["note"] = "no completed Friday session found; fell back to last completed session"
+        if chosen is None or atr_d is None:
+            # nothing safe to anchor on (e.g. <1 completed daily bar, or no ATR):
+            # leave the live pivots/bands untouched, record why.
+            anchor_meta["applied"] = False
+            anchor_meta["reason"] = ("no completed daily session available" if chosen is None
+                                     else "daily ATR(14) unavailable")
+        else:
+            a_close = chosen["c"]
+            a_piv, a_bands = compute_pivots_bands(chosen, a_close, atr_d)
+            a_date = _sess_date(chosen["ts"]).isoformat()
+            pivots_live_out, bands_live_out = pivots_out, bands_out  # preserve live
+            pivots_out = {k: round(v, 6) for k, v in a_piv.items()} if a_piv else None
+            bands_out = {k: round(v, 6) for k, v in a_bands.items()} if a_bands else None
+            if bands_out:
+                bands_out["anchor"] = f"{anchor_mode}_session_close"
+            anchor_meta.update({"applied": True, "session_date": a_date,
+                                "anchor_close": round(a_close, 6)})
+
     # per-SMA warm-up sufficiency at the DISPLAY-window start (charts crop to display):
     # warm = at least n bars exist BEFORE the display cutoff, so the SMA(n)/RSI line
     # is valid from the first visible bar. Never infer trend from a cold SMA.
@@ -626,6 +709,12 @@ def main():
         "files": {"hourly_csv": (candles_dir / f"{name}_hourly.csv").as_posix(),
                   "daily_csv": (candles_dir / f"{name}_daily.csv").as_posix()},
     }
+    if anchor_mode != "live":
+        out["anchor"] = anchor_meta
+        if pivots_live_out is not None:
+            out["pivots_classic_live"] = pivots_live_out
+        if bands_live_out is not None:
+            out["atr_day_bands_live"] = bands_live_out
     (analysis_dir / f"{name}_analysis.json").write_text(json.dumps(out, indent=1), encoding="utf-8")
     print(json.dumps(out, indent=1))
 

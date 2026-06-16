@@ -5,6 +5,7 @@ import { getEntitlement } from "@/lib/entitlements";
 import { Hero, Note } from "@/components/ui";
 import OpenCallsBrowser from "@/components/OpenCallsBrowser";
 import ScoredResults from "@/components/ScoredResults";
+import TrackRecordAnalytics from "@/components/TrackRecordAnalytics";
 import BuyButton from "@/components/BuyButton";
 import { SITE } from "@/site.config";
 
@@ -95,6 +96,16 @@ export default async function TrackRecordPage() {
           <span>Predictions are registered <b>before</b> each window, then graded Hit / Miss / No-trigger against the tape — append-only, never re-tuned.</span>
           <Link href="/how-it-works" className="font-semibold text-navy underline underline-offset-2">How it works →</Link>
         </div>
+
+        <TrackRecordAnalytics
+          byInstrument={tr.byInstrument}
+          byAssetClass={tr.byAssetClass}
+          byPredictionType={tr.byPredictionType}
+          byRegime={tr.byRegime}
+          timeline={tr.timeline}
+          calibrationCurve={tr.calibrationCurve}
+          componentVsOutcome={tr.componentVsOutcome}
+        />
 
         <h2 className="mt-8 mb-1 text-xl font-bold text-navy">Prediction calls</h2>
         <p className="mb-3 text-sm text-muted-foreground">Each call registers its predictions before the window. The badge tracks how many came true (hits/total) once the engine scores it — a majority feeds the homepage streak. Filter by asset or date, then open one to see every prediction.</p>

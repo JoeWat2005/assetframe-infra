@@ -39,16 +39,47 @@ const orgJsonLd = {
       description:
         "AssetFrame publishes next-session market-research reports on stocks, crypto, FX and commodities, with every call graded against the market afterwards. Not regulated financial advice.",
       sameAs: Object.values(SITE.socials).filter(Boolean),
+      contactPoint: {
+        "@type": "ContactPoint",
+        contactType: "customer support",
+        email: SITE.contactEmail,
+        availableLanguage: "en",
+      },
     },
     {
       "@type": "WebSite",
       "@id": `${SITE.url}/#website`,
       name: SITE.brand,
       url: SITE.url,
+      inLanguage: "en-GB",
       publisher: { "@id": `${SITE.url}/#organization` },
+      potentialAction: {
+        "@type": "SearchAction",
+        target: { "@type": "EntryPoint", urlTemplate: `${SITE.url}/reports?q={search_term_string}` },
+        "query-input": "required name=search_term_string",
+      },
     },
   ],
 };
+
+// Reusable BreadcrumbList JSON-LD for nested pages (e.g. /developers/mcp, a report).
+// Drop <BreadcrumbJsonLd items={[{name:"Developers",path:"/developers"},…]} /> into any
+// page that sits below the top level; "Home" is prepended and positions are 1-based.
+export function BreadcrumbJsonLd({ items }: { items: { name: string; path: string }[] }) {
+  const base = SITE.url.replace(/\/$/, "");
+  const all = [{ name: SITE.brand, path: "/" }, ...items];
+  const ld = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: all.map((it, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: it.name,
+      item: `${base}${it.path === "/" ? "" : it.path}`,
+    })),
+  };
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />;
+}
 
 const clerkAppearance = {
   variables: {

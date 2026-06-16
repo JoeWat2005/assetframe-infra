@@ -29,8 +29,37 @@ export default async function ReviewsPage() {
   const data = await getGoogleReviews();
   const hasReviews = !!data && data.reviews.length > 0;
 
+  // AggregateRating + Review JSON-LD, attached to the Organization entity declared in the
+  // root layout (@id reference). Emitted only when real Google reviews are present; Google
+  // requires itemReviewed + a numeric rating, so we guard on both.
+  const reviewsLd =
+    hasReviews && data!.rating != null
+      ? {
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          "@id": `${SITE.url}/#organization`,
+          name: SITE.brand,
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: data!.rating,
+            reviewCount: data!.total,
+            bestRating: 5,
+            worstRating: 1,
+          },
+          review: data!.reviews.map((r) => ({
+            "@type": "Review",
+            author: { "@type": "Person", name: r.author },
+            reviewRating: { "@type": "Rating", ratingValue: r.rating, bestRating: 5, worstRating: 1 },
+            reviewBody: r.text,
+          })),
+        }
+      : null;
+
   return (
     <>
+      {reviewsLd && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(reviewsLd) }} />
+      )}
       <Hero title="Reviews" tag="What people say about AssetFrame." />
       <div className="mx-auto max-w-3xl px-5 py-10">
         {hasReviews ? (
@@ -72,15 +101,11 @@ export default async function ReviewsPage() {
             </div>
           </>
         ) : (
-          <div className="rounded-xl border border-line bg-white p-8 text-center" data-animate="up">
-            <div className="text-lg font-bold text-navy">Reviews are on the way</div>
-            <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-              We&rsquo;re just getting started. As people use AssetFrame, their Google reviews will show here.
-              Used us already? We&rsquo;d love your honest review.
+          <div className="rounded-xl border border-line bg-white p-10 text-center" data-animate="up">
+            <div className="text-xl font-bold text-navy">Coming soon</div>
+            <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+              Reviews are coming soon. As people use AssetFrame, verified reviews will appear here.
             </p>
-            <div className="mt-4 flex flex-wrap justify-center gap-2">
-              <Button asChild variant="outline"><a href={`mailto:${SITE.contactEmail}`}>Share your experience</a></Button>
-            </div>
           </div>
         )}
 
