@@ -4,6 +4,7 @@ import { auth, clerkClient } from "@clerk/nextjs/server";
 import { z } from "zod";
 import { listReports, getReportDetail, getProReportDetail, getTrackRecordPayload } from "@/lib/reports-api";
 import { computeEntitlement, type PublicMeta } from "@/lib/access";
+import { isValidReportRef } from "@/lib/report-key";
 import { SITE } from "@/site.config";
 
 // AssetFrame MCP server (Streamable HTTP) at /api/mcp.
@@ -73,6 +74,7 @@ const handler = createMcpHandler(
         },
       },
       async ({ date, slug }) => {
+        if (!isValidReportRef(date, slug)) return note("No published report found for that date/slug.", true);
         const r = await getReportDetail(date, slug);
         return r ? json(r) : note("No published report found for that date/slug.", true);
       }
@@ -108,6 +110,7 @@ const handler = createMcpHandler(
         if (!(await userIsPro(userId))) {
           return note(`Your account doesn't have an active AssetFrame Pro subscription. Subscribe at ${SITE.url}/pricing to unlock Pro reports.`, true);
         }
+        if (!isValidReportRef(date, slug)) return note("No Pro report found for that date/slug.", true);
         const r = await getProReportDetail(date, slug);
         return r ? json(r) : note("No Pro report found for that date/slug.", true);
       }

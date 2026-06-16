@@ -6,21 +6,32 @@ import { SITE } from "@/site.config";
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "AssetFrame pricing — a free Snapshot on every edition, or Pro at £9.99/month for conditional setups, the price ladder, the scorecard and the full scored ledger. Cancel anytime.",
+    "AssetFrame pricing — a free Snapshot on every edition, or Pro at £9.99/month for conditional setups, the price ladder, the calibrated confidence score, the full scored ledger and Pro access over MCP and the API. Cancel anytime.",
   alternates: { canonical: "/pricing" },
 };
 
 const FREE = [
-  "One-page Snapshot per edition", "Status, risk and broad expected range",
-  "One chart with support/resistance", "Three-bullet thesis and broad scenarios",
+  "One-page Snapshot per edition",
+  "Status, risk and broad expected range",
+  "One chart with support/resistance",
+  "Three-bullet thesis and broad scenarios",
   "Risk-window timeline",
+  "Follow instruments + new-edition alerts",
+  "Public track record + REST API & MCP (free tools)",
 ];
 const PRO = [
-  "Everything in the Snapshot, plus:", "Plain-English 30-second read + verdict",
-  "Conditional long & short setups with R:R", "Price ladder with distances and key-level cards",
-  "Scenario matrix, event-risk timeline, technicals", "Sentiment, positioning and options context where sourced",
-  "Trade-quality scorecard and risk math", "The full source audit and outcome ledger",
-  "Glossary — every chart abbreviation explained",
+  "Everything in the Snapshot, plus:",
+  "Plain-English 30-second read + verdict",
+  "Conditional long & short setups with R:R",
+  "Price ladder with distances and key-level cards",
+  "Calibrated confidence score (0–100), explained",
+  "Registered predictions with explicit windows",
+  "Scenario matrix, event-risk timeline, technicals",
+  "Sentiment, positioning and options context where sourced",
+  "Trade-quality scorecard and risk math",
+  "Full scored outcome ledger + calibration detail",
+  "Pro reports over MCP (OAuth) and the API",
+  "Source audit + glossary of every chart abbreviation",
 ];
 
 export default function PricingPage() {
@@ -51,8 +62,11 @@ export default function PricingPage() {
         </div>
         <Note>
           Checkout opens right here on the page. After paying you&apos;re subscribed automatically against
-          your signed-in account — open any Pro report from <b>Reports</b> or your <b>Account</b>.
+          your signed-in account — open any Pro report from <b>Reports</b> or your <b>Account</b>. Pro is{" "}
+          {SITE.proPrice}, billed through our merchant of record; cancel in one click anytime and keep access to the
+          end of the period you&apos;ve paid for.
         </Note>
+        <p className="mt-4 text-xs text-muted-foreground" data-animate="up">{SITE.disclaimer}</p>
       </div>
     </>
   );

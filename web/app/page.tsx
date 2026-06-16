@@ -14,11 +14,6 @@ import { SITE } from "@/site.config";
 // canonical so the homepage resolves to the site root rather than any query-string variant.
 export const metadata: Metadata = { alternates: { canonical: "/" } };
 
-// Social links surfaced under the proof section (only the ones filled in site.config).
-const SOCIAL_LABELS: Record<string, string> = {
-  x: "X", linkedin: "LinkedIn", youtube: "YouTube", reddit: "Reddit", instagram: "Instagram",
-};
-
 // Publishing model: editions change only when a new one is published, so serve a
 // cached static render and revalidate in the background. Fast for everyone, light on the DB.
 export const revalidate = 300;
@@ -61,7 +56,6 @@ export default async function Home() {
   const latestScored = [...tr.scored]
     .sort((a, b) => (b.windowEnd || "").localeCompare(a.windowEnd || ""))
     .slice(0, 3);
-  const socials = Object.entries(SITE.socials).filter(([, url]) => url);
 
   return (
     <>
@@ -228,23 +222,13 @@ export default async function Home() {
             </CardContent>
           </Card>
         </div>
-        <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-3">
+        <div className="mt-6">
           <Button asChild variant="outline">
             <Link href="/track-record">
               See the full track record
               <ArrowRight data-icon="inline-end" />
             </Link>
           </Button>
-          {socials.length > 0 && (
-            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-              <span>Follow along:</span>
-              {socials.map(([key, url]) => (
-                <a key={key} href={url} target="_blank" rel="noopener noreferrer" className="font-semibold text-navy hover:underline">
-                  {SOCIAL_LABELS[key] ?? key}
-                </a>
-              ))}
-            </div>
-          )}
         </div>
       </Section>
 

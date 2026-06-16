@@ -9,7 +9,7 @@ session is closed or nearly over — the product is next-session intelligence.
 Holiday handling: pass `holiday_dates` (set of date objects, web-verified at
 run time) to skip closed days. Metadata must record what was applied.
 """
-from datetime import datetime, timedelta, timezone, date
+from datetime import datetime, timedelta, timezone
 
 UTC = timezone.utc
 

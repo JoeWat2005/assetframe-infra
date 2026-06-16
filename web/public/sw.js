@@ -7,7 +7,7 @@ self.addEventListener("push", (event) => {
   let payload = {};
   try {
     payload = event.data ? event.data.json() : {};
-  } catch (e) {
+  } catch {
     payload = { title: "AssetFrame", body: event.data ? event.data.text() : "" };
   }
   const title = payload.title || "AssetFrame";
@@ -36,7 +36,7 @@ self.addEventListener("notificationclick", (event) => {
             if ("navigate" in client && target !== client.url) {
               try {
                 client.navigate(target);
-              } catch (e) {
+              } catch {
                 /* navigation not allowed cross-origin — focus is enough */
               }
             }

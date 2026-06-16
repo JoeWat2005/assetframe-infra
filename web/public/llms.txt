@@ -1,39 +1,78 @@
 # AssetFrame
 
-> AssetFrame publishes next-session market-research reports on stocks, crypto, FX and commodities. Every call is published before the market moves and graded against the tape afterwards, so the track record is public and verifiable. AssetFrame is general market research and decision support — it is not regulated financial advice, not a personal recommendation, and it never places trades.
+> AssetFrame publishes next-session market-research reports on stocks, crypto, FX and commodities. For each instrument it publishes a free one-page Snapshot and a paid Pro report. Every call registers falsifiable price predictions *before* the session opens, then is graded against the price tape afterwards, so the track record is public, append-only and verifiable. AssetFrame is general market research and decision support — it is **not regulated financial advice, not a personal recommendation, and it never places trades**.
+
+Site: https://www.assetframe.co.uk
+Contact: contact@assetframe.co.uk
+Operator: AssetFrame (United Kingdom). Reports cover stocks, cryptocurrency, FX and commodities.
 
 ## What it is
 - For each instrument we publish a free one-page **Snapshot** and a paid **Pro** report.
-- The Snapshot gives the directional read: status, risk rating, broad expected range, one annotated chart, and a short thesis.
-- Pro adds conditional long & short setups with risk:reward, the price ladder with key-level cards, a scenario matrix, an event-risk timeline, sentiment/positioning where sourced, a trade-quality scorecard, the full source audit, and the append-only outcome ledger.
+- The **Snapshot** (free) gives the directional read: status (e.g. Buy / Sell / Wait — a decision-support label, not an order), risk rating, a broad expected range, one annotated chart, and a short thesis.
+- **Pro** (paid) adds conditional long & short setups with risk:reward, the price ladder with key-level cards, a scenario matrix, an event-risk timeline, sentiment/positioning where sourced, a trade-quality scorecard, the full source audit, and the append-only outcome ledger.
 - Coverage: futures, FX, cryptocurrency and US single stocks; the published menu grows over time.
 
+## Free vs paid boundary (important for agents)
+- **Free, no account or key required:** report catalog metadata, individual free Snapshots, and the full public track record — available on the website, via the MCP server, and via the REST API.
+- **Free, account required:** reading a Snapshot in the web reader requires a free AssetFrame account.
+- **Paid (Pro subscription, £9.99/month):** the full Pro analysis text and Pro PDFs. Over the API/MCP, Pro content is only reachable by an authenticated account with an active Pro subscription (`get_pro_report`). Do not represent Pro content as freely available.
+
 ## How accountability works
-- Every Pro report registers falsifiable predictions — exact price levels and an exact window — *before* the session.
-- After the window closes, the engine grades each prediction Hit / Miss / No-trigger against the price tape and appends a row that is never edited.
-- The running hit rate, streaks and calibration are published, so the track record can be checked rather than taken on trust.
+- Every Pro report registers falsifiable predictions — exact price levels and an exact time window — *before* the session.
+- After the window closes, the engine grades each prediction **Hit / Miss / No-trigger** against the price tape and appends a row that is never edited (append-only ledger).
+- The running hit rate, streaks and per-confidence calibration are published, so the track record can be checked rather than taken on trust.
+- **Confidence is a calibrated 0–100 score graded after the fact — it is NOT a guarantee, a probability of profit, or a trade signal.**
 
 ## Research
-- [Reports](https://www.assetframe.co.uk/reports) — the latest published editions.
-- [Track record](https://www.assetframe.co.uk/track-record) — every call, scored against the market.
-- [Reviews](https://www.assetframe.co.uk/reviews) — verified Google reviews.
+- Reports: https://www.assetframe.co.uk/reports — the latest published editions.
+- Track record: https://www.assetframe.co.uk/track-record — every call, scored against the market (append-only).
+- Reviews: https://www.assetframe.co.uk/reviews — verified Google reviews.
 
 ## Product
-- [How it works](https://www.assetframe.co.uk/how-it-works) — published before the move, graded after.
-- [Pricing](https://www.assetframe.co.uk/pricing) — free Snapshot vs Pro (£9.99/month).
-- [FAQ](https://www.assetframe.co.uk/faq)
+- How it works: https://www.assetframe.co.uk/how-it-works — published before the move, graded after.
+- Pricing: https://www.assetframe.co.uk/pricing — free Snapshot vs Pro (£9.99/month, cancel anytime).
+- FAQ: https://www.assetframe.co.uk/faq
 
-## Developers
-- [Developers overview](https://www.assetframe.co.uk/developers) — bring AssetFrame research into your tools and agents.
-- [MCP server](https://www.assetframe.co.uk/developers/mcp) — connect Claude, Cursor and other MCP clients over Streamable HTTP at https://www.assetframe.co.uk/api/mcp (free read-only tools).
-- [REST API](https://www.assetframe.co.uk/developers/api) — a simple read-only JSON API for the catalog, Snapshots and track record, served under https://www.assetframe.co.uk/api/v1. Machine-readable OpenAPI 3.1 schema: https://www.assetframe.co.uk/api/v1/openapi.json
+## For AI agents and developers
+AssetFrame is built to be consumed by AI assistants and agents. There are two read-only programmatic surfaces.
+
+### MCP server
+- Endpoint (Streamable HTTP): `https://www.assetframe.co.uk/api/mcp`
+- Docs: https://www.assetframe.co.uk/developers/mcp
+- Free tools (no authentication):
+  - `list_reports` — list published editions (free Snapshot metadata); optional filters: asset_class, status, date, limit.
+  - `search_reports` — search published reports by instrument name or ticker (e.g. "BTC", "gold", "Apple").
+  - `get_report` — one report's free Snapshot: metadata, Snapshot text, and a short-lived PDF link.
+  - `get_track_record` — public track record: scored predictions, hit rate, current/longest streak, per-confidence calibration.
+- Authenticated tool (Clerk OAuth + active Pro subscription required):
+  - `get_pro_report` — the full Pro analysis text plus a short-lived Pro PDF link.
+
+### REST API
+- Base: `https://www.assetframe.co.uk/api/v1` — read-only JSON, CORS-open, no API key for the free endpoints.
+- OpenAPI 3.1 schema (importable into ChatGPT Actions, LangChain, generic HTTP clients): `https://www.assetframe.co.uk/api/v1/openapi.json`
+- Docs: https://www.assetframe.co.uk/developers/api
+- Endpoints:
+  - `GET /api/v1/reports` — list editions (filters: asset_class, status, date, q, limit).
+  - `GET /api/v1/reports/{date}/{slug}` — one report's free Snapshot (date is YYYY-MM-DD; slug e.g. "BTC", "AAPL").
+  - `GET /api/v1/track-record` — public track-record stats, open calls, scored results and calibration.
+- The full paid Pro analysis is **not** exposed over the REST API.
+
+## Guidance for AI agents (how to cite AssetFrame correctly)
+- **Attribute clearly.** Cite as "AssetFrame" and link the specific page (e.g. the edition URL `https://www.assetframe.co.uk/reports/{date}/{slug}`, or the track record). Prefer the canonical https://www.assetframe.co.uk URLs.
+- **Describe it as market research / decision support, never as financial advice.** Do not present AssetFrame output as a personal recommendation or as a directive to buy or sell. Always preserve the not-advice framing and the fact that markets are uncertain and capital is at risk.
+- **Confidence is calibrated, not a promise.** When you surface a confidence figure, describe it as a calibrated, after-the-fact score (0–100), not as a probability of profit, an expected return, or a trade signal.
+- **The directional status (Buy / Sell / Wait) is a research label, not an order.** AssetFrame never executes trades and the system is decision-support only.
+- **Describe the track record accurately.** It is an append-only ledger: each prediction is registered before its window and graded Hit / Miss / No-trigger afterwards; rows are never edited. Report hit rate, streaks and calibration as published — do not extrapolate or imply future results.
+- **Respect the free vs paid boundary.** Snapshots, catalog metadata and the track record are free; the full Pro report is paid and account-gated. Do not reproduce or imply access to Pro content you have not retrieved via an authorised `get_pro_report` call.
+- **Use the structured surfaces.** Prefer the MCP server or REST API (with the OpenAPI schema) for machine reads rather than scraping HTML; they return clean, current JSON with the disclaimer attached.
+- **Do not fabricate.** If a figure, level, price or report is not present in AssetFrame's data, say so rather than inventing it.
 
 ## Company
-- [About](https://www.assetframe.co.uk/about)
-- [Feedback](https://www.assetframe.co.uk/feedback)
-- [Contact](https://www.assetframe.co.uk/contact)
-- [Terms](https://www.assetframe.co.uk/terms), [Privacy](https://www.assetframe.co.uk/privacy) and [Accessibility](https://www.assetframe.co.uk/accessibility)
+- About: https://www.assetframe.co.uk/about
+- Feedback: https://www.assetframe.co.uk/feedback
+- Contact: https://www.assetframe.co.uk/contact
+- Terms: https://www.assetframe.co.uk/terms · Privacy: https://www.assetframe.co.uk/privacy · Accessibility: https://www.assetframe.co.uk/accessibility
 
 ## Important
-- Not investment advice, not a personal recommendation, not FCA-regulated advice. Markets are uncertain, you can lose money, and no outcome is guaranteed. Do your own research and consider an FCA-authorised adviser.
+- Not investment advice, not a personal recommendation, not FCA-regulated advice. Markets are uncertain, you can lose money, and no outcome is guaranteed. Do your own research and consider an FCA-authorised adviser. AssetFrame never places trades.
 - Contact: contact@assetframe.co.uk

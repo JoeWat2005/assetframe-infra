@@ -16,31 +16,37 @@ import { cn } from "@/lib/utils";
 
 const HOME = process.env.NODE_ENV === "production" ? SITE.url : "/";
 
+// Items within each category are alphabetical by label (per request).
 const RESEARCH = [
   { href: "/reports", label: "Reports", desc: "Browse the latest published editions.", icon: FileText },
-  { href: "/track-record", label: "Track record", desc: "Every call, scored against the tape.", icon: LineChart },
   { href: "/reviews", label: "Reviews", desc: "What people say about AssetFrame.", icon: Star },
+  { href: "/track-record", label: "Track record", desc: "Every call, scored against the tape.", icon: LineChart },
 ];
 const PRODUCT = [
+  { href: "/faq", label: "FAQ", desc: "Common questions, answered.", icon: HelpCircle },
   { href: "/how-it-works", label: "How it works", desc: "Published before the move, graded after.", icon: BookOpen },
   { href: "/pricing", label: "Pricing", desc: "Free Snapshots, and what Pro adds.", icon: CreditCard },
-  { href: "/faq", label: "FAQ", desc: "Common questions, answered.", icon: HelpCircle },
 ];
 const DEVELOPERS = [
-  { href: "/developers", label: "Overview", desc: "MCP server & API for agents.", icon: Code2 },
   { href: "/developers/mcp", label: "MCP server", desc: "Connect Claude, Cursor and other agents.", icon: Terminal },
+  { href: "/developers", label: "Overview", desc: "MCP server & API for agents.", icon: Code2 },
   { href: "/developers/api", label: "REST API", desc: "Read-only JSON for catalog & record.", icon: Code2 },
 ];
 const COMPANY = [
   { href: "/about", label: "About", desc: "Who we are and what we stand for.", icon: Building2 },
-  { href: "/feedback", label: "Feedback", desc: "Tell us what to build or cover next.", icon: MessageSquare },
-  { href: "/contact", label: "Contact", desc: "Reach us about anything.", icon: Mail },
-  { href: "/terms", label: "Terms", desc: "The terms of using AssetFrame.", icon: FileText },
-  { href: "/privacy", label: "Privacy", desc: "How we handle your data.", icon: ShieldCheck },
   { href: "/accessibility", label: "Accessibility", desc: "Our WCAG 2.2 AA commitment.", icon: Accessibility },
+  { href: "/contact", label: "Contact", desc: "Reach us about anything.", icon: Mail },
+  { href: "/feedback", label: "Feedback", desc: "Tell us what to build or cover next.", icon: MessageSquare },
+  { href: "/privacy", label: "Privacy", desc: "How we handle your data.", icon: ShieldCheck },
+  { href: "/terms", label: "Terms", desc: "The terms of using AssetFrame.", icon: FileText },
 ];
-// Mobile is a flat list of every page (the sheet scrolls if it overflows).
-const MOBILE = [...RESEARCH, ...PRODUCT, ...DEVELOPERS, ...COMPANY];
+// Categories in alphabetical order — drives both desktop dropdowns and grouped mobile sections.
+const NAV = [
+  { title: "Company", items: COMPANY },
+  { title: "Developers", items: DEVELOPERS },
+  { title: "Product", items: PRODUCT },
+  { title: "Research", items: RESEARCH },
+];
 
 function MenuGrid({ items }: { items: typeof RESEARCH }) {
   return (
@@ -112,32 +118,16 @@ export default function Header() {
         <div className="hidden items-center gap-3 lg:flex">
           <NavigationMenu viewport={false}>
             <NavigationMenuList className="gap-1">
-              <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-transparent text-sm font-semibold text-ink hover:text-navy data-[state=open]:text-navy">
-                  Research
-                </NavigationMenuTrigger>
-                {/* right-align: the triggers sit in a right-aligned cluster, so a left-anchored
-                    440px panel would overflow the viewport. right-0 makes it extend leftward. */}
-                <NavigationMenuContent className="left-auto right-0"><MenuGrid items={RESEARCH} /></NavigationMenuContent>
-              </NavigationMenuItem>
-              <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-transparent text-sm font-semibold text-ink hover:text-navy data-[state=open]:text-navy">
-                  Product
-                </NavigationMenuTrigger>
-                <NavigationMenuContent className="left-auto right-0"><MenuGrid items={PRODUCT} /></NavigationMenuContent>
-              </NavigationMenuItem>
-              <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-transparent text-sm font-semibold text-ink hover:text-navy data-[state=open]:text-navy">
-                  Developers
-                </NavigationMenuTrigger>
-                <NavigationMenuContent className="left-auto right-0"><MenuGrid items={DEVELOPERS} /></NavigationMenuContent>
-              </NavigationMenuItem>
-              <NavigationMenuItem>
-                <NavigationMenuTrigger className="bg-transparent text-sm font-semibold text-ink hover:text-navy data-[state=open]:text-navy">
-                  Company
-                </NavigationMenuTrigger>
-                <NavigationMenuContent className="left-auto right-0"><MenuGrid items={COMPANY} /></NavigationMenuContent>
-              </NavigationMenuItem>
+              {/* right-align: the triggers sit in a right-aligned cluster, so a left-anchored
+                  440px panel would overflow the viewport. right-0 makes it extend leftward. */}
+              {NAV.map((group) => (
+                <NavigationMenuItem key={group.title}>
+                  <NavigationMenuTrigger className="bg-transparent text-sm font-semibold text-ink hover:text-navy data-[state=open]:text-navy">
+                    {group.title}
+                  </NavigationMenuTrigger>
+                  <NavigationMenuContent className="left-auto right-0"><MenuGrid items={group.items} /></NavigationMenuContent>
+                </NavigationMenuItem>
+              ))}
             </NavigationMenuList>
           </NavigationMenu>
           <div className="flex items-center gap-3 border-l border-line pl-3">
@@ -155,19 +145,29 @@ export default function Header() {
             </SheetTrigger>
             <SheetContent side="right" className="flex w-72 flex-col gap-0 overflow-y-auto">
               <SheetTitle className="px-4 pt-4 text-navy">Menu</SheetTitle>
-              <nav className="mt-2 flex flex-col px-2">
-                {MOBILE.map((n) => (
-                  <SheetClose asChild key={n.href}>
-                    <Link
-                      href={n.href}
-                      className={cn(
-                        "rounded-lg px-3 py-2.5 text-sm font-semibold",
-                        isActive(n.href) ? "bg-tile text-navy" : "text-ink hover:bg-muted"
-                      )}
-                    >
-                      {n.label}
-                    </Link>
-                  </SheetClose>
+              {/* Grouped by category with headings (mirrors the desktop dropdowns) so the
+                  list reads as sections rather than one long scroll. */}
+              <nav className="mt-2 flex flex-col gap-1 px-2 pb-2">
+                {NAV.map((group) => (
+                  <div key={group.title} className="mt-2 first:mt-0">
+                    <div className="px-3 pb-1 pt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {group.title}
+                    </div>
+                    {group.items.map((n) => (
+                      <SheetClose asChild key={n.href}>
+                        <Link
+                          href={n.href}
+                          className={cn(
+                            "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold",
+                            isActive(n.href) ? "bg-tile text-navy" : "text-ink hover:bg-muted"
+                          )}
+                        >
+                          <n.icon className="size-4 shrink-0 text-navy" />
+                          {n.label}
+                        </Link>
+                      </SheetClose>
+                    ))}
+                  </div>
                 ))}
               </nav>
               <div className="mt-3 border-t border-line px-2 pt-3">

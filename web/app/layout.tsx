@@ -20,12 +20,32 @@ export const metadata: Metadata = {
     "Pre-session market research and decision support: a free Snapshot and a full Pro report " +
     "for each instrument, with every call scored against the tape afterwards. Not personal advice.",
   metadataBase: new URL(SITE.url),
-  openGraph: { title: SITE.brand, description: SITE.tagline, type: "website" },
-  twitter: { card: "summary_large_image", title: SITE.brand, description: SITE.tagline },
-  robots: { index: true, follow: true },
+  alternates: { canonical: "/" },
+  applicationName: SITE.brand,
+  openGraph: {
+    title: SITE.brand,
+    description: SITE.tagline,
+    type: "website",
+    siteName: SITE.brand,
+    url: SITE.url,
+    locale: "en_GB",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE.brand,
+    description: SITE.tagline,
+    site: "@AssetFrame",
+    creator: "@AssetFrame",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 },
+  },
 };
 
-// Sitewide structured data so search + AI engines recognise the entity and site.
+// Sitewide structured data so search + AI engines recognise the entity, the site, the
+// product (with its MCP/REST access points) and the public track-record dataset.
 const orgJsonLd = {
   "@context": "https://schema.org",
   "@graph": [
@@ -58,6 +78,65 @@ const orgJsonLd = {
         target: { "@type": "EntryPoint", urlTemplate: `${SITE.url}/reports?q={search_term_string}` },
         "query-input": "required name=search_term_string",
       },
+    },
+    {
+      // The product itself: scored market-research reports, reachable by humans (web) and
+      // by AI agents (MCP server + read-only REST API). Helps assistants describe and cite
+      // what AssetFrame actually is and how to access it.
+      "@type": "SoftwareApplication",
+      "@id": `${SITE.url}/#software`,
+      name: SITE.brand,
+      url: SITE.url,
+      applicationCategory: "FinanceApplication",
+      applicationSubCategory: "Market research and decision support",
+      operatingSystem: "Web, MCP, REST API",
+      description:
+        "AssetFrame publishes a free Snapshot and a paid Pro report for each instrument (stocks, crypto, FX, commodities). " +
+        "Every call registers falsifiable price predictions before the session and is graded Hit / Miss / No-trigger against " +
+        "the tape afterwards in an append-only ledger. Confidence is a calibrated, after-the-fact score — not a guarantee or a " +
+        "trade signal. Reports are accessible to AI agents over an MCP server and a read-only REST API. " +
+        "This is general market research and decision support, not regulated financial advice, and it never places trades.",
+      publisher: { "@id": `${SITE.url}/#organization` },
+      provider: { "@id": `${SITE.url}/#organization` },
+      isAccessibleForFree: true,
+      featureList: [
+        "Free one-page Snapshot per instrument",
+        "Pro report: conditional setups, price ladder, scenario matrix, event-risk timeline, trade-quality scorecard",
+        "Public append-only outcome ledger with calibrated confidence",
+        "MCP server for AI agents (Streamable HTTP)",
+        "Read-only REST API with OpenAPI 3.1 schema",
+      ],
+      offers: [
+        { "@type": "Offer", name: "Snapshot", price: "0", priceCurrency: "GBP", description: "Free one-page Snapshot on every edition." },
+        { "@type": "Offer", name: "Pro", price: "9.99", priceCurrency: "GBP", category: "subscription", url: `${SITE.url}/pricing`, description: "Full Pro report, billed monthly. Cancel anytime." },
+      ],
+      potentialAction: {
+        "@type": "ConsumeAction",
+        name: "Access AssetFrame research over MCP",
+        target: { "@type": "EntryPoint", urlTemplate: `${SITE.url}/api/mcp`, contentType: "application/json" },
+      },
+    },
+    {
+      // The public track record as a citable dataset: every scored call, append-only,
+      // available as a page and as a JSON endpoint.
+      "@type": "Dataset",
+      "@id": `${SITE.url}/#track-record`,
+      name: "AssetFrame public track record",
+      url: `${SITE.url}/track-record`,
+      description:
+        "Append-only record of every AssetFrame call: registered before its prediction window and graded Hit / Miss / No-trigger " +
+        "against the price tape afterwards, with overall hit rate, streaks and per-confidence calibration. Rows are never edited.",
+      license: `${SITE.url}/terms`,
+      isAccessibleForFree: true,
+      creator: { "@id": `${SITE.url}/#organization` },
+      publisher: { "@id": `${SITE.url}/#organization` },
+      distribution: [
+        {
+          "@type": "DataDownload",
+          encodingFormat: "application/json",
+          contentUrl: `${SITE.url}/api/v1/track-record`,
+        },
+      ],
     },
   ],
 };

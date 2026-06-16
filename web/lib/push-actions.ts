@@ -53,11 +53,15 @@ export async function saveSubscription(
 export async function removeSubscription(
   endpoint: string
 ): Promise<{ ok: boolean; message?: string }> {
+  const { userId } = await auth();
+  if (!userId) return { ok: false, message: "Sign in to manage notifications." };
   if (!sql) return { ok: false, message: "Notifications are unavailable right now." };
   const ep = (endpoint || "").trim();
   if (!ep) return { ok: false, message: "Invalid subscription." };
   try {
-    await sql.query(`DELETE FROM push_subscriptions WHERE endpoint = $1`, [ep]);
+    // Scope to the caller: a user can only delete their own subscription, never
+    // another user's by guessing/replaying an endpoint string.
+    await sql.query(`DELETE FROM push_subscriptions WHERE endpoint = $1 AND clerk_user_id = $2`, [ep, userId]);
     return { ok: true };
   } catch {
     return { ok: false, message: "Could not disable notifications — please try again." };

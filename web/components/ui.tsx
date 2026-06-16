@@ -43,6 +43,8 @@ export function Btn({
   return (
     <Link href={href} className={`${base} ${styles}`} target={target} rel={rel}>
       {children}
+      {/* WCAG G201 — warn screen-reader users the link opens a new tab/window. */}
+      {external && <span className="sr-only"> (opens in a new tab)</span>}
     </Link>
   );
 }

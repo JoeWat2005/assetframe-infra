@@ -18,3 +18,22 @@ export function classifyReportKey(key: string): ReportTier | null {
   if (PREVIEW_RE.test(key)) return "public";
   return null;
 }
+
+// The (date, slug) pair that identifies a report edition, validated with the SAME anchored
+// date + slug grammar as the object keys above. Used by the public REST API and the MCP
+// tools to reject malformed input before it reaches the data layer (defence in depth — the
+// DB lookups are already parameterized, but this stops path-traversal/garbage slugs and
+// over-long inputs from ever hitting a query). Linear/anchored, so not ReDoS-prone.
+const DATE_RE = new RegExp(`^${DATE}$`);
+const SLUG_RE = new RegExp(`^${SLUG}$`);
+const SLUG_MAX = 64;
+
+export function isValidReportRef(date: string, slug: string): boolean {
+  return (
+    typeof date === "string" &&
+    typeof slug === "string" &&
+    slug.length <= SLUG_MAX &&
+    DATE_RE.test(date) &&
+    SLUG_RE.test(slug)
+  );
+}
