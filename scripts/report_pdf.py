@@ -767,7 +767,7 @@ def build_html_twin(p, respath):
     exec_rows = "".join(f'<div class="kv"><span class="k">{e(str(k))}</span><span class="v">{e(str(v))}</span></div>'
                         for k, v in p.get("exec", []))
     sections = "".join(f'<section><h2>{e(s["heading"])}</h2>{s["html"]}</section>' for s in p.get("sections", []))
-    return f"""<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{e(p["title"])}</title><style>
+    return f"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{e(p["title"])}</title><style>
 @page {{ size: A4; margin: 13mm; }} * {{ box-sizing: border-box; }}
 body {{ font-family: Arial, sans-serif; color: #24292f; font-size: 10.2px; line-height: 1.45; margin: 0 auto; max-width: 760px; padding: 12px; }}
 h1 {{ font-size: 20px; margin: 0; }} .sub {{ color: #57606a; font-size: 11px; margin: 2px 0 8px; }}
@@ -818,7 +818,8 @@ def chart_svg(rows, cfg):
         return PT + ch * (1 - (p - lo) / (hi - lo))
 
     e = html_mod.escape
-    P = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" font-family="Arial" font-size="10">',
+    P = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" font-family="Arial" font-size="10" '
+         f'role="img" aria-label="{e(cfg.get("label", "Price chart"))}">',
          f'<text x="{PL}" y="14" font-size="12" font-weight="600" fill="#24292f">{e(cfg.get("label", ""))}</text>']
     if notes:
         P.append(f'<text x="{W - PR}" y="14" text-anchor="end" font-size="8.5" '
