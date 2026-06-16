@@ -72,7 +72,7 @@ export default function AboutPage() {
 
         <h2 className="mt-10 mb-2 text-xl font-bold text-navy" data-animate="up">What AssetFrame is not</h2>
         <p className="text-[15px] leading-relaxed text-ink" data-animate="up">
-          AssetFrame is general market research and decision support. It is <b>not</b> investment advice and not a
+          AssetFrame is general market research and decision support. It is <b>not</b>{" "}investment advice and not a
           personal recommendation, we never tell anyone to buy or sell, and we place no trades. We don&rsquo;t
           guarantee outcomes — markets are uncertain and you can lose money. A calibrated confidence score is an
           estimate of how a setup may resolve, not a promise of profit. Do your own research and consider an

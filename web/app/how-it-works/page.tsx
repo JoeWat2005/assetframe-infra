@@ -54,7 +54,7 @@ export default function HowItWorksPage() {
         <p className="text-[15px] leading-relaxed text-ink" data-animate="up">
           Each Pro report carries a confidence score from 0 to 100. It isn&rsquo;t a hand-waved number: the engine
           blends three things — the <b>market structure</b> the setup is built on, the ledger&rsquo;s own <b>track
-          record</b> for similar calls, and how well the <b>catalysts</b> are sourced. Because it&rsquo;s graded against
+          record</b> for similar calls, and how well the <b>catalysts</b>{" "}are sourced. Because it&rsquo;s graded against
           the tape after every window, it&rsquo;s <b>calibrated</b> — the goal is that calls rated, say, 70 actually
           come true about 70% of the time. It is a calibrated estimate of how a setup may resolve, <b>not</b> a
           guarantee, a probability of profit, or a signal to trade. Always read it next to the risk rating and the
@@ -83,7 +83,7 @@ export default function HowItWorksPage() {
             <Bell className="size-5" />
           </div>
           <p className="text-sm text-ink">
-            <b>Follow</b> any instrument and we&rsquo;ll tell you the moment a new edition publishes. Alerts go out as
+            <b>Follow</b>{" "}any instrument and we&rsquo;ll tell you the moment a new edition publishes. Alerts go out as
             browser/web-push notifications where your browser supports them, with email as the fallback — so you read
             the call before the session, not after.
           </p>
