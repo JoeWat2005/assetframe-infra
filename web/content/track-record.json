@@ -1,13 +1,260 @@
 {
- "stats": { "reportsScored": 0, "openCalls": 0, "predictionsGraded": 0, "hitRate": null },
- "open": [],
- "scored": [],
- "calibration": null,
- "byInstrument": [],
- "byAssetClass": [],
- "byPredictionType": [],
- "byRegime": [],
- "timeline": [],
- "calibrationCurve": [],
- "componentVsOutcome": []
+  "stats": {
+    "reportsScored": 2,
+    "openCalls": 2,
+    "predictionsGraded": 11,
+    "hitRate": 45.5
+  },
+  "open": [
+    {
+      "reportId": "AF-20260616-GBPJPY",
+      "instrument": "British Pound / Japanese Yen",
+      "symbol": "GBPJPY",
+      "view": "GBP/JPY opens the Tuesday session sitting on the S1 pivot (214.77) - a counter-trend pullback inside an intact daily uptrend - on a Bank of Japan decision day. With a 25bp hike ~94% priced, the base case is a sharp but CONTAINED reaction within the wide outer bands rather than a clean trend break; the lean is two-sided and event-gated.",
+      "confidence": 60,
+      "windowEnd": "2026-06-16 21:00",
+      "n": 6,
+      "nManual": 1,
+      "hits": 3,
+      "scored": true,
+      "predictions": [
+        {
+          "id": "P1",
+          "type": "close_above",
+          "text": "Session settles below PP 215.07",
+          "manual": false,
+          "expect": false,
+          "verdict": "N",
+          "predType": "range_hold"
+        },
+        {
+          "id": "P2",
+          "type": "range_inside",
+          "text": "Stays inside the outer bands 213.79 - 216.09",
+          "manual": false,
+          "expect": true,
+          "verdict": "Y",
+          "predType": "range_hold"
+        },
+        {
+          "id": "P3",
+          "type": "touches",
+          "text": "R1 215.26 is not touched",
+          "manual": false,
+          "expect": false,
+          "verdict": "N",
+          "predType": "range_hold"
+        },
+        {
+          "id": "P4",
+          "type": "no_close_below",
+          "text": "No hourly close below the floor 214.5",
+          "manual": false,
+          "expect": true,
+          "verdict": "Y",
+          "predType": "range_hold"
+        },
+        {
+          "id": "P5",
+          "type": "no_close_above_after_touch",
+          "text": "First touch of R1 215.26 does not close an hour above R2 215.56 (NT if untouched)",
+          "manual": false,
+          "expect": true,
+          "verdict": "Y",
+          "predType": "range_hold"
+        },
+        {
+          "id": "P6",
+          "type": "manual",
+          "text": "Net session: the priced BoJ outcome does NOT produce a directional trend day - GBP/JPY closes the Tuesday window (21:00 UTC) within roughly 50 pips of the 214.77 open level, with neither outer band (213.79 / 216.09) sustaining an hourly close beyond it.",
+          "manual": true,
+          "expect": null,
+          "verdict": "N",
+          "predType": "range_hold"
+        }
+      ]
+    },
+    {
+      "reportId": "AF-20260616-GBPUSD",
+      "instrument": "British Pound / US Dollar",
+      "symbol": "GBPUSD",
+      "view": "Cable sits below the PP balance level in an aligned-down read, but realized volatility is low and the session is hostage to a pre-FOMC holding pattern - the base case is a contained, mildly-lower range rather than a clean trend extension.",
+      "confidence": 65,
+      "windowEnd": "2026-06-16 21:00",
+      "n": 6,
+      "nManual": 1,
+      "hits": 2,
+      "scored": true,
+      "predictions": [
+        {
+          "id": "P1",
+          "type": "close_above",
+          "text": "Session settles below PP 1.3426",
+          "manual": false,
+          "expect": false,
+          "verdict": "N",
+          "predType": "range_hold"
+        },
+        {
+          "id": "P2",
+          "type": "range_inside",
+          "text": "Stays inside the outer bands 1.3334 - 1.349",
+          "manual": false,
+          "expect": true,
+          "verdict": "Y",
+          "predType": "range_hold"
+        },
+        {
+          "id": "P3",
+          "type": "touches",
+          "text": "R1 1.3444 is not touched",
+          "manual": false,
+          "expect": false,
+          "verdict": "Y",
+          "predType": "range_hold"
+        },
+        {
+          "id": "P4",
+          "type": "no_close_below",
+          "text": "No hourly close below the floor 1.3407",
+          "manual": false,
+          "expect": true,
+          "verdict": "N",
+          "predType": "range_hold"
+        },
+        {
+          "id": "P5",
+          "type": "no_close_above_after_touch",
+          "text": "First touch of R1 1.3444 does not close an hour above R2 1.348 (NT if untouched)",
+          "manual": false,
+          "expect": true,
+          "verdict": "NT",
+          "predType": "range_hold"
+        },
+        {
+          "id": "P6",
+          "type": "manual",
+          "text": "Pre-FOMC discipline holds: no hourly close back above the PP 1.3426 before the New York afternoon (i.e. the aligned-down cap survives the European session).",
+          "manual": true,
+          "expect": null,
+          "verdict": "N",
+          "predType": "range_hold"
+        }
+      ]
+    }
+  ],
+  "scored": [
+    {
+      "reportId": "AF-20260616-GBPUSD",
+      "instrument": "British Pound / US Dollar",
+      "view": "Cable sits below the PP balance level in an aligned-down read, but realized volatility is low and the session is hostage to a pre-FOMC holding pattern - the base case is a contained, mildly-lower range rather than a clean trend extension.",
+      "confidence": "65",
+      "results": "P1=N P2=Y P3=Y P4=N P5=NT P6=N",
+      "hits": "2",
+      "misses": "3",
+      "hitRate": "40.0",
+      "windowEnd": "2026-06-16 21:00",
+      "assetClass": "fx",
+      "predType": "range_hold"
+    },
+    {
+      "reportId": "AF-20260616-GBPJPY",
+      "instrument": "British Pound / Japanese Yen",
+      "view": "GBP/JPY opens the Tuesday session sitting on the S1 pivot (214.77) - a counter-trend pullback inside an intact daily uptrend - on a Bank of Japan decision day. With a 25bp hike ~94% priced, the base case is a sharp but CONTAINED reaction within the wide outer bands rather than a clean trend break; the lean is two-sided and event-gated.",
+      "confidence": "60",
+      "results": "P1=N P2=Y P3=N P4=Y P5=Y P6=N",
+      "hits": "3",
+      "misses": "3",
+      "hitRate": "50.0",
+      "windowEnd": "2026-06-16 21:00",
+      "assetClass": "fx",
+      "predType": "range_hold"
+    }
+  ],
+  "calibration": null,
+  "byInstrument": [
+    {
+      "instrument": "British Pound / Japanese Yen",
+      "ticker": "GBPJPY",
+      "assetClass": "fx",
+      "reportsScored": 1,
+      "hits": 3,
+      "misses": 3,
+      "hitRate": 50.0
+    },
+    {
+      "instrument": "British Pound / US Dollar",
+      "ticker": "GBPUSD",
+      "assetClass": "fx",
+      "reportsScored": 1,
+      "hits": 2,
+      "misses": 3,
+      "hitRate": 40.0
+    }
+  ],
+  "byAssetClass": [
+    {
+      "assetClass": "fx",
+      "reportsScored": 2,
+      "hits": 5,
+      "misses": 6,
+      "hitRate": 45.5
+    }
+  ],
+  "byPredictionType": [
+    {
+      "predType": "range_hold",
+      "reportsScored": 2,
+      "hits": 5,
+      "misses": 6,
+      "hitRate": 45.5
+    }
+  ],
+  "byRegime": [
+    {
+      "regime": "high_volatility",
+      "reportsScored": 1,
+      "hits": 3,
+      "misses": 3,
+      "hitRate": 50.0
+    },
+    {
+      "regime": "trend_down",
+      "reportsScored": 1,
+      "hits": 2,
+      "misses": 3,
+      "hitRate": 40.0
+    }
+  ],
+  "timeline": [
+    {
+      "reportId": "AF-20260616-GBPJPY",
+      "instrument": "British Pound / Japanese Yen",
+      "windowEnd": "2026-06-16 21:00",
+      "perReportHitRate": 50.0,
+      "cumulativeHitRate": 50.0
+    },
+    {
+      "reportId": "AF-20260616-GBPUSD",
+      "instrument": "British Pound / US Dollar",
+      "windowEnd": "2026-06-16 21:00",
+      "perReportHitRate": 40.0,
+      "cumulativeHitRate": 45.5
+    }
+  ],
+  "calibrationCurve": [],
+  "componentVsOutcome": [
+    {
+      "band": "Moderate",
+      "reports": 1,
+      "avgConfidence": 60.0,
+      "hitRate": 50.0
+    },
+    {
+      "band": "Elevated",
+      "reports": 1,
+      "avgConfidence": 65.0,
+      "hitRate": 40.0
+    }
+  ]
 }

@@ -1,1 +1,40 @@
-[]
+[
+  {
+    "date": "2026-06-16",
+    "slug": "GBPUSD",
+    "instrument": "British Pound / US Dollar",
+    "ticker": "GBPUSD",
+    "assetClass": "FX - spot (major)",
+    "status": "Caution",
+    "risk": "Elevated (central-bank week)",
+    "bias": "Mild bearish tilt, range-gated into the FOMC",
+    "lastPrice": "1.34059 (last completed hourly bar Tue 16 Jun 07:00 UK; spot, Yahoo via the project engine)",
+    "dataQuality": 7,
+    "windowEnd": "Tue 16 Jun 2026 22:00 UK",
+    "reportDate": "2026-06-16",
+    "catalystStatus": "FOMC, BoJ and BoE meeting dates taken from official central-bank calendars cross-referenced with Reuters/preview coverage; rate-hold pricing from futures via Reuters/Polymarket as of 13 Jun. Last checked 16 Jun.",
+    "freeHtml": "/api/report/2026-06-16/GBPUSD/free.html",
+    "freePdf": "/api/report/2026-06-16/GBPUSD/free.pdf",
+    "preview": "/api/report/2026-06-16/GBPUSD/preview.png",
+    "hasPro": true
+  },
+  {
+    "date": "2026-06-16",
+    "slug": "GBPJPY",
+    "instrument": "British Pound / Japanese Yen",
+    "ticker": "GBPJPY",
+    "assetClass": "FX - spot (cross)",
+    "status": "Caution",
+    "risk": "High - BoJ decision in-window",
+    "bias": "Two-sided into the BoJ; a mild mean-reversion lean off S1 support within a daily uptrend",
+    "lastPrice": "214.77 (last completed hourly bar Tue 16 Jun 07:00 UK; spot, Yahoo via the project engine)",
+    "dataQuality": 7,
+    "windowEnd": "Tue 16 Jun 2026 22:00 UK",
+    "reportDate": "2026-06-16",
+    "catalystStatus": "BoJ, FOMC and BoE meeting dates from official central-bank calendars cross-referenced with Reuters/preview coverage; the BoJ hike consensus (+25bp to 1.00%, ~94%) is from a Reuters economist poll. The BoJ statement time is not fixed in advance. Last checked 16 Jun.",
+    "freeHtml": "/api/report/2026-06-16/GBPJPY/free.html",
+    "freePdf": "/api/report/2026-06-16/GBPJPY/free.pdf",
+    "preview": "/api/report/2026-06-16/GBPJPY/preview.png",
+    "hasPro": true
+  }
+]
