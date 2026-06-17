@@ -13,6 +13,12 @@ const client =
         region: "auto",
         endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
         credentials: { accessKeyId, secretAccessKey },
+        // Cloudflare R2 rejects presigned URLs that carry the AWS SDK v3 default checksum
+        // params (x-amz-checksum-mode / x-amz-sdk-checksum-algorithm) with HTTP 403 — which
+        // broke every report preview/thumbnail. Force checksums off so presigned GET/PUT
+        // URLs stay R2-compatible. (Verified: boto3 presign without these params returns 200.)
+        requestChecksumCalculation: "WHEN_REQUIRED",
+        responseChecksumValidation: "WHEN_REQUIRED",
       })
     : null;
 
