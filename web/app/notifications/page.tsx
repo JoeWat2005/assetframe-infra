@@ -6,7 +6,6 @@ import { getCatalog } from "@/lib/content";
 import { Hero } from "@/components/ui";
 import PushToggle from "@/components/PushToggle";
 import FollowingList from "@/components/FollowingList";
-import NewsletterSignupLight from "@/components/NewsletterSignupLight";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -116,13 +115,13 @@ export default async function NotificationsPage() {
         <div className="mt-6 rounded-xl border border-line bg-white p-5">
           <h2 className="text-lg font-bold text-navy">Newsletter</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Subscribe to receive a daily email digest of every new edition — all instruments in one
-            message. This is separate from push notifications; you can have both, either, or neither.
-            To unsubscribe, use the link at the bottom of any newsletter email.
+            A daily email digest of every new edition — all instruments in one message. It&rsquo;s
+            separate from push notifications; you can have both, either, or neither.{" "}
+            <strong className="font-semibold text-ink">Subscribe using the newsletter form in the
+            site footer.</strong>{" "}
+            To unsubscribe, use the &ldquo;Unsubscribe&rdquo; link at the bottom of any newsletter
+            email (every newsletter includes a one-click unsubscribe).
           </p>
-          <div className="mt-3 max-w-sm">
-            <NewsletterSignupLight />
-          </div>
         </div>
 
       </div>
