@@ -1,5 +1,5 @@
 import "server-only";
-import { getCatalog, getEdition, getEditionProKeys, getTrackRecord, type Edition, type TrackRecord } from "./content";
+import { getCatalog, getEdition, getTrackRecord, type Edition, type TrackRecord } from "./content";
 import { getObjectText, signedReportUrl } from "./r2";
 import { SITE } from "@/site.config";
 
@@ -52,11 +52,28 @@ export type ListFilters = {
   limit?: number;
 };
 
+// Map a display asset class ("Crypto - major", "US equity", "Equity index future") to a short
+// key so the asset_class filter accepts crypto|fx|equity|index|commodity|rates as well as the
+// exact stored label.
+function assetClassKey(display: string): string {
+  const d = display.toLowerCase();
+  if (d.includes("crypto")) return "crypto";
+  if (d.includes("fx") || d.includes("forex") || d.includes("currency")) return "fx";
+  if (d.includes("index")) return "index";
+  if (d.includes("equity") || d.includes("stock")) return "equity";
+  if (d.includes("commodit") || d.includes("metal") || d.includes("energy")) return "commodity";
+  if (d.includes("bond") || d.includes("rate")) return "rates";
+  return d;
+}
+
 export async function listReports(f: ListFilters = {}) {
   let items = await getCatalog();
   if (f.assetClass) {
-    const a = f.assetClass.toLowerCase();
-    items = items.filter((e) => e.assetClass.toLowerCase() === a);
+    const a = f.assetClass.toLowerCase().trim();
+    items = items.filter((e) => {
+      const disp = e.assetClass.toLowerCase();
+      return disp === a || assetClassKey(disp) === a;
+    });
   }
   if (f.status) {
     const s = f.status.toLowerCase();
@@ -99,12 +116,12 @@ function htmlToText(html: string): string {
 export async function getReportDetail(date: string, slug: string) {
   const e = await getEdition(date, slug);
   if (!e) return null;
+  // R2 object keys are the bare "<date>/<slug>/<file>" — NOT the "/api/report/..." route paths
+  // the DB stores (those are for the gated web route). Build the keys directly from date+slug.
   let snapshotText = "";
-  if (e.freeHtml) {
-    const html = await getObjectText(e.freeHtml);
-    if (html) snapshotText = htmlToText(html);
-  }
-  const snapshotPdfUrl = e.freePdf ? await signedReportUrl(e.freePdf, 600) : null;
+  const html = await getObjectText(`${e.date}/${e.slug}/free.html`);
+  if (html) snapshotText = htmlToText(html);
+  const snapshotPdfUrl = await signedReportUrl(`${e.date}/${e.slug}/free.pdf`, 600);
   return {
     ...toSummary(e),
     snapshotText,
@@ -119,13 +136,11 @@ export async function getReportDetail(date: string, slug: string) {
 export async function getProReportDetail(date: string, slug: string) {
   const e = await getEdition(date, slug);
   if (!e || !e.hasPro) return null;
-  const keys = await getEditionProKeys(date, slug);
+  // Bare R2 keys (see getReportDetail) — the stored pro_*_key columns are route paths.
   let proText = "";
-  if (keys?.proHtml) {
-    const html = await getObjectText(keys.proHtml);
-    if (html) proText = htmlToText(html);
-  }
-  const proPdfUrl = keys?.proPdf ? await signedReportUrl(keys.proPdf, 600) : null;
+  const html = await getObjectText(`${e.date}/${e.slug}/pro.html`);
+  if (html) proText = htmlToText(html);
+  const proPdfUrl = await signedReportUrl(`${e.date}/${e.slug}/pro.pdf`, 600);
   return { ...toSummary(e), proText, proPdfUrl, disclaimer: DISCLAIMER };
 }
 
