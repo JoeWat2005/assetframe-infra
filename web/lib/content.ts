@@ -164,6 +164,25 @@ export async function getAllEditions(): Promise<Edition[]> {
   return readJson<Edition[]>("catalog.json", []);
 }
 
+// Admin view: ONLY hidden editions, most-recent first. These were generated behind the
+// engine's approval gate (hidden=true) and are awaiting an admin to approve (un-hide) them.
+// Uncached so the list updates the moment one is approved.
+export async function getHiddenEditions(): Promise<Edition[]> {
+  if (sql) {
+    try {
+      const rows = await sql.query(
+        `SELECT ${EDITION_COLS} ${EDITION_FROM} WHERE coalesce(e.hidden, false) = true ORDER BY e.report_date DESC, e.slug DESC`
+      );
+      return (rows as Row[]).map(rowToEdition);
+    } catch {
+      /* fall through */
+    }
+  }
+  // JSON fallback can't represent hidden editions (the catalog excludes them), so an empty
+  // list is the correct degraded behaviour.
+  return readJson<Edition[]>("catalog.json", []).filter((e) => e.hidden);
+}
+
 export async function getEdition(date: string, slug: string): Promise<Edition | undefined> {
   if (sql) {
     try {

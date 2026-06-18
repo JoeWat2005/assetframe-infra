@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { ExternalLink, BarChart3, LineChart, Users, CreditCard, Percent, FileText, Download, PoundSterling } from "lucide-react";
-import { getAllEditions } from "@/lib/content";
+import { getAllEditions, getHiddenEditions } from "@/lib/content";
 import { getEntitlement } from "@/lib/entitlements";
 import { getAdminStats } from "@/lib/admin-stats";
-import { Hero, Note } from "@/components/ui";
+import { Badge, Hero, Note } from "@/components/ui";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TrendChart, ClassBars, SplitDonut } from "@/components/admin/Charts";
@@ -14,6 +14,7 @@ import AdminLog from "./AdminLog";
 import ProToggle from "./ProToggle";
 import AdminTierToggle from "./AdminTierToggle";
 import EditionsBrowser from "./EditionsBrowser";
+import ApproveButton from "./ApproveButton";
 import { getAuditLog } from "@/lib/audit";
 import { getFeedback } from "@/lib/feedback";
 import FeedbackInbox from "./FeedbackInbox";
@@ -27,8 +28,8 @@ export default async function AdminPage() {
   if (!ent.signedIn) redirect("/sign-in");
   if (!ent.admin) redirect("/account");
 
-  const [stats, catalog, auditLog, feedback] = await Promise.all([
-    getAdminStats(), getAllEditions(), getAuditLog(), getFeedback(),
+  const [stats, catalog, pending, auditLog, feedback] = await Promise.all([
+    getAdminStats(), getAllEditions(), getHiddenEditions(), getAuditLog(), getFeedback(),
   ]);
   const titleById = new Map(catalog.map((e) => [`${e.date}/${e.slug}`, e.instrument]));
 
@@ -227,6 +228,55 @@ export default async function AdminPage() {
           the Pro-subscriber count and MRR come from the billing table. Full member management (refunds,
           bans, roles) lives in the <b>Clerk</b> and <b>Lemon Squeezy</b> dashboards.
         </Note>
+
+        {/* Pending approval — editions generated hidden by the engine's approval gate, awaiting publish */}
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle className="text-base">Pending approval</CardTitle>
+            <CardDescription>
+              Editions generated behind the engine&rsquo;s approval gate (hidden). Preview each one, then <b>Approve</b> to publish it to the public site, sitemap and reader.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className={pending.length === 0 ? undefined : "px-0"}>
+            {pending.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No editions awaiting approval.</p>
+            ) : (
+              <div className="divide-y divide-line border-t border-line">
+                {pending.map((e) => {
+                  const id = `${e.date}/${e.slug}`;
+                  return (
+                    <div key={id} className="flex flex-wrap items-center justify-between gap-3 px-6 py-3 text-sm">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <b className="truncate">{e.instrument}</b>
+                          <span className="text-muted-foreground">{e.ticker}</span>
+                          {e.status && <Badge label={e.status} kind="status" />}
+                          {e.risk && <Badge label={e.risk} kind="risk" />}
+                        </div>
+                        <div className="mt-0.5 text-[11px] text-muted-foreground">
+                          {e.reportDate} · prediction window to {e.windowEnd || "—"}
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <Button asChild size="sm" variant="outline">
+                          <a href={`/reports/${id}`} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink data-icon="inline-start" />Preview
+                          </a>
+                        </Button>
+                        <Button asChild size="sm" variant="outline">
+                          <a href={`/api/report/${id}/free.pdf`} target="_blank" rel="noopener noreferrer">
+                            <FileText data-icon="inline-start" />PDF
+                          </a>
+                        </Button>
+                        <ApproveButton id={id} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <h2 className="mt-6 mb-1 text-xl font-bold text-navy">Editions</h2>
         <p className="mb-3 text-sm text-muted-foreground">
