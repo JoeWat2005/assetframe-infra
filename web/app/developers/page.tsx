@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 const BASE = SITE.url.replace(/\/$/, "");
 
 const CARDS = [
-  { href: "/developers/mcp", icon: Terminal, title: "MCP server", desc: "Connect Claude Code, Claude Desktop, Cursor and other agents to AssetFrame over the Model Context Protocol — five read-only tools, four of them keyless." },
+  { href: "/developers/mcp", icon: Terminal, title: "MCP server", desc: "Connect Claude Code, Claude Desktop, Cursor and other agents to AssetFrame over the Model Context Protocol — five read-only tools: keyless discovery, an OAuth sign-in to read reports, and Pro for subscribers." },
   { href: "/developers/api", icon: Code2, title: "REST API", desc: "A read-only JSON API: public catalog and track record, plus API-key access to each Snapshot and the full Pro analysis. CORS-open; every payload carries the disclaimer." },
   { href: `${BASE}/api/v1/openapi.json`, icon: FileJson, title: "OpenAPI schema", desc: "Import the OpenAPI 3.1 document straight into ChatGPT Actions, LangChain or any client that speaks OpenAPI.", external: true },
 ];
@@ -73,8 +73,8 @@ export default function DevelopersPage() {
         <p className="text-muted-foreground" data-animate="up">
           Everything we publish can be read programmatically. The report catalog and the public track record are open —
           no key required. Reading an individual report&rsquo;s content takes a free API key tied to your account, and
-          the full Pro analysis additionally needs a Pro subscription. The same model applies over MCP, with an OAuth
-          sign-in for Pro.
+          the full Pro analysis additionally needs a Pro subscription. Over MCP it&rsquo;s the same split — an OAuth
+          sign-in stands in for the key.
         </p>
         <div className="mt-6 grid gap-4 sm:grid-cols-2" data-animate="up">
           {CARDS.map((c) => (

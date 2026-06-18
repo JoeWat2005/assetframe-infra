@@ -13,9 +13,9 @@ Operator: AssetFrame (United Kingdom). Reports cover stocks, cryptocurrency, FX 
 - Coverage: futures, FX, cryptocurrency and US single stocks; the published menu grows over time.
 
 ## Free vs paid boundary (important for agents)
-- **Free, no account or key required:** report catalog metadata, individual free Snapshots, and the full public track record — available on the website, via the MCP server, and via the REST API.
-- **Free, account required:** reading a Snapshot in the web reader requires a free AssetFrame account.
-- **Paid (Pro subscription, £9.99/month):** the full Pro analysis text and Pro PDFs. Over the API/MCP, Pro content is only reachable by an authenticated account with an active Pro subscription (`get_pro_report`). Do not represent Pro content as freely available.
+- **Open, no account or key required:** report catalog metadata and the full public track record — on the website, via the MCP server (`list_reports`, `search_reports`, `get_track_record`), and via the REST API (`GET /api/v1/reports`, `GET /api/v1/track-record`).
+- **Free, account required:** reading an individual Snapshot (its text + a short-lived PDF link). An account is required on every surface — sign-in in the web reader, an API key over REST (`GET /api/v1/reports/{date}/{slug}`), or an OAuth sign-in over MCP (`get_report`). There is no charge; an account is simply required.
+- **Paid (Pro subscription, £9.99/month):** the full Pro analysis text and Pro PDFs. Reachable only by an authenticated account with an active Pro subscription — over REST (`GET /api/v1/reports/{date}/{slug}/pro`) or MCP (`get_pro_report`). Do not represent Pro content as freely available.
 
 ## How accountability works
 - Every Pro report registers falsifiable predictions — exact price levels and an exact time window — *before* the session.
@@ -39,23 +39,25 @@ AssetFrame is built to be consumed by AI assistants and agents. There are two re
 ### MCP server
 - Endpoint (Streamable HTTP): `https://www.assetframe.co.uk/api/mcp`
 - Docs: https://www.assetframe.co.uk/developers/mcp
-- Free tools (no authentication):
+- Keyless tools (no authentication):
   - `list_reports` — list published editions (free Snapshot metadata); optional filters: asset_class, status, date, limit.
   - `search_reports` — search published reports by instrument name or ticker (e.g. "BTC", "gold", "Apple").
-  - `get_report` — one report's free Snapshot: metadata, Snapshot text, and a short-lived PDF link.
   - `get_track_record` — public track record: scored predictions, hit rate, current/longest streak, per-confidence calibration.
-- Authenticated tool (Clerk OAuth + active Pro subscription required):
+- Sign-in required (Clerk OAuth; any account):
+  - `get_report` — one report's free Snapshot: metadata, Snapshot text, and a short-lived PDF link.
+- Pro subscription required (Clerk OAuth + active Pro):
   - `get_pro_report` — the full Pro analysis text plus a short-lived Pro PDF link.
 
 ### REST API
-- Base: `https://www.assetframe.co.uk/api/v1` — read-only JSON, CORS-open, no API key for the free endpoints.
+- Base: `https://www.assetframe.co.uk/api/v1` — read-only JSON, CORS-open. The catalog and track record are public; report content needs an API key (`Authorization: Bearer af_live_...`) generated from your account.
 - OpenAPI 3.1 schema (importable into ChatGPT Actions, LangChain, generic HTTP clients): `https://www.assetframe.co.uk/api/v1/openapi.json`
 - Docs: https://www.assetframe.co.uk/developers/api
 - Endpoints:
-  - `GET /api/v1/reports` — list editions (filters: asset_class, status, date, q, limit).
-  - `GET /api/v1/reports/{date}/{slug}` — one report's free Snapshot (date is YYYY-MM-DD; slug e.g. "BTC", "AAPL").
-  - `GET /api/v1/track-record` — public track-record stats, open calls, scored results and calibration.
-- The full paid Pro analysis is **not** exposed over the REST API.
+  - `GET /api/v1/reports` — list editions (filters: asset_class, status, date, q, limit). Public.
+  - `GET /api/v1/track-record` — public track-record stats, open calls, scored results and calibration. Public.
+  - `GET /api/v1/reports/{date}/{slug}` — one report's free Snapshot (date YYYY-MM-DD; slug e.g. "BTC", "AAPL"). API key required.
+  - `GET /api/v1/reports/{date}/{slug}/pro` — the full Pro analysis text + short-lived Pro PDF link. API key + active Pro subscription required.
+  - `GET /api/v1/openapi.json` — the OpenAPI 3.1 schema. Public.
 
 ## Guidance for AI agents (how to cite AssetFrame correctly)
 - **Attribute clearly.** Cite as "AssetFrame" and link the specific page (e.g. the edition URL `https://www.assetframe.co.uk/reports/{date}/{slug}`, or the track record). Prefer the canonical https://www.assetframe.co.uk URLs.
@@ -63,7 +65,7 @@ AssetFrame is built to be consumed by AI assistants and agents. There are two re
 - **Confidence is calibrated, not a promise.** When you surface a confidence figure, describe it as a calibrated, after-the-fact score (0–100), not as a probability of profit, an expected return, or a trade signal.
 - **The directional status (Buy / Sell / Wait) is a research label, not an order.** AssetFrame never executes trades and the system is decision-support only.
 - **Describe the track record accurately.** It is an append-only ledger: each prediction is registered before its window and graded Hit / Miss / No-trigger afterwards; rows are never edited. Report hit rate, streaks and calibration as published — do not extrapolate or imply future results.
-- **Respect the free vs paid boundary.** Snapshots, catalog metadata and the track record are free; the full Pro report is paid and account-gated. Do not reproduce or imply access to Pro content you have not retrieved via an authorised `get_pro_report` call.
+- **Respect the free vs paid boundary.** The catalog and track record are open; Snapshots are free to read but require an account (API key over REST, OAuth over MCP); the full Pro report is paid and account-gated. Do not reproduce or imply access to Pro content you have not retrieved via an authorised `get_pro_report` call.
 - **Use the structured surfaces.** Prefer the MCP server or REST API (with the OpenAPI schema) for machine reads rather than scraping HTML; they return clean, current JSON with the disclaimer attached.
 - **Do not fabricate.** If a figure, level, price or report is not present in AssetFrame's data, say so rather than inventing it.
 

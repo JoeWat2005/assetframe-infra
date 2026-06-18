@@ -8,10 +8,12 @@ import { isValidReportRef } from "@/lib/report-key";
 import { SITE } from "@/site.config";
 
 // AssetFrame MCP server (Streamable HTTP) at /api/mcp.
-//  - Free tools (list/search/get_report/track_record): no auth.
-//  - get_pro_report: gated behind Clerk OAuth (MCP Authorization spec) AND a live Pro
-//    subscription. The handler is wrapped with experimental_withMcpAuth({ required: false })
-//    so the free tools keep working without a token; the Pro tool enforces auth itself.
+//  - Keyless tools (list_reports / search_reports / get_track_record): no auth — discovery.
+//  - get_report: requires Clerk OAuth sign-in (any account), mirroring the REST rule that
+//    reading report content needs an account.
+//  - get_pro_report: requires OAuth sign-in AND a live Pro subscription.
+// The handler is wrapped with experimental_withMcpAuth({ required: false }) so the keyless
+// tools keep working without a token; the gated tools enforce auth themselves in-handler.
 export const maxDuration = 60;
 
 const json = (data: unknown) => ({ content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] });
@@ -67,13 +69,20 @@ const handler = createMcpHandler(
       {
         title: "Get a report",
         description:
-          "Get one report's free Snapshot: metadata, the Snapshot text, and a short-lived PDF link. The full Pro analysis requires a subscription (see get_pro_report).",
+          "Get one report's free Snapshot: metadata, the Snapshot text, and a short-lived PDF link. Requires signing in with your AssetFrame account (OAuth) — any account works. The full Pro analysis additionally requires a subscription (see get_pro_report).",
         inputSchema: {
           date: z.string().describe("ISO date YYYY-MM-DD"),
           slug: z.string().describe("instrument slug, e.g. 'AAPL' or 'BTC'"),
         },
       },
-      async ({ date, slug }) => {
+      async ({ date, slug }, extra) => {
+        const userId = extra?.authInfo?.extra?.userId as string | undefined;
+        if (!userId) {
+          return note(
+            "Reading a report requires signing in with your AssetFrame account (OAuth). The catalog (list_reports / search_reports) and track record stay open without sign-in.",
+            true
+          );
+        }
         if (!isValidReportRef(date, slug)) return note("No published report found for that date/slug.", true);
         const r = await getReportDetail(date, slug);
         return r ? json(r) : note("No published report found for that date/slug.", true);

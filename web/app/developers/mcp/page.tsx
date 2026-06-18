@@ -7,21 +7,21 @@ import { SITE } from "@/site.config";
 
 export const metadata: Metadata = {
   title: "MCP server",
-  description: "Connect Claude Code, Claude Desktop, Cursor and other MCP clients to AssetFrame research. Free read-only tools over Streamable HTTP.",
+  description: "Connect Claude Code, Claude Desktop, Cursor and other MCP clients to AssetFrame research. Read-only tools over Streamable HTTP — keyless discovery, OAuth sign-in to read reports.",
   alternates: { canonical: "/developers/mcp" },
 };
 
 const BASE = SITE.url.replace(/\/$/, "");
 const MCP_URL = `${BASE}/api/mcp`;
 
-// Full tool reference. access: "free" needs no auth; "oauth" needs a Clerk OAuth sign-in
-// with a live Pro subscription.
-const TOOLS: { name: string; access: "free" | "oauth"; params: string; returns: string }[] = [
+// Full tool reference. access: "free" needs no auth; "signin" needs a Clerk OAuth sign-in
+// (any account); "pro" needs an OAuth sign-in with a live Pro subscription.
+const TOOLS: { name: string; access: "free" | "signin" | "pro"; params: string; returns: string }[] = [
   { name: "list_reports", access: "free", params: "asset_class?, status?, date?, limit? (1–200, default 50)", returns: "{ total, returned, reports[], disclaimer } — Snapshot metadata per edition." },
   { name: "search_reports", access: "free", params: "query (required), limit?", returns: "Same shape as list_reports, filtered by instrument name or ticker." },
-  { name: "get_report", access: "free", params: "date (YYYY-MM-DD), slug (e.g. BTC)", returns: "Snapshot metadata + snapshotText + short-lived snapshotPdfUrl + proAvailable." },
+  { name: "get_report", access: "signin", params: "date (YYYY-MM-DD), slug (e.g. BTC)", returns: "Snapshot metadata + snapshotText + short-lived snapshotPdfUrl. Requires an OAuth sign-in (any account)." },
   { name: "get_track_record", access: "free", params: "(none)", returns: "{ stats, open[], scored[], calibration, disclaimer }." },
-  { name: "get_pro_report", access: "oauth", params: "date (YYYY-MM-DD), slug", returns: "Full Pro analysis text + short-lived Pro PDF link. Requires OAuth + active Pro." },
+  { name: "get_pro_report", access: "pro", params: "date (YYYY-MM-DD), slug", returns: "Full Pro analysis text + short-lived Pro PDF link. Requires OAuth + active Pro." },
 ];
 
 const cliCmd = `claude mcp add --transport http assetframe ${MCP_URL}`;
@@ -52,18 +52,23 @@ const remoteJson = `{
   }
 }`;
 
-const sampleResponse = `// get_report → date: "2026-06-15", slug: "BTC"
+const sampleResponse = `// get_report → date: "2026-06-18", slug: "AAPL"  (after OAuth sign-in)
 {
-  "id": "2026-06-15/BTC",
-  "date": "2026-06-15",
-  "instrument": "Bitcoin",
-  "ticker": "BTC",
-  "assetClass": "crypto",
+  "id": "2026-06-18/AAPL",
+  "date": "2026-06-18",
+  "slug": "AAPL",
+  "instrument": "Apple Inc.",
+  "ticker": "AAPL",
+  "assetClass": "US equity",
+  "assetClassKey": "equity",
   "status": "Wait",
   "risk": "High",
-  "confidence": 60,
-  "windowEnd": "2026-06-16T20:00:00Z",
-  "snapshotText": "AssetFrame Snapshot — Bitcoin (BTC) ...",
+  "bias": "Neutral",
+  "confidence": 55,
+  "windowEnd": "Thu 18 Jun 2026 21:00 UK",
+  "hasPro": true,
+  "url": "${BASE}/reports/2026-06-18/AAPL",
+  "snapshotText": "AssetFrame Snapshot — Apple Inc. (AAPL) ...",
   "snapshotPdfUrl": "https://.../free.pdf?X-Amz-Expires=600...",
   "proAvailable": true,
   "proAccess": "Subscribe at ${BASE}/pricing to unlock the full Pro analysis.",
@@ -78,9 +83,11 @@ client = MultiServerMCPClient({
 })
 tools = await client.get_tools()  # list_reports, search_reports, get_report, get_track_record`;
 
-const sub = ({ access }: { access: "free" | "oauth" }) =>
+const sub = ({ access }: { access: "free" | "signin" | "pro" }) =>
   access === "free" ? (
     <span className="ml-2 rounded-full bg-[#e3f0e3] px-2 py-0.5 text-[11px] font-semibold text-[#1f6b34]">Free · no auth</span>
+  ) : access === "signin" ? (
+    <span className="ml-2 rounded-full bg-[#e6eefb] px-2 py-0.5 text-[11px] font-semibold text-[#23457e]">OAuth sign-in</span>
   ) : (
     <span className="ml-2 rounded-full bg-[#fde9d6] px-2 py-0.5 text-[11px] font-semibold text-[#9a5b18]">OAuth + Pro</span>
   );
@@ -92,8 +99,9 @@ export default function McpDocsPage() {
       <div className="mx-auto max-w-3xl px-5 py-10">
         <p className="text-muted-foreground">
           The Model Context Protocol (MCP) lets AI clients call tools on a server. AssetFrame runs a hosted MCP server
-          over Streamable HTTP, so any MCP-capable client can read the published research. Four of the five tools need
-          no authentication; only <code>get_pro_report</code> requires an OAuth sign-in with a Pro subscription.
+          over Streamable HTTP, so any MCP-capable client can read the published research. Discovery is keyless —
+          listing, searching and the track record need no sign-in. Reading an individual report needs an OAuth sign-in
+          (any account); the full Pro analysis additionally needs a Pro subscription.
         </p>
 
         <h2 className="mt-8 text-xl font-bold text-navy">Endpoint</h2>
@@ -152,11 +160,11 @@ export default function McpDocsPage() {
         <h2 className="mt-10 text-xl font-bold text-navy">Sample response</h2>
         <CodeBlock code={sampleResponse} />
 
-        <h2 className="mt-10 text-xl font-bold text-navy">Pro access (OAuth)</h2>
+        <h2 className="mt-10 text-xl font-bold text-navy">Authentication (OAuth)</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          The four free tools return the Snapshot tier and never require sign-in. <code>get_pro_report</code> returns the
-          full Pro analysis and is gated by the MCP Authorization spec — your client signs you in with your AssetFrame
-          account and the server checks for a live Pro subscription.
+          Discovery — listing, searching and the track record — is keyless. Reading a report and the full Pro analysis
+          both sign you in via the MCP Authorization spec: your client opens an OAuth window for your AssetFrame
+          account. Any account can read Snapshots; the Pro report additionally needs a live Pro subscription.
         </p>
         <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-[#33415c]">
           <li>Connect to <code className="text-[12px]">{MCP_URL}</code> with an OAuth-capable client (Claude Desktop, Cursor, or any client via <code>mcp-remote</code>).</li>
@@ -165,8 +173,8 @@ export default function McpDocsPage() {
             <code className="text-[12px]">/.well-known/oauth-protected-resource</code> and{" "}
             <code className="text-[12px]">/.well-known/oauth-authorization-server</code>. Dynamic Client Registration is enabled, so there is nothing to pre-register.
           </li>
-          <li>When you call <code>get_pro_report</code>, the client opens a sign-in window. Sign in with the AssetFrame account that holds your Pro subscription.</li>
-          <li>The Pro tool then returns the full report text plus a short-lived Pro PDF link. Without an active subscription it returns a message pointing to <Link href="/pricing" className="font-semibold text-navy hover:underline">/pricing</Link>.</li>
+          <li>When you call <code>get_report</code> or <code>get_pro_report</code>, the client opens a sign-in window. Sign in with your AssetFrame account (for Pro, the account that holds your subscription).</li>
+          <li><code>get_report</code> returns the Snapshot; <code>get_pro_report</code> returns the full Pro text plus a short-lived Pro PDF link. Without an active subscription, <code>get_pro_report</code> returns a message pointing to <Link href="/pricing" className="font-semibold text-navy hover:underline">/pricing</Link>.</li>
         </ol>
 
         <AgentGuidance />

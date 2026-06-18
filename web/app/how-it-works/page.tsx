@@ -97,8 +97,8 @@ export default function HowItWorksPage() {
           <p className="text-sm text-ink">
             Everything we publish can be read programmatically. Connect tools and agents — Claude, ChatGPT, Cursor and
             others — over our <b>MCP server</b>, a read-only <b>REST API</b> or the <b>OpenAPI</b> schema. The report
-            catalog, free Snapshots and the public track record are keyless; full Pro analysis is gated by an OAuth
-            sign-in and a subscription. <Link className="text-navy underline" href="/developers">See the developer docs →</Link>
+            catalog and public track record are keyless; reading a report needs an account (an API key over REST, an
+            OAuth sign-in over MCP), and the full Pro analysis additionally needs a subscription. <Link className="text-navy underline" href="/developers">See the developer docs →</Link>
           </p>
         </div>
 

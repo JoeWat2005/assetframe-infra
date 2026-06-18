@@ -49,8 +49,8 @@ const FAQS: { q: string; a: React.ReactNode; text: string }[] = [
   },
   {
     q: "Can ChatGPT, Claude or other AI agents use AssetFrame?",
-    a: <>Yes. We expose an <b>MCP server</b>, a read-only <b>REST API</b> and an <b>OpenAPI</b> schema, so agents and tools like Claude, ChatGPT and Cursor can read our data directly. The report catalog, free Snapshots and the public track record are keyless; full Pro analysis is gated by an OAuth sign-in and a subscription. <Link className="text-navy underline" href="/developers">Developer docs →</Link></>,
-    text: "Yes. We expose an MCP server, a read-only REST API and an OpenAPI schema, so agents and tools like Claude, ChatGPT and Cursor can read our data directly. The report catalog, free Snapshots and the public track record are keyless; full Pro analysis is gated by an OAuth sign-in and a subscription.",
+    a: <>Yes. We expose an <b>MCP server</b>, a read-only <b>REST API</b> and an <b>OpenAPI</b> schema, so agents and tools like Claude, ChatGPT and Cursor can read our data directly. The report catalog and public track record are keyless; reading a report needs an account (an API key over REST, an OAuth sign-in over MCP), and the full Pro analysis additionally needs a subscription. <Link className="text-navy underline" href="/developers">Developer docs →</Link></>,
+    text: "Yes. We expose an MCP server, a read-only REST API and an OpenAPI schema, so agents and tools like Claude, ChatGPT and Cursor can read our data directly. The report catalog and public track record are keyless; reading a report needs an account (an API key over REST, an OAuth sign-in over MCP), and the full Pro analysis additionally needs a subscription.",
   },
   {
     q: "How much does Pro cost, and how do I pay?",
