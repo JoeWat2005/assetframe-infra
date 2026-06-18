@@ -17,6 +17,7 @@ export type ReportSummary = {
   instrument: string;
   ticker: string;
   assetClass: string;
+  assetClassKey: string;
   status: string;
   risk: string;
   bias: string;
@@ -34,6 +35,7 @@ function toSummary(e: Edition): ReportSummary {
     instrument: e.instrument,
     ticker: e.ticker,
     assetClass: e.assetClass,
+    assetClassKey: assetClassKey(e.assetClass),
     status: e.status,
     risk: e.risk,
     bias: e.bias,
@@ -146,5 +148,15 @@ export async function getProReportDetail(date: string, slug: string) {
 
 export async function getTrackRecordPayload() {
   const tr: TrackRecord = await getTrackRecord();
-  return { ...tr, disclaimer: DISCLAIMER };
+  const coerceConf = (raw: string | number): number | null => {
+    if (raw === "" || raw == null) return null;
+    const n = Number(raw);
+    return isNaN(n) ? null : n;
+  };
+  return {
+    ...tr,
+    open: tr.open.map((c) => ({ ...c, confidence: coerceConf(c.confidence) })),
+    scored: tr.scored.map((s) => ({ ...s, confidence: coerceConf(s.confidence) })),
+    disclaimer: DISCLAIMER,
+  };
 }

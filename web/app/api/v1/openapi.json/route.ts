@@ -28,16 +28,17 @@ function buildOpenApi() {
       slug: { type: "string", examples: ["BTC"] },
       instrument: { type: "string", examples: ["Bitcoin"] },
       ticker: { type: "string", examples: ["BTC"] },
-      assetClass: { type: "string", examples: ["crypto", "equity", "fx", "commodity", "index"] },
+      assetClass: { type: "string", examples: ["Crypto - major", "US equity", "FX - major", "Commodity - metals", "Equity index future"] },
+      assetClassKey: { type: "string", description: "Normalised asset-class key.", examples: ["crypto", "equity", "fx", "commodity", "index"] },
       status: { type: "string", description: "Directional status (decision-support label, not an order).", examples: ["Buy", "Sell", "Wait"] },
       risk: { type: "string", examples: ["Low", "Medium", "High"] },
       bias: { type: "string", examples: ["Bullish", "Bearish", "Neutral"] },
       confidence: { type: ["integer", "null"], description: "Calibrated 0–100 confidence, scored after the fact. Not a guarantee or a trade signal.", examples: [60] },
-      windowEnd: { type: "string", description: "End of the prediction window the call is graded against.", examples: ["2026-06-16T20:00:00Z"] },
+      windowEnd: { type: "string", description: "Human-readable end of the prediction window (report timezone) the call is graded against.", examples: ["Thu 18 Jun 2026 22:00 UK"] },
       hasPro: { type: "boolean", description: "Whether a paid Pro edition also exists for this report." },
       url: { type: "string", format: "uri", examples: [`${BASE}/reports/2026-06-15/BTC`] },
     },
-    required: ["id", "date", "slug", "instrument", "ticker", "assetClass", "status", "risk", "bias", "confidence", "windowEnd", "hasPro", "url"],
+    required: ["id", "date", "slug", "instrument", "ticker", "assetClass", "assetClassKey", "status", "risk", "bias", "confidence", "windowEnd", "hasPro", "url"],
   };
 
   return {
@@ -61,7 +62,7 @@ function buildOpenApi() {
           description:
             "List published editions as free Snapshot metadata (instrument, directional status, risk, calibrated confidence, window). Optionally filter by asset class, status, date, or a free-text query.",
           parameters: [
-            { name: "asset_class", in: "query", required: false, description: "Filter by asset class.", schema: { type: "string", examples: ["crypto", "equity", "fx", "commodity", "index"] } },
+            { name: "asset_class", in: "query", required: false, description: "Filter by asset class — accepts a short key (crypto|fx|equity|index|commodity) or the exact display label.", schema: { type: "string", examples: ["crypto", "equity", "fx", "commodity", "index"] } },
             { name: "status", in: "query", required: false, description: "Filter by directional status.", schema: { type: "string", examples: ["Buy", "Sell", "Wait"] } },
             { name: "date", in: "query", required: false, description: "Filter to a single ISO date (YYYY-MM-DD).", schema: { type: "string", format: "date" } },
             { name: "q", in: "query", required: false, description: "Free-text search over instrument name and ticker.", schema: { type: "string", examples: ["bitcoin", "gold"] } },
@@ -172,7 +173,7 @@ function buildOpenApi() {
                             instrument: { type: "string" },
                             symbol: { type: "string" },
                             view: { type: "string" },
-                            confidence: { type: ["string", "number"] },
+                            confidence: { type: ["number", "null"] },
                             windowEnd: { type: "string" },
                             n: { type: "integer", description: "Number of falsifiable predictions in the call." },
                             nManual: { type: "integer" },
@@ -202,7 +203,7 @@ function buildOpenApi() {
                           properties: {
                             instrument: { type: "string" },
                             view: { type: "string" },
-                            confidence: { type: ["string", "number"] },
+                            confidence: { type: ["number", "null"] },
                             results: { type: "string", description: "Per-prediction Hit/Miss/No-trigger summary." },
                             hitRate: { type: ["string", "number"] },
                             windowEnd: { type: "string" },
