@@ -1,10 +1,16 @@
 import { listReports } from "@/lib/reports-api";
 import { apiJson, apiPreflight } from "@/lib/http";
+import { rateLimitResponseWithHeaders, getRequestIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
-// GET /api/v1/reports?asset_class=&status=&date=&q=&limit=
+// GET /api/v1/reports?asset_class=&status=&date=&q=&limit= — PUBLIC (no key required).
+// Per-IP rate limit: 120 req/min.
 export async function GET(req: Request) {
+  const ip = getRequestIp(req);
+  const rl = await rateLimitResponseWithHeaders(req, `ip:${ip}`, { limit: 120, windowSec: 60 });
+  if (rl) return rl;
+
   const sp = new URL(req.url).searchParams;
   const limitRaw = Number(sp.get("limit"));
   const data = await listReports({

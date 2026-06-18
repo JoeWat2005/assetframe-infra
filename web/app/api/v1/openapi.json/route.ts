@@ -1,18 +1,20 @@
 import { SITE } from "@/site.config";
 
-// OpenAPI 3.1 description of the public read-only REST API (/api/v1/*). Served so that
-// agent platforms which speak OpenAPI — ChatGPT Actions, LangChain tool loaders, generic
-// HTTP clients — can import the schema directly from <SITE.url>/api/v1/openapi.json.
+// OpenAPI 3.1 description of the REST API (/api/v1/*). Served so that agent platforms
+// which speak OpenAPI — ChatGPT Actions, LangChain tool loaders, generic HTTP clients
+// — can import the schema directly from <SITE.url>/api/v1/openapi.json.
 //
-// The document mirrors the real route shapes built in lib/reports-api.ts. It is deterministic
-// per deployment (SITE.url is resolved from env at module load, no request-time APIs), so we
-// prerender it with `force-static` and serve it CORS-open just like the v1 data routes.
+// Access model:
+//  - GET /api/v1/reports          → PUBLIC (no key). Per-IP rate limit.
+//  - GET /api/v1/track-record     → PUBLIC (no key). Per-IP rate limit.
+//  - GET /api/v1/reports/{date}/{slug}      → API key required (Bearer af_live_...).
+//  - GET /api/v1/reports/{date}/{slug}/pro  → API key + Pro subscription required.
+//
+// The document is deterministic per deployment, so we prerender with `force-static`.
 export const dynamic = "force-static";
 
 const BASE = SITE.url.replace(/\/$/, "");
 
-// Reused by both the route GET and the OPTIONS preflight. Mirrors lib/http.ts CORS so the
-// spec is fetchable from a browser / importable by hosted agent builders.
 const CORS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, OPTIONS",
@@ -41,26 +43,70 @@ function buildOpenApi() {
     required: ["id", "date", "slug", "instrument", "ticker", "assetClass", "assetClassKey", "status", "risk", "bias", "confidence", "windowEnd", "hasPro", "url"],
   };
 
+  const errorSchema = {
+    type: "object",
+    properties: {
+      error: { type: "string" },
+      message: { type: "string" },
+    },
+    required: ["error", "message"],
+  };
+
+  const resp401 = {
+    description: "Missing or invalid API key.",
+    content: { "application/json": { schema: errorSchema } },
+  };
+  const resp403 = {
+    description: "Valid API key but no active Pro subscription.",
+    content: { "application/json": { schema: errorSchema } },
+  };
+  const resp404 = {
+    description: "No published report for that date/slug.",
+    content: { "application/json": { schema: errorSchema } },
+  };
+  const resp429 = {
+    description: "Rate limit exceeded.",
+    content: { "application/json": { schema: errorSchema } },
+    headers: {
+      "Retry-After": { schema: { type: "integer" }, description: "Seconds until the limit resets." },
+      "RateLimit-Limit": { schema: { type: "integer" } },
+      "RateLimit-Remaining": { schema: { type: "integer" } },
+      "RateLimit-Reset": { schema: { type: "integer" }, description: "Unix epoch seconds." },
+    },
+  };
+
   return {
     openapi: "3.1.0",
     info: {
       title: "AssetFrame REST API",
       version: "1.0.0",
       description:
-        "Read-only JSON API for the AssetFrame report catalog, individual free Snapshots, and the public track record. " +
-        "No API key is required for these endpoints and responses are CORS-open. The full paid Pro analysis is NOT exposed here. " +
-        "\n\n" +
+        "JSON API for the AssetFrame report catalog, individual Snapshots, Pro analysis, and the public track record.\n\n" +
+        "**Access model:**\n" +
+        "- `GET /api/v1/reports` and `GET /api/v1/track-record` are **public** — no API key needed, per-IP rate limited.\n" +
+        "- `GET /api/v1/reports/{date}/{slug}` (free Snapshot content) requires an **API key** (`Authorization: Bearer af_live_...`).\n" +
+        "- `GET /api/v1/reports/{date}/{slug}/pro` (full Pro analysis) requires an **API key** AND an active **Pro subscription**.\n\n" +
+        "To obtain an API key, sign in at " + BASE + " and generate one from your account settings.\n\n" +
         SITE.disclaimer,
       contact: { name: "AssetFrame", email: SITE.contactEmail, url: BASE },
     },
     servers: [{ url: BASE, description: "AssetFrame" }],
+    components: {
+      securitySchemes: {
+        ApiKeyAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "AssetFrame API key (af_live_...)",
+        },
+      },
+    },
     paths: {
       "/api/v1/reports": {
         get: {
           operationId: "listReports",
           summary: "List published report editions",
           description:
-            "List published editions as free Snapshot metadata (instrument, directional status, risk, calibrated confidence, window). Optionally filter by asset class, status, date, or a free-text query.",
+            "List published editions as free Snapshot metadata (instrument, directional status, risk, calibrated confidence, window). Optionally filter by asset class, status, date, or a free-text query. **No API key required.**",
           parameters: [
             { name: "asset_class", in: "query", required: false, description: "Filter by asset class — accepts a short key (crypto|fx|equity|index|commodity) or the exact display label.", schema: { type: "string", examples: ["crypto", "equity", "fx", "commodity", "index"] } },
             { name: "status", in: "query", required: false, description: "Filter by directional status.", schema: { type: "string", examples: ["Buy", "Sell", "Wait"] } },
@@ -86,6 +132,7 @@ function buildOpenApi() {
                 },
               },
             },
+            "429": resp429,
           },
         },
       },
@@ -94,7 +141,8 @@ function buildOpenApi() {
           operationId: "getReport",
           summary: "Get one report's free Snapshot",
           description:
-            "Return one report's free Snapshot: metadata, the Snapshot text, and a short-lived signed PDF link (~10 minutes). The full Pro analysis is not included here.",
+            "Return one report's free Snapshot: metadata, the Snapshot text, and a short-lived signed PDF link (~10 minutes). **Requires an API key.** The full Pro analysis is at the `/pro` sub-resource.",
+          security: [{ ApiKeyAuth: [] }],
           parameters: [
             { name: "date", in: "path", required: true, description: "ISO date (YYYY-MM-DD).", schema: { type: "string", format: "date" } },
             { name: "slug", in: "path", required: true, description: "Instrument slug, e.g. 'BTC' or 'AAPL'.", schema: { type: "string" } },
@@ -122,18 +170,49 @@ function buildOpenApi() {
                 },
               },
             },
-            "404": {
-              description: "No published report for that date/slug.",
+            "401": resp401,
+            "404": resp404,
+            "429": resp429,
+          },
+        },
+      },
+      "/api/v1/reports/{date}/{slug}/pro": {
+        get: {
+          operationId: "getProReport",
+          summary: "Get the full Pro analysis for one report",
+          description:
+            "Return the full Pro analysis: metadata, Pro text, and a short-lived signed Pro PDF link (~10 minutes). **Requires an API key AND an active Pro subscription.**",
+          security: [{ ApiKeyAuth: [] }],
+          parameters: [
+            { name: "date", in: "path", required: true, description: "ISO date (YYYY-MM-DD).", schema: { type: "string", format: "date" } },
+            { name: "slug", in: "path", required: true, description: "Instrument slug, e.g. 'BTC' or 'AAPL'.", schema: { type: "string" } },
+          ],
+          responses: {
+            "200": {
+              description: "The full Pro analysis for the requested edition.",
               content: {
                 "application/json": {
                   schema: {
-                    type: "object",
-                    properties: { error: { type: "string", examples: ["not_found"] }, message: { type: "string" } },
-                    required: ["error", "message"],
+                    allOf: [
+                      reportSummary,
+                      {
+                        type: "object",
+                        properties: {
+                          proText: { type: "string", description: "Plain-text rendering of the Pro analysis." },
+                          proPdfUrl: { type: ["string", "null"], format: "uri", description: "Short-lived signed Pro PDF link (~600s), or null." },
+                          disclaimer: { type: "string" },
+                        },
+                        required: ["proText", "proPdfUrl", "disclaimer"],
+                      },
+                    ],
                   },
                 },
               },
             },
+            "401": resp401,
+            "403": resp403,
+            "404": resp404,
+            "429": resp429,
           },
         },
       },
@@ -142,7 +221,7 @@ function buildOpenApi() {
           operationId: "getTrackRecord",
           summary: "Get the public track record",
           description:
-            "Return the public, append-only track record: aggregate stats (reports scored, open calls, predictions graded, hit rate, streaks), the open (not-yet-graded) calls, the scored results, and per-confidence calibration.",
+            "Return the public, append-only track record: aggregate stats (reports scored, open calls, predictions graded, hit rate, streaks), the open (not-yet-graded) calls, the scored results, and per-confidence calibration. **No API key required.**",
           responses: {
             "200": {
               description: "Track-record stats, open calls, scored results and calibration.",
@@ -225,6 +304,7 @@ function buildOpenApi() {
                 },
               },
             },
+            "429": resp429,
           },
         },
       },
