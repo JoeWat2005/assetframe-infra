@@ -165,10 +165,12 @@ export async function requestGeneration(
     normalized = { all_due: true };
     summary = "all due";
   } else if (scope && "assets" in scope && Array.isArray(scope.assets)) {
-    const known = new Set((await getAllEditions()).map((e) => e.slug));
-    // De-dupe, lowercase-trim, keep only slugs we actually publish.
+    // Match case-insensitively — edition slugs are upper-case (e.g. "ETH"), but the picker/user
+    // input may differ in case — while keeping the canonical slug so the engine receives the exact
+    // id it published the edition under.
+    const known = new Map((await getAllEditions()).map((e) => [e.slug.toLowerCase(), e.slug] as const));
     const requested = [...new Set(scope.assets.map((a) => String(a).trim().toLowerCase()).filter(Boolean))];
-    const assets = requested.filter((a) => known.has(a));
+    const assets = requested.map((a) => known.get(a)).filter((s): s is string => Boolean(s));
     const unknown = requested.filter((a) => !known.has(a));
     if (assets.length === 0) return { ok: false, message: "Select at least one known asset." };
     if (unknown.length) return { ok: false, message: `Unknown asset(s): ${unknown.join(", ")}.` };
