@@ -23,8 +23,22 @@ async function getLimiter(
   limit: number,
   windowSec: number
 ): Promise<((id: string) => Promise<{ success: boolean; limit: number; remaining: number; reset: number }>) | null> {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  // Accept several env-var namings so it works however the credentials were provisioned:
+  //  1. the canonical @upstash/redis names (UPSTASH_REDIS_REST_*),
+  //  2. the Vercel <-> Upstash Marketplace integration's names (UPSTASH_KV_REST_API_*) — it
+  //     injects the read-WRITE token as ..._TOKEN (NOT ..._READ_ONLY_TOKEN, which can't write
+  //     the rate-limit counters),
+  //  3. the generic Vercel KV names (KV_REST_API_*) when no prefix was set.
+  // Reading the integration's own vars means credential rotation is picked up automatically —
+  // no hand-copied aliases to keep in sync (just redeploy after a rotation).
+  const url =
+    process.env.UPSTASH_REDIS_REST_URL ||
+    process.env.UPSTASH_KV_REST_API_URL ||
+    process.env.KV_REST_API_URL;
+  const token =
+    process.env.UPSTASH_REDIS_REST_TOKEN ||
+    process.env.UPSTASH_KV_REST_API_TOKEN ||
+    process.env.KV_REST_API_TOKEN;
   if (!url || !token) return null;
 
   const cacheKey = `${limit}:${windowSec}`;
