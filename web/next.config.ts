@@ -2,9 +2,10 @@ import type { NextConfig } from "next";
 
 // Content-Security-Policy — ENFORCED (browser blocks anything not allow-listed below).
 // Allow-lists cover every third party the app loads: Clerk (auth widgets, frames, images,
-// telemetry, Cloudflare Turnstile bot-check), Google Analytics, Vercel Analytics/Speed
-// Insights, and Cloudflare R2 (signed report-preview images). Lemon Squeezy checkout is a
-// top-level navigation (window.location), so it isn't constrained here. 'unsafe-inline' is
+// telemetry, Cloudflare Turnstile bot-check), Clerk Billing's Stripe-Elements checkout
+// (js.stripe.com script + frame, api.stripe.com XHR), Google Analytics, Vercel Analytics/Speed
+// Insights, and Cloudflare R2 (signed report-preview images). The Clerk Billing checkout drawer
+// renders in-page, so Stripe must be allow-listed here for it to load. 'unsafe-inline' is
 // still permitted for scripts/styles (Next bootstrap + Clerk + Recharts/Tailwind inline
 // styles); the hardened follow-up is to replace it with a per-request nonce.
 // To roll back fast if something legitimate is blocked, rename the header key at the bottom
@@ -20,16 +21,16 @@ const liveImg = isPreview ? " https://vercel.live https://vercel.com" : "";
 
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://*.clerk.com https://clerk.assetframe.co.uk https://challenges.cloudflare.com https://www.googletagmanager.com https://*.vercel-scripts.com${liveScript}`,
+  `script-src 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://*.clerk.com https://clerk.assetframe.co.uk https://challenges.cloudflare.com https://js.stripe.com https://www.googletagmanager.com https://*.vercel-scripts.com${liveScript}`,
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' data: blob: https://img.clerk.com https://*.clerk.com https://*.assetframe.co.uk https://*.r2.cloudflarestorage.com https://www.googletagmanager.com https://www.google-analytics.com${liveImg}`,
   "font-src 'self' data:",
-  `connect-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://clerk.assetframe.co.uk https://clerk-telemetry.com https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://vitals.vercel-insights.com https://*.vercel-scripts.com${liveConnect}`,
-  `frame-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://*.assetframe.co.uk https://challenges.cloudflare.com${liveFrame}`,
+  `connect-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://clerk.assetframe.co.uk https://clerk-telemetry.com https://api.stripe.com https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com https://vitals.vercel-insights.com https://*.vercel-scripts.com${liveConnect}`,
+  `frame-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://*.assetframe.co.uk https://challenges.cloudflare.com https://js.stripe.com https://hooks.stripe.com${liveFrame}`,
   "worker-src 'self' blob:",
   "frame-ancestors 'self'",
   "base-uri 'self'",
-  "form-action 'self' https://*.lemonsqueezy.com https://*.clerk.accounts.dev https://*.clerk.com",
+  "form-action 'self' https://*.clerk.accounts.dev https://*.clerk.com",
   "object-src 'none'",
   "upgrade-insecure-requests",
 ].join("; ");

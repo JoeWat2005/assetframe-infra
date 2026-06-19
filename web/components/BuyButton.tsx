@@ -1,14 +1,11 @@
 "use client";
-import { useState, useTransition } from "react";
 import { useUser } from "@clerk/nextjs";
-import { getCheckoutUrl } from "@/lib/checkout-actions";
 
-// Subscribe button with three states:
-//  - already subscribed  -> manage subscription (no double-billing)
-//  - not signed in        -> sign up first (checkout MUST be bound to an account)
-//  - signed in            -> server-built checkout URL with a signed token binding it to
-//                            this account (so the payment is credited correctly regardless
-//                            of the email entered at checkout).
+// Subscribe/upgrade button with three states:
+//  - admin                -> comped Pro; never bills — point at the admin dashboard
+//  - already subscribed   -> manage subscription (no double-billing)
+//  - everyone else        -> /pricing, where Clerk Billing's <PricingTable /> handles
+//                            sign-in (if needed) and the in-page checkout drawer.
 export default function BuyButton({
   children,
   className = "",
@@ -20,9 +17,7 @@ export default function BuyButton({
   full?: boolean;
   admin?: boolean;
 }) {
-  const { user, isSignedIn, isLoaded } = useUser();
-  const [pending, start] = useTransition();
-  const [adminBlocked, setAdminBlocked] = useState(false);
+  const { user } = useUser();
   const gold = `inline-flex items-center justify-center rounded-lg bg-[#9a6700] px-4 py-2.5 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-60 ${
     full ? "w-full" : ""
   } ${className}`;
@@ -34,15 +29,14 @@ export default function BuyButton({
   const subscribed = meta?.subscribed === true;
   // Admin signal: the server-passed `admin` prop is authoritative; client-side we also treat a
   // Clerk "admin" role or the presence of `adminTier` (only ever set on admins) as admin, so
-  // email-allowlist admins are caught even without the prop. getCheckoutUrl is the final
-  // backstop (sets adminBlocked on click).
+  // email-allowlist admins are caught even without the prop.
   const isAdmin = admin || meta?.role === "admin" || meta?.adminTier !== undefined;
 
   // Admins are comped and fully decoupled from billing — NEVER a checkout and never a billing
   // "manage" link, regardless of any stale paid flag. Their tier is the Free/Pro toggle on the
   // admin dashboard. Checked before the subscribed branch so a free-preview admin never sees
   // "You're on Pro".
-  if (isAdmin || adminBlocked) {
+  if (isAdmin) {
     return (
       <a href="/admin" className={calm}>
         Admin access — set your view on the dashboard
@@ -58,30 +52,11 @@ export default function BuyButton({
     );
   }
 
-  // Require an account before checkout so the payment can be bound to it. Send them to
-  // sign-up (which links to sign-in), returning to pricing to subscribe.
-  if (isLoaded && !isSignedIn) {
-    return (
-      <a href="/sign-up?redirect_url=%2Fpricing" className={gold}>
-        {children}
-      </a>
-    );
-  }
-
-  const go = () =>
-    start(async () => {
-      try {
-        const { url, reason } = await getCheckoutUrl();
-        if (reason === "admin") { setAdminBlocked(true); return; } // comped — show the admin note
-        if (url) window.location.href = url;
-      } catch {
-        /* leave the button as-is; the user can retry */
-      }
-    });
-
+  // Everyone else: send them to the pricing page, where Clerk Billing's PricingTable prompts
+  // sign-in if needed and runs the in-page checkout drawer bound to their account.
   return (
-    <button type="button" onClick={go} disabled={pending || !isLoaded} className={gold}>
-      {pending ? "Loading…" : children}
-    </button>
+    <a href="/pricing" className={gold}>
+      {children}
+    </a>
   );
 }

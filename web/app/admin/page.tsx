@@ -48,8 +48,8 @@ export default async function AdminPage() {
 
   const priceNum = parseFloat((SITE.proPrice.match(/[\d.]+/) || ["0"])[0]) || 0;
   const mrr = stats.subscribers * priceNum;
-  // Members come from Clerk, subscribers from the billing table — clamp so a stale billing
-  // row (e.g. a deleted Clerk account) can never show an impossible >100% conversion.
+  // Both members and subscribers come from Clerk (subscribers = the publicMetadata.subscribed
+  // flag Clerk Billing mirrors). Clamp so the count can never show an impossible >100% conversion.
   const conversion = stats.members ? Math.min(100, Math.round((stats.subscribers / stats.members) * 1000) / 10) : 0;
 
   const kpis: { icon: typeof Users; label: string; value: React.ReactNode; sub?: string }[] = [
@@ -238,8 +238,9 @@ export default async function AdminPage() {
 
         <Note>
           The member count + recent sign-ups come from Clerk (the newest 100 accounts feed the charts);
-          the Pro-subscriber count and MRR come from the billing table. Full member management (refunds,
-          bans, roles) lives in the <b>Clerk</b> and <b>Lemon Squeezy</b> dashboards.
+          the Pro-subscriber count and MRR are derived from the same accounts&rsquo; subscription flag.
+          Full member and subscription management (refunds, cancellations, bans, roles) lives in the{" "}
+          <b>Clerk</b> dashboard.
         </Note>
 
         {/* Engine — control plane for the Oracle Cloud VM that runs the Python engine. The VM has

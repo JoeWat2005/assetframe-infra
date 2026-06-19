@@ -21,6 +21,8 @@ function Clause({ title, children }: { title: string; children: React.ReactNode 
 
 const PROCESSORS = [
   ["Clerk", "Authentication & account management", "USA"],
+  // TODO(copy): billing migrated to Clerk Billing (Stripe is the payment processor / MoR);
+  // this sub-processor row + the Lemon Squeezy mentions in the body are handled in the copy pass.
   ["Lemon Squeezy", "Payments & subscriptions (merchant of record), invoicing & tax", "USA"],
   ["Neon", "Database — accounts, subscription status, watchlists, follows, report catalogue & track record", "EU (London region)"],
   ["Cloudflare", "Private Pro-file storage (R2) & content delivery", "Global edge"],

@@ -1,23 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ExternalLink } from "lucide-react";
+import { PricingTable } from "@clerk/nextjs";
 import { getEntitlement } from "@/lib/entitlements";
 import { Hero } from "@/components/ui";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import BuyButton from "@/components/BuyButton";
-import CancelSubscription from "@/components/CancelSubscription";
-import ResumeSubscription from "@/components/ResumeSubscription";
-import { cancelMySubscription, resumeMySubscription } from "./actions";
 import { SITE } from "@/site.config";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Subscription" };
 
-// LS dates look like "2026-07-13T09:00:00.000000Z" — show the date part only.
+// Billing dates look like "2026-07-13T09:00:00.000000Z" — show the date part only.
 const fmtDate = (iso?: string) => (iso ? iso.slice(0, 10) : null);
 
 export default async function SubscriptionPage({
@@ -27,18 +23,12 @@ export default async function SubscriptionPage({
   if (!ent.signedIn) redirect("/sign-in");
   const { welcome } = await searchParams;
 
-  // "paid" = a real Lemon Squeezy subscription. Admins get Pro comped, so ent.subscribed
-  // can be true with no paid plan — bill/cancel UI keys off `paid`, never the comp.
+  // "paid" = a real Clerk Billing subscription. Admins get Pro comped, so ent.subscribed
+  // can be true with no paid plan — the billing card keys off `paid`, never the comp.
   const paid = ent.billingActive;
-  const cancelling = paid && ent.subStatus === "cancelled";
   const renews = fmtDate(ent.renewsAt);
-  const ends = fmtDate(ent.endsAt);
-  const canManageInApp = paid && !!ent.subscriptionId && !!process.env.LEMONSQUEEZY_API_KEY;
-  // Per-subscription portal if the webhook captured it, else the universal email magic-link.
-  const portalUrl = ent.portalUrl || SITE.lemonPortalUrl;
-  // Admins are kept entirely outside Lemon Squeezy: they ALWAYS see the complimentary-Pro
-  // card (never a paid / cancelling / checkout state), even if a legacy LS subscription
-  // lingers on the account. Admin Pro is comped by role and never depends on a paid plan.
+  // Admins are kept entirely outside billing: they ALWAYS see the complimentary-Pro card
+  // (never a paid / checkout state). Admin Pro is comped by role and never depends on a plan.
   const compOnly = ent.admin;
 
   return (
@@ -75,94 +65,55 @@ export default async function SubscriptionPage({
             </CardFooter>
           </Card>
         ) : (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">
-                {paid ? ent.planName || "AssetFrame Pro" : "Free plan"}
-              </CardTitle>
-              <CardDescription>{ent.email}</CardDescription>
-              <div className="mt-1 flex flex-wrap gap-1.5">
-                <Badge variant={paid ? "default" : "secondary"}>
-                  {paid ? (cancelling ? "Cancelling" : "Active") : "Free"}
-                </Badge>
-                {ent.admin && <Badge variant="outline">Admin</Badge>}
-              </div>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-2 text-sm">
-              {paid ? (
-                <>
-                  {cancelling && ends ? (
-                    <p>Your plan is cancelled — Pro access ends on <b>{ends}</b>.</p>
-                  ) : renews ? (
-                    <p>Renews on <b>{renews}</b> at {SITE.proPrice}.</p>
-                  ) : (
-                    <p>Your AssetFrame Pro plan is active.</p>
-                  )}
-                  <p className="text-muted-foreground">
-                    Billing is handled securely by Lemon Squeezy, our merchant of record.
-                  </p>
-                  {ent.admin && (
+          <>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">
+                  {paid ? ent.planName || "AssetFrame Pro" : "Free plan"}
+                </CardTitle>
+                <CardDescription>{ent.email}</CardDescription>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  <Badge variant={paid ? "default" : "secondary"}>{paid ? "Active" : "Free"}</Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-2 text-sm">
+                {paid ? (
+                  <>
+                    {renews ? (
+                      <p>Renews on <b>{renews}</b> at {SITE.proPrice}.</p>
+                    ) : (
+                      <p>Your AssetFrame Pro plan is active.</p>
+                    )}
                     <p className="text-muted-foreground">
-                      You also have admin access, so Pro stays on even if you cancel this subscription.
+                      Billing is handled securely by our merchant of record. Manage or cancel your plan below.
                     </p>
-                  )}
-                </>
-              ) : (
-                <p className="text-muted-foreground">
-                  You&apos;re on the free plan — Snapshots only. Upgrade to unlock Pro reports, the
-                  price ladder and the full outcome ledger on every edition.
-                </p>
-              )}
-            </CardContent>
-            <CardFooter className="flex flex-wrap gap-2">
-              {!paid && <BuyButton>Subscribe {SITE.proPrice}</BuyButton>}
-              {paid && (
-                <Button asChild variant="outline">
-                  <a href={portalUrl} target="_blank" rel="noopener noreferrer">
-                    Billing portal
-                    <ExternalLink data-icon="inline-end" />
-                  </a>
+                  </>
+                ) : (
+                  <p className="text-muted-foreground">
+                    You&apos;re on the free plan — Snapshots only. Upgrade to unlock Pro reports, the
+                    price ladder and the full outcome ledger on every edition.
+                  </p>
+                )}
+              </CardContent>
+              <CardFooter className="flex flex-wrap gap-2">
+                <Button asChild variant="ghost">
+                  <Link href="/account">Back to account</Link>
                 </Button>
-              )}
-              <Button asChild variant="ghost">
-                <Link href="/account">Back to account</Link>
-              </Button>
-            </CardFooter>
-          </Card>
-        )}
+              </CardFooter>
+            </Card>
 
-        {!compOnly && paid && cancelling && (
-          <>
             <Separator className="my-6" />
-            <h2 className="mb-1 text-base font-semibold">Changed your mind?</h2>
+            <h2 className="mb-1 text-base font-semibold">
+              {paid ? "Manage your plan" : "Upgrade to Pro"}
+            </h2>
             <p className="mb-3 text-sm text-muted-foreground">
-              Your plan is set to end{ends ? ` on ${ends}` : ""}. Resume to keep Pro and let it renew as normal.
+              {paid
+                ? "Change or cancel your plan below — you keep Pro access until the end of the period you've paid for."
+                : "Subscribe below to unlock every Pro report. Cancel anytime."}
             </p>
-            {canManageInApp ? (
-              <ResumeSubscription onResume={resumeMySubscription} />
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Open the <b>Billing portal</b> above to resume your plan.
-              </p>
-            )}
-          </>
-        )}
-
-        {!compOnly && paid && !cancelling && (
-          <>
-            <Separator className="my-6" />
-            <h2 className="mb-1 text-base font-semibold">Cancel subscription</h2>
-            <p className="mb-3 text-sm text-muted-foreground">
-              Cancel anytime — you keep Pro access until the end of your current billing period.
-            </p>
-            {canManageInApp ? (
-              <CancelSubscription onCancel={cancelMySubscription} />
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Open the <b>Billing portal</b> above to cancel — your access continues to the end of the
-                current billing period.
-              </p>
-            )}
+            {/* Clerk Billing: shows the current plan with cancel/upgrade for subscribers, or the
+                checkout drawer for free users — all in-page, no external portal. */}
+            <PricingTable />
           </>
         )}
       </div>

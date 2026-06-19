@@ -26,16 +26,10 @@ export const SITE = {
   brand: "AssetFrame",
   tagline: "Next-session market intelligence, scored after the fact.",
   url: resolveSiteUrl(),
-  // Lemon Squeezy buy link + price label (public, safe to expose). Env overrides the default.
-  checkoutUrl:
-    process.env.NEXT_PUBLIC_CHECKOUT_URL ||
-    "https://assetframe.lemonsqueezy.com/checkout/buy/2b3067fc-8b2c-4f45-b709-e2d28ae448d1",
+  // Pro price label (public). Checkout + plan management are handled by Clerk Billing's
+  // <PricingTable />, so there's no checkout/portal URL to configure here.
   proPrice: process.env.NEXT_PUBLIC_PRO_PRICE || "£9.99/month",
   contactEmail: "contact@assetframe.co.uk",
-  // Lemon Squeezy Customer Portal — universal self-serve cancel/billing via an email
-  // magic-link. Always works (no API key needed); used when we don't yet have a
-  // per-subscription portal URL from the webhook.
-  lemonPortalUrl: process.env.NEXT_PUBLIC_LEMON_PORTAL_URL || "https://app.lemonsqueezy.com/my-orders",
   // Homepage countdown — when the next batch of editions is generated. Honest + configurable.
   // Times are in `tz`; with tz "UTC" the countdown targets a fixed 06:00 UTC daily (DST-free).
   // cadence "daily" counts to the next hourLocal; "weekly" counts to weekdayLocal at hourLocal.

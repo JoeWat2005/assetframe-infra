@@ -31,8 +31,9 @@ describe("entitlement matrix — who can reach Pro", () => {
   });
 
   it("CANCELLED-but-not-expired: webhook keeps subscribed=true until period end → still Pro", () => {
-    // The Lemon Squeezy webhook leaves meta.subscribed=true for 'cancelled'/'past_due' until
-    // the sub actually expires (then it flips to false). So a cancelling user keeps access.
+    // The Clerk Billing webhook leaves meta.subscribed=true while a 'past_due' grace window or a
+    // cancelled-but-not-yet-ended term runs, and only flips it to false on the terminal
+    // ended/expired event. So a cancelling user keeps access until the term ends.
     const e = ent({ subscribed: true, subStatus: "cancelled", endsAt: "2026-12-01T00:00:00Z" }, "cxl@example.com");
     expect(e.subscribed).toBe(true);
     expect(e.billingActive).toBe(true);
@@ -65,7 +66,7 @@ describe("entitlement matrix — who can reach Pro", () => {
     expect(e.subscribed).toBe(false);
   });
 
-  it("ADMIN preview-free wins over a legacy paid flag (admin Pro is decoupled from billing)", () => {
+  it("ADMIN preview-free wins over a paid flag (admin Pro is decoupled from billing)", () => {
     const e = ent({ role: "admin", adminTier: "free", subscribed: true }, "admin@assetframe.co.uk");
     expect(e.admin).toBe(true);
     expect(e.subscribed).toBe(false);

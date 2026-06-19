@@ -40,9 +40,11 @@ async function _getAdminStats(): Promise<AdminStats> {
   let membersCapped = false;
 
   // Bare-minimum Clerk read: ONE page of the newest accounts (not a full multi-page
-  // scan). Gives the member count (totalCount), the recent-members list and the 30-day
-  // signup sparkline. The Pro-subscriber number comes from the DB below, not from
-  // scanning every user's metadata — one cheap query, and it works even if Clerk is down.
+  // scan). Gives the member count (totalCount), the recent-members list, the 30-day
+  // signup sparkline, and the Pro-subscriber count. Clerk Billing is the source of truth for
+  // Pro and mirrors it onto publicMetadata.subscribed, so we count that flag here — the
+  // separate billing table is gone. The count is over the scanned page (newest 100), so it's
+  // capped exactly like the charts when there are more than 100 members (membersCapped).
   try {
     const cc = await clerkClient();
     let page;
@@ -55,32 +57,18 @@ async function _getAdminStats(): Promise<AdminStats> {
       page = await cc.users.getUserList({ limit: 100 });
     }
     members = typeof page.totalCount === "number" ? page.totalCount : page.data.length;
-    membersCapped = members > page.data.length; // charts + recent cover the newest 100 only
+    membersCapped = members > page.data.length; // charts + recent + subscriber count cover the newest 100 only
     for (const u of page.data) {
       const created = new Date(Number(u.createdAt)).toISOString().slice(0, 10);
       if (signupMap.has(created)) signupMap.set(created, (signupMap.get(created) ?? 0) + 1);
+      const sub = (u.publicMetadata as { subscribed?: boolean })?.subscribed === true;
+      if (sub) subscribers++;
       if (recent.length < 12) {
-        const sub = (u.publicMetadata as { subscribed?: boolean })?.subscribed === true;
         recent.push({ id: u.id, email: u.primaryEmailAddress?.emailAddress ?? u.id, subscribed: sub });
       }
     }
   } catch {
     /* Clerk unavailable — the DB-backed stats below still render */
-  }
-
-  // Pro subscribers straight from the billing table: accurate, cheap, and Clerk-independent.
-  // Counts subscriptions that still grant access (active / trialing / cancelling / past-due).
-  // Admin comps that never paid aren't counted here — correct for a subscriber/MRR metric.
-  if (sql) {
-    try {
-      const r = (await sql.query(
-        `SELECT count(*)::int AS c FROM billing_subscriptions
-         WHERE status IN ('active','on_trial','cancelled','past_due')`
-      )) as Row[];
-      subscribers = Number(r[0]?.c) || 0;
-    } catch {
-      /* billing_subscriptions not migrated yet */
-    }
   }
 
   // Downloads from the log (if a DB is configured and the table exists).

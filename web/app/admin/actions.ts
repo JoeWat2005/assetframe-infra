@@ -4,7 +4,6 @@ import { revalidateTag } from "next/cache";
 import { clerkClient, currentUser } from "@clerk/nextjs/server";
 import { getEntitlement } from "@/lib/entitlements";
 import { logAudit } from "@/lib/audit";
-import { cancelLemonSubscription } from "@/lib/lemonsqueezy";
 import { rateLimit } from "@/lib/rate-limit";
 import { getAllEditions } from "@/lib/content";
 import { sql } from "@/lib/db";
@@ -18,8 +17,11 @@ async function requireAdmin() {
   return ent;
 }
 
-// Grant or revoke Pro for a member by email. Revoking a real subscriber ALSO cancels their
-// Lemon Squeezy subscription (stops billing); revoking a comp just clears the flag.
+// Grant or revoke a COMP (complimentary Pro) for a member by email — just flips the
+// publicMetadata.subscribed flag. This is for comps only: a real *paid* Clerk Billing
+// subscriber should be refunded/cancelled in the Clerk dashboard (Clerk Billing owns the
+// subscription lifecycle and will reconcile the flag back via the billing webhook). Clearing
+// the flag here would only be overwritten on the subscriber's next billing event.
 export async function setPro(email: string, subscribed: boolean): Promise<Result> {
   const ent = await requireAdmin();
   const cleaned = (email || "").trim().toLowerCase();
@@ -30,26 +32,8 @@ export async function setPro(email: string, subscribed: boolean): Promise<Result
     const user = list.data[0];
     if (!user) return { ok: false, message: `No member found for ${cleaned}.` };
     const m = user.publicMetadata || {};
-    const subscriptionId = (m as { subscriptionId?: string }).subscriptionId;
 
-    if (!subscribed && subscriptionId) {
-      // Revoking a paying subscriber → cancel the LS subscription so billing stops. Access
-      // continues to period end via the normal lifecycle (status → cancelled).
-      const res = await cancelLemonSubscription(subscriptionId);
-      await cc.users.updateUserMetadata(user.id, {
-        publicMetadata: { ...m, subStatus: res.ok ? "cancelled" : (m as { subStatus?: string }).subStatus },
-      });
-      await logAudit({
-        actor: ent.email, action: "revoke_pro", target: cleaned,
-        detail: res.ok ? `cancelled LS subscription (${res.status})` : `LS cancel failed: ${res.reason}`,
-      });
-      revalidateTag("content", "max");
-      return res.ok
-        ? { ok: true, message: `Cancelled ${cleaned}'s subscription — Pro ends at period end.` }
-        : { ok: false, message: `Couldn't cancel via Lemon Squeezy (${res.reason}). Check LEMONSQUEEZY_API_KEY.` };
-    }
-
-    // Grant a comp, or revoke a comp (no LS subscription) — just flip the flag.
+    // Comp toggle — flip the flag, merging the rest of publicMetadata.
     await cc.users.updateUserMetadata(user.id, { publicMetadata: { ...m, subscribed } });
     await logAudit({
       actor: ent.email, action: subscribed ? "grant_pro" : "revoke_pro",

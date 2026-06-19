@@ -57,6 +57,8 @@ export default function TermsPage() {
           <p>Notify us promptly at <a className="text-navy underline" href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a> if you suspect any unauthorised use of, or security breach affecting, your account. We are not liable for losses arising from your failure to safeguard your credentials.</p>
         </Clause>
 
+        {/* TODO(copy): billing migrated from Lemon Squeezy to Clerk Billing (Stripe-backed);
+            update the merchant-of-record / portal references in clauses 5 & 6 in the copy pass. */}
         <Clause n="5" title="Subscriptions and billing">
           <p>The Snapshot tier is free. <b>{SITE.brand} Pro</b> is a paid subscription priced at <b>{SITE.proPrice}</b> (or as otherwise shown to you at checkout). Pro is sold and billed by our merchant of record, <b>Lemon Squeezy</b>, which acts as the <b>seller / merchant of record</b>: it processes your payment, appears on your statement, issues your invoice, and <b>collects and remits any applicable taxes</b> (such as VAT or sales tax) based on your location. Your purchase is also subject to Lemon Squeezy&apos;s own terms.</p>
           <p>The price, currency, and billing period are shown at checkout. Unless stated otherwise, subscriptions <b>renew automatically</b> at the end of each billing period at the then-current price, using your saved payment method, until cancelled. By subscribing you authorise these recurring charges.</p>
