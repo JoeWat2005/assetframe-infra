@@ -15,6 +15,10 @@ const COMMAND_LABEL: Record<string, string> = {
   run_maintenance: "Re-run publish",
   tail_logs: "Fetch logs",
   set_config: "Set config",
+  sync_assets: "Sync asset universe",
+  reset_ledger: "Reset ledger",
+  clear_reports: "Clear working dirs",
+  run_scoring: "Score closed windows",
 };
 
 // Status pill colours, reusing the same green/amber/red/grey palette as the rest of the admin.

@@ -74,6 +74,33 @@ export default function BoxControls() {
         </Button>
       </div>
 
+      {/* Scoring + system refresh (the box runs as root, so these work without SSH). */}
+      <div className="flex flex-wrap gap-2">
+        <Button
+          size="sm" variant="outline" disabled={pending}
+          onClick={() => run("run_scoring")}
+          title="Grade any closed prediction windows into the ledger now (no new reports generated)."
+        >
+          Score now
+        </Button>
+        <Button
+          size="sm" variant="outline" disabled={pending}
+          onClick={() => run("reset_ledger", undefined,
+            "Reset the box's outcome ledger to empty? This clears the track-record source on the box and cannot be undone.")}
+          title="Truncate the box's outcome ledger to its header — a fresh track record."
+        >
+          Reset ledger
+        </Button>
+        <Button
+          size="sm" variant="outline" disabled={pending}
+          onClick={() => run("clear_reports", undefined,
+            "Clear ALL working dirs on the box (reports, data, content, runs)? Use for a clean restart — the ledger is NOT touched.")}
+          title="Clear the box's working dirs (reports/data/content/runs) — a dashboard system refresh, no SSH."
+        >
+          Clear reports
+        </Button>
+      </div>
+
       {/* set_config: write an allow-listed key to the engine .env (effective on next restart). */}
       <div className="flex flex-wrap items-end gap-2">
         <div>

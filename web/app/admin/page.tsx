@@ -5,6 +5,7 @@ import { getAllEditions, getHiddenEditions } from "@/lib/content";
 import { getEntitlement } from "@/lib/entitlements";
 import { getAdminStats } from "@/lib/admin-stats";
 import { getEngineState, getGenerationRequests, getEngineRuns, getEngineCommands } from "@/lib/engine";
+import { getEngineAssets } from "@/lib/engine-assets";
 import { Badge, Hero, Note } from "@/components/ui";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import ApproveButton from "./ApproveButton";
 import PauseToggle from "./PauseToggle";
 import GenerateForm from "./GenerateForm";
 import BoxControls from "./BoxControls";
+import AssetManager from "./AssetManager";
 import { RequestQueue, RunLog, CommandLog } from "./EnginePanels";
 import { getAuditLog } from "@/lib/audit";
 import { getFeedback } from "@/lib/feedback";
@@ -33,9 +35,9 @@ export default async function AdminPage() {
   if (!ent.signedIn) redirect("/sign-in");
   if (!ent.admin) redirect("/account");
 
-  const [stats, catalog, pending, auditLog, feedback, engineState, genRequests, engineRuns, engineCommands] = await Promise.all([
+  const [stats, catalog, pending, auditLog, feedback, engineState, genRequests, engineRuns, engineCommands, engineAssets] = await Promise.all([
     getAdminStats(), getAllEditions(), getHiddenEditions(), getAuditLog(), getFeedback(),
-    getEngineState(), getGenerationRequests(), getEngineRuns(), getEngineCommands(),
+    getEngineState(), getGenerationRequests(), getEngineRuns(), getEngineCommands(), getEngineAssets(),
   ]);
   const titleById = new Map(catalog.map((e) => [`${e.date}/${e.slug}`, e.instrument]));
 
@@ -317,6 +319,47 @@ export default async function AdminPage() {
               </p>
               <BoxControls />
             </div>
+
+            {/* Command reference — what each control does. */}
+            <details className="border-t border-line pt-4">
+              <summary className="cursor-pointer text-sm font-bold text-navy">Command reference — what each control does</summary>
+              <dl className="mt-3 grid gap-x-6 gap-y-2.5 sm:grid-cols-2">
+                {[
+                  ["Generate → All due / Pick", "Queue a run now for every due asset, or a hand-picked set. New editions land per their publish policy."],
+                  ["Pause / Resume automation", "Stop or restart the automatic 05:00 UTC daily run. Manual runs still work while paused."],
+                  ["Re-run publish", "Re-runs export → R2 → Neon for a run that generated locally but didn’t publish (e.g. a transient error)."],
+                  ["Fetch logs", "Pulls the box’s recent poller output into the Box command log below."],
+                  ["Pull + restart", "git pull the latest code on the box + reinstall deps, then restart onto it."],
+                  ["Restart poller", "Gracefully bounce the box process (picks up .env / config changes)."],
+                  ["Set config", "Write an allow-listed env setting on the box (applies after a restart)."],
+                  ["Score now", "Grade any closed prediction windows into the ledger immediately (no new reports)."],
+                  ["Reset ledger", "Truncate the box’s outcome ledger to empty — a fresh track-record source. Pair with clearing Neon."],
+                  ["Clear reports", "Wipe the box’s working dirs (reports/data/content/runs) — a full system refresh, no SSH needed."],
+                  ["Asset universe", "Add / enable / disable the instruments the engine generates, plus the global approval toggle. Auto-syncs to the box."],
+                  ["Approve / Unpublish", "Publish a hidden edition to the public site, or hide a live one (per-report, in Pending approval below)."],
+                ].map(([t, d]) => (
+                  <div key={t}>
+                    <dt className="text-sm font-semibold text-navy">{t}</dt>
+                    <dd className="text-xs text-muted-foreground">{d}</dd>
+                  </div>
+                ))}
+              </dl>
+            </details>
+          </CardContent>
+        </Card>
+
+        {/* Asset universe — what the engine generates reports for (dashboard-editable). */}
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle className="text-base">Asset universe</CardTitle>
+            <CardDescription>
+              What the engine generates reports for. Add or enable/disable instruments and set whether new
+              reports need your approval. Edited here and auto-synced to the box — validated before it applies,
+              so a bad entry can never break generation.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AssetManager assets={engineAssets} />
           </CardContent>
         </Card>
 

@@ -20,6 +20,11 @@ const LABEL: Record<string, string> = {
   engine_cmd_restart_poller: "Box · restart poller", engine_cmd_pull_latest: "Box · pull + restart",
   engine_cmd_run_maintenance: "Box · re-run publish", engine_cmd_tail_logs: "Box · fetch logs",
   engine_cmd_set_config: "Box · set config", engine_cmd_cancel: "Box · cancel command",
+  engine_cmd_reset_ledger: "Box · reset ledger", engine_cmd_clear_reports: "Box · clear reports",
+  engine_cmd_run_scoring: "Box · score now", engine_cmd_sync_assets: "Box · sync assets",
+  // Asset universe
+  asset_upsert: "Asset · save", asset_delete: "Asset · delete", asset_enable: "Asset · enable",
+  asset_disable: "Asset · disable", asset_approval_mode: "Asset · approval mode",
 };
 const label = (a: string) => LABEL[a] ?? a;
 

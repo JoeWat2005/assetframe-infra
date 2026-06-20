@@ -251,6 +251,10 @@ const ENGINE_COMMANDS: Record<string, string> = {
   run_maintenance: "Re-run publish (export → R2 → Neon)",
   tail_logs: "Fetch recent logs",
   set_config: "Set config value",
+  sync_assets: "Sync asset universe to the box",
+  reset_ledger: "Reset the outcome ledger",
+  clear_reports: "Clear working dirs (system refresh)",
+  run_scoring: "Score closed windows now",
 };
 // Keys set_config may write to the engine .env. Mirrors engine_ops._SETTABLE_CONFIG_KEYS — only
 // keys the engine consumes, never secrets/credentials/URLs. (The box re-validates this list too.)
@@ -326,5 +330,131 @@ export async function cancelEngineCommand(id: string): Promise<Result> {
     return { ok: true, message: "Cancellation requested." };
   } catch {
     return { ok: false, message: "Couldn't request cancellation." };
+  }
+}
+
+// ------------------------------------------------------------ Asset universe (engine_assets)
+// The admin-editable list of WHAT the engine generates reports for. Every mutation writes
+// engine_assets (the dashboard's source of truth) and enqueues a `sync_assets` box command so the
+// box rewrites config/assets.json — but only after the engine's config_loader validates it. Enum
+// values mirror scripts/config_loader.py; the engine re-validates, so this is the convenience copy.
+const ASSET_CLASSES = ["equity", "crypto", "fx", "futures", "index", "commodity"];
+const SESSION_PROFILES = ["fx_spot", "crypto_24_7", "us_equity_rth", "cme_futures"];
+const CADENCES = ["daily", "weekday", "trading_day", "weekday_or_market_open"];
+const FORECAST_WINDOWS = ["next_liquid_session", "next_regular_session", "rolling_24h", "next_session"];
+const PUBLISH_POLICIES = ["approval_required", "auto"];
+const REPORT_TIERS = ["official", "watchlist", "staged", "backtest"];
+const TIMEZONES = [
+  "UTC", "Europe/London", "America/New_York", "America/Chicago", "America/Los_Angeles",
+  "Asia/Tokyo", "Asia/Shanghai", "Asia/Hong_Kong", "Asia/Singapore", "Australia/Sydney",
+  "Europe/Zurich", "Europe/Frankfurt", "Europe/Paris",
+];
+
+type AssetInput = {
+  id: string; name: string; instrument: string; ticker: string; yahoo: string;
+  assetClass: string; sessionProfile: string; cadence: string; timezone: string;
+  rollUtc?: number; related?: string; forecastWindow?: string; publishPolicy?: string;
+  reportTier?: string; enabled?: boolean;
+};
+
+// Push config/assets.json on the box up to date with engine_assets (validated box-side).
+async function enqueueSyncAssets(): Promise<void> {
+  if (!sql) return;
+  try {
+    await sql.query(
+      `INSERT INTO engine_commands (id, command, args, requested_by, status)
+       VALUES ($1, 'sync_assets', '{}'::jsonb, $2, 'queued')`,
+      [randomUUID(), "asset-edit"]
+    );
+    await signalEngineWake();
+  } catch {
+    /* engine_commands not migrated yet */
+  }
+}
+
+export async function upsertEngineAsset(input: AssetInput): Promise<Result> {
+  const ent = await requireAdmin();
+  if (!sql) return { ok: false, message: "Database not configured." };
+  const id = (input.id || "").trim().toLowerCase();
+  const ticker = (input.ticker || "").trim().toUpperCase();
+  const yahoo = (input.yahoo || "").trim();
+  if (!/^[a-z0-9_]+$/.test(id)) return { ok: false, message: "id must be lowercase letters/numbers/underscore." };
+  if (!ticker) return { ok: false, message: "ticker is required." };
+  if (!yahoo) return { ok: false, message: "Yahoo symbol is required (the price feed)." };
+  if (!input.name?.trim() || !input.instrument?.trim()) return { ok: false, message: "name and instrument are required." };
+  if (!ASSET_CLASSES.includes(input.assetClass)) return { ok: false, message: "Invalid asset class." };
+  if (!SESSION_PROFILES.includes(input.sessionProfile)) return { ok: false, message: "Invalid session profile." };
+  if (!CADENCES.includes(input.cadence)) return { ok: false, message: "Invalid cadence." };
+  if (!TIMEZONES.includes(input.timezone)) return { ok: false, message: "Invalid timezone." };
+  const publishPolicy = PUBLISH_POLICIES.includes(input.publishPolicy ?? "") ? input.publishPolicy! : "approval_required";
+  const forecastWindow = FORECAST_WINDOWS.includes(input.forecastWindow ?? "") ? input.forecastWindow! : "next_session";
+  const reportTier = REPORT_TIERS.includes(input.reportTier ?? "") ? input.reportTier! : "official";
+  const roll = Math.max(0, Math.min(23, Math.round(Number(input.rollUtc) || 0)));
+  const enabled = input.enabled !== false;
+  try {
+    await sql.query(
+      `INSERT INTO engine_assets (id, name, instrument, ticker, provider_symbols, asset_class, session_profile,
+         cadence, timezone, roll_utc, related, forecast_window, publish_policy, report_tier, enabled, updated_at)
+       VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15, now())
+       ON CONFLICT (id) DO UPDATE SET name=excluded.name, instrument=excluded.instrument, ticker=excluded.ticker,
+         provider_symbols=excluded.provider_symbols, asset_class=excluded.asset_class, session_profile=excluded.session_profile,
+         cadence=excluded.cadence, timezone=excluded.timezone, roll_utc=excluded.roll_utc, related=excluded.related,
+         forecast_window=excluded.forecast_window, publish_policy=excluded.publish_policy, report_tier=excluded.report_tier,
+         enabled=excluded.enabled, updated_at=now()`,
+      [id, input.name.trim(), input.instrument.trim(), ticker, JSON.stringify({ yahoo }), input.assetClass,
+       input.sessionProfile, input.cadence, input.timezone, roll, (input.related || "").trim(),
+       forecastWindow, publishPolicy, reportTier, enabled]
+    );
+    await logAudit({ actor: ent.email, action: "asset_upsert", target: id, detail: `${ticker} (${input.assetClass})` });
+    await enqueueSyncAssets();
+    return { ok: true, message: `Saved ${ticker} — syncing to the engine.` };
+  } catch {
+    return { ok: false, message: "Couldn't save — has the engine-assets migration been applied?" };
+  }
+}
+
+export async function deleteEngineAsset(id: string): Promise<Result> {
+  const ent = await requireAdmin();
+  if (!sql) return { ok: false, message: "Database not configured." };
+  const cleaned = (id || "").trim().toLowerCase();
+  if (!cleaned) return { ok: false, message: "Bad id." };
+  try {
+    await sql.query(`DELETE FROM engine_assets WHERE id = $1`, [cleaned]);
+    await logAudit({ actor: ent.email, action: "asset_delete", target: cleaned, detail: "removed from universe" });
+    await enqueueSyncAssets();
+    return { ok: true, message: `Removed ${cleaned} — syncing.` };
+  } catch {
+    return { ok: false, message: "Delete failed." };
+  }
+}
+
+export async function setAssetEnabled(id: string, enabled: boolean): Promise<Result> {
+  const ent = await requireAdmin();
+  if (!sql) return { ok: false, message: "Database not configured." };
+  const cleaned = (id || "").trim().toLowerCase();
+  if (!cleaned) return { ok: false, message: "Bad id." };
+  try {
+    await sql.query(`UPDATE engine_assets SET enabled = $2, updated_at = now() WHERE id = $1`, [cleaned, enabled]);
+    await logAudit({ actor: ent.email, action: enabled ? "asset_enable" : "asset_disable", target: cleaned, detail: enabled ? "in daily universe" : "out of daily universe" });
+    await enqueueSyncAssets();
+    return { ok: true, message: `${cleaned} ${enabled ? "enabled" : "disabled"}.` };
+  } catch {
+    return { ok: false, message: "Update failed." };
+  }
+}
+
+// Global approval toggle — set EVERY asset's publish_policy. require=true => approval_required
+// (you approve each report); false => auto (reports publish straight away when generated).
+export async function setRequireApproval(requireApproval: boolean): Promise<Result> {
+  const ent = await requireAdmin();
+  if (!sql) return { ok: false, message: "Database not configured." };
+  const policy = requireApproval ? "approval_required" : "auto";
+  try {
+    await sql.query(`UPDATE engine_assets SET publish_policy = $1, updated_at = now()`, [policy]);
+    await logAudit({ actor: ent.email, action: "asset_approval_mode", target: "all", detail: policy });
+    await enqueueSyncAssets();
+    return { ok: true, message: requireApproval ? "New reports now require your approval." : "New reports will auto-publish." };
+  } catch {
+    return { ok: false, message: "Update failed." };
   }
 }
