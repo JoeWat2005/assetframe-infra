@@ -146,7 +146,7 @@ export async function searchMembers(
 // ports, so we only ever WRITE rows to Neon here — the VM polls them. We never execute the
 // engine ourselves (consistent with the no-auto-trading posture: the web app is control-plane).
 
-type EngineScope = { all_due: true } | { assets: string[] };
+type EngineScope = { all_due: true; as_of?: string } | { assets: string[]; as_of?: string };
 
 // Enqueue a generation run. Validates the scope against the known edition slugs, then inserts a
 // 'queued' generation_requests row with a fresh uuid. The VM's poller claims it from there.
@@ -186,6 +186,16 @@ export async function requestGeneration(
     summary = assets.join(", ");
   } else {
     return { ok: false, message: "Bad scope." };
+  }
+
+  // Optional BACKDATE (as-of): generate for a past time so the prediction window is already closed
+  // — used to test scoring/the ledger immediately. Accept "YYYY-MM-DDTHH:MM" or with a space.
+  const asOfRaw = (scope as { as_of?: string })?.as_of;
+  if (typeof asOfRaw === "string" && asOfRaw.trim()) {
+    const v = asOfRaw.trim().replace("T", " ").slice(0, 16);
+    if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(v)) return { ok: false, message: "Bad backdate — pick a valid date/time." };
+    normalized.as_of = v;
+    summary += ` as-of ${v} UTC`;
   }
 
   try {

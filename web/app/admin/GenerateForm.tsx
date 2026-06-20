@@ -8,14 +8,15 @@ import { Input } from "@/components/ui/input";
 type Asset = { slug: string; instrument: string; ticker: string };
 type Result = { ok: boolean; message: string };
 
-// Queue an engine run: either "All due" (the engine decides which instruments are due) or a
-// hand-picked set of known asset slugs. Mirrors AdminActions' useTransition + router.refresh()
-// pattern, with an inline result message instead of a separate toast lib.
+// Queue an engine run: "All due" (the engine picks what's due) or hand-picked assets. Optionally
+// BACKDATE it (as-of a past time) so the prediction window is already closed — that's how you test
+// the ledger immediately instead of waiting ~24h for a live window to close.
 export default function GenerateForm({ assets }: { assets: Asset[] }) {
   const router = useRouter();
   const [allDue, setAllDue] = useState(true);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [q, setQ] = useState("");
+  const [asOf, setAsOf] = useState(""); // "" = now; otherwise "YYYY-MM-DDTHH:MM" (UTC)
   const [msg, setMsg] = useState<Result | null>(null);
   const [pending, start] = useTransition();
 
@@ -36,7 +37,8 @@ export default function GenerateForm({ assets }: { assets: Asset[] }) {
   const submit = () =>
     start(async () => {
       try {
-        const scope = allDue ? { all_due: true as const } : { assets: [...selected] };
+        const base = allDue ? { all_due: true as const } : { assets: [...selected] };
+        const scope = asOf ? { ...base, as_of: asOf } : base;
         const r = await requestGeneration(scope);
         setMsg(r);
         if (r.ok) {
@@ -52,6 +54,13 @@ export default function GenerateForm({ assets }: { assets: Asset[] }) {
 
   return (
     <div className="flex flex-col gap-3">
+      <p className="text-xs text-muted-foreground">
+        A run generates each asset&rsquo;s report and <b>registers its predictions</b>. Predictions are
+        graded <b>after their window closes</b> (BTC ≈ 24h) — that&rsquo;s when the track record grows.
+        To test scoring <b>now</b>, use <b>Backdate</b> below to generate a report whose window has
+        already closed, then click <b>Score now</b>.
+      </p>
+
       {/* Mode: all-due vs hand-pick */}
       <div className="inline-flex w-fit overflow-hidden rounded-lg border border-line">
         <Button size="sm" variant={allDue ? "default" : "ghost"} className="rounded-none" disabled={pending} onClick={() => setAllDue(true)}>
@@ -103,9 +112,34 @@ export default function GenerateForm({ assets }: { assets: Asset[] }) {
         </div>
       )}
 
+      {/* Backdate (as-of) — for testing the ledger immediately. */}
+      <div className="rounded-lg border border-line bg-tile/30 px-3 py-2.5">
+        <label className="block text-xs font-semibold text-navy">Backdate (optional — test the ledger now)</label>
+        <p className="mb-2 text-[11px] text-muted-foreground">
+          Generate the report as if it were a <b>past</b> UTC date/time, so its prediction window is
+          already closed. Then <b>Score now</b> grades it straight into the ledger. Leave blank to run
+          for now. Pick a time a few days back (e.g. 3 days ago) for crypto.
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="datetime-local"
+            aria-label="Backdate as-of (UTC)"
+            value={asOf}
+            onChange={(e) => setAsOf(e.target.value)}
+            className="h-9 rounded-lg border border-line bg-white px-2 text-sm"
+          />
+          <span className="text-[11px] text-muted-foreground">UTC</span>
+          {asOf && (
+            <Button size="sm" variant="ghost" className="h-7 px-2 text-[11px]" disabled={pending} onClick={() => setAsOf("")}>
+              clear
+            </Button>
+          )}
+        </div>
+      </div>
+
       <div className="flex flex-wrap items-center gap-2">
         <Button size="sm" disabled={!canSubmit} onClick={submit}>
-          {pending ? "Queuing…" : "Queue run"}
+          {pending ? "Queuing…" : asOf ? "Queue backdated run" : "Queue run"}
         </Button>
         {msg && <span className={`text-sm ${msg.ok ? "text-[#1a7f37]" : "text-[#cf222e]"}`}>{msg.message}</span>}
       </div>
