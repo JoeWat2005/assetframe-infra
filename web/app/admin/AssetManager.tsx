@@ -70,6 +70,7 @@ export default function AssetManager({ assets }: { assets: EngineAsset[] }) {
   };
 
   const requireApproval = assets.some((a) => a.publishPolicy === "approval_required");
+  const mixedApproval = new Set(assets.map((a) => a.publishPolicy)).size > 1;
   const lastChecked = assets.map((a) => a.dueCheckedAt).filter(Boolean).sort().pop() || "";
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -97,8 +98,11 @@ export default function AssetManager({ assets }: { assets: EngineAsset[] }) {
       {/* Global approval toggle + add */}
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-xs text-muted-foreground">New reports:</span>
-        <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${requireApproval ? "bg-[#fff7e6] text-[#9a6700]" : "bg-[#dafbe1] text-[#1a7f37]"}`}>
-          {requireApproval ? "Need approval" : "Auto-publish"}
+        <span
+          title={mixedApproval ? "Some assets require approval, some auto-publish. Use the toggle to make them all the same, or set per-asset in each row." : undefined}
+          className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${mixedApproval ? "bg-tile text-muted-foreground" : requireApproval ? "bg-[#fff7e6] text-[#9a6700]" : "bg-[#dafbe1] text-[#1a7f37]"}`}
+        >
+          {mixedApproval ? "Mixed" : requireApproval ? "Need approval" : "Auto-publish"}
         </span>
         <Button
           size="sm" variant="outline" disabled={pending}

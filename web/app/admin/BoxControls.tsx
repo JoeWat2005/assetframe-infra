@@ -52,6 +52,25 @@ export default function BoxControls() {
       }
     });
 
+  // One-click FULL reset — does all four together so you never leave orphaned data by clearing
+  // only one (e.g. catalog but not R2/ledger). Neon (clearCatalog) + the three box commands.
+  const fullReset = () =>
+    start(async () => {
+      if (!window.confirm("FULL RESET — delete the Neon catalog AND clear the box's reports, ledger and R2 files? This wipes all generated data and cannot be undone. Continue?")) return;
+      try {
+        const r = await clearCatalog();
+        await sendEngineCommand("clear_reports");
+        await sendEngineCommand("reset_ledger");
+        await sendEngineCommand("clear_r2");
+        setMsg(r.ok
+          ? { ok: true, message: "Full reset: catalog cleared in Neon; box clearing reports + ledger + R2 (watch the command log)." }
+          : r);
+        router.refresh();
+      } catch {
+        setMsg({ ok: false, message: "Full reset failed — not authorized?" });
+      }
+    });
+
   return (
     <div className="flex flex-col gap-3">
       {/* Safe operations — read-only / recoverable, no data loss. */}
@@ -161,7 +180,17 @@ export default function BoxControls() {
             Clear catalog (Neon)
           </Button>
         </div>
-        <p className="mt-2 text-[11px] text-[#cf222e]/80">A full system reset = all four (box dirs + ledger + R2 files + Neon catalog).</p>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <Button
+            size="sm" disabled={pending}
+            className="bg-[#cf222e] text-white hover:bg-[#a01b23]"
+            onClick={fullReset}
+            title="Clear the Neon catalog AND the box's reports, ledger and R2 files — all at once, so you never leave orphaned data."
+          >
+            Full reset (all four)
+          </Button>
+          <span className="text-[11px] text-[#cf222e]/80">One click = Neon catalog + box dirs + ledger + R2 (no orphans).</span>
+        </div>
       </div>
       {msg && <span className={`text-sm ${msg.ok ? "text-[#1a7f37]" : "text-[#cf222e]"}`}>{msg.message}</span>}
     </div>
