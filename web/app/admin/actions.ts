@@ -238,3 +238,93 @@ export async function cancelGenerationRequest(id: string): Promise<Result> {
     return { ok: false, message: "Couldn't request cancellation." };
   }
 }
+
+// ------------------------------------------------------------ Box control (engine_commands)
+// A SECOND web->box channel: allow-listed COMMANDS the OCI poller claims + runs (restart, pull
+// latest, re-run the publish chain, fetch logs, set an allow-listed config value). Like generation
+// requests, we only WRITE a queued row here — the box polls + executes. The allow-list is enforced
+// on BOTH sides; the box (engine_ops.run_command) is the real security boundary and never runs an
+// unknown verb. Keep this list in sync with engine_ops.ALLOWED_COMMANDS in the assetframe-scripts repo.
+const ENGINE_COMMANDS: Record<string, string> = {
+  restart_poller: "Restart poller",
+  pull_latest: "Pull latest + restart",
+  run_maintenance: "Re-run publish (export → R2 → Neon)",
+  tail_logs: "Fetch recent logs",
+  set_config: "Set config value",
+};
+// Keys set_config may write to the engine .env. Mirrors engine_ops._SETTABLE_CONFIG_KEYS — only
+// keys the engine consumes, never secrets/credentials/URLs. (The box re-validates this list too.)
+const SETTABLE_CONFIG_KEYS = [
+  "ASSETFRAME_AUTHOR_BRIEFS", "ADVISOR_DATA_PROVIDER", "ASSETFRAME_RUN_TIMEOUT",
+];
+
+// Enqueue an allow-listed box command. Validates the verb + args, inserts a 'queued'
+// engine_commands row, and wakes the poller. The box claims it on its next ~30s tick.
+export async function sendEngineCommand(
+  command: string,
+  args?: Record<string, unknown>
+): Promise<{ ok: boolean; message: string; id?: string }> {
+  const ent = await requireAdmin();
+  if (!sql) return { ok: false, message: "Database not configured." };
+  if (!(command in ENGINE_COMMANDS)) return { ok: false, message: "Unknown command." };
+
+  // Rate-limit per admin — these can restart/redeploy the box. No-op until Upstash is set.
+  const rl = await rateLimit(`engine:command:${ent.email ?? "admin"}`, { limit: 20, windowSec: 60 });
+  if (!rl.ok) return { ok: false, message: "Too many commands — please slow down." };
+
+  // Validate + normalise per-command args (defence in depth; the box re-validates and is the boundary).
+  let cleanArgs: Record<string, unknown> = {};
+  let detail = ENGINE_COMMANDS[command];
+  if (command === "set_config") {
+    const key = String(args?.key ?? "").trim();
+    const value = String(args?.value ?? "");
+    if (!SETTABLE_CONFIG_KEYS.includes(key)) return { ok: false, message: "Not a settable config key." };
+    if (/[\r\n]/.test(value) || value.length > 200) return { ok: false, message: "Value must be a single line ≤ 200 chars." };
+    // Per-key value validation (defence in depth; the box validates + is the boundary). A bad
+    // ASSETFRAME_RUN_TIMEOUT is int()-parsed at engine import and would crash-loop the poller.
+    if (key === "ASSETFRAME_RUN_TIMEOUT" && !(/^\d+$/.test(value) && Number(value) >= 60 && Number(value) <= 86400)) {
+      return { ok: false, message: "ASSETFRAME_RUN_TIMEOUT must be an integer 60–86400 (seconds)." };
+    }
+    cleanArgs = { key, value };
+    detail = `${key}=${value}`;
+  } else if (command === "tail_logs") {
+    const n = Number(args?.lines);
+    cleanArgs = { lines: Number.isFinite(n) ? Math.max(20, Math.min(1000, Math.round(n))) : 200 };
+  }
+
+  try {
+    const id = randomUUID();
+    await sql.query(
+      `INSERT INTO engine_commands (id, command, args, requested_by, status)
+       VALUES ($1, $2, $3::jsonb, $4, 'queued')`,
+      [id, command, JSON.stringify(cleanArgs), ent.email ?? null]
+    );
+    await logAudit({ actor: ent.email, action: `engine_cmd_${command}`, target: id, detail });
+    await signalEngineWake();
+    return { ok: true, message: `Queued: ${ENGINE_COMMANDS[command]}.`, id };
+  } catch {
+    return { ok: false, message: "Couldn't queue the command — has the engine-commands migration been applied?" };
+  }
+}
+
+// Co-operatively cancel a queued/running box command (mostly relevant for queued ones — the box
+// runs commands quickly and doesn't interrupt a running handler).
+export async function cancelEngineCommand(id: string): Promise<Result> {
+  const ent = await requireAdmin();
+  if (!sql) return { ok: false, message: "Database not configured." };
+  const cleaned = (id || "").trim();
+  if (!cleaned) return { ok: false, message: "Bad command id." };
+  try {
+    const rows = (await sql.query(
+      `UPDATE engine_commands SET cancel_requested = true
+        WHERE id = $1 AND status IN ('queued','running')
+        RETURNING id`,
+      [cleaned]
+    )) as Record<string, unknown>[];
+    if (rows.length === 0) return { ok: false, message: "Nothing to cancel — already finished?" };
+    await logAudit({ actor: ent.email, action: "engine_cmd_cancel", target: cleaned, detail: "cancellation requested" });
+    return { ok: true, message: "Cancellation requested." };
+  } catch {
+    return { ok: false, message: "Couldn't request cancellation." };
+  }
+}

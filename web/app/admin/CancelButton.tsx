@@ -1,16 +1,17 @@
 "use client";
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { cancelGenerationRequest } from "./actions";
+import { cancelGenerationRequest, cancelEngineCommand } from "./actions";
 
-// Request cancellation of a queued/running generation request. Co-operative: the VM stops at
-// its next safe point. Mirrors ApproveButton's pill styling + useTransition + router.refresh().
-export default function CancelButton({ id }: { id: string }) {
+// Request cancellation of a queued/running generation request (kind="request", default) or a box
+// command (kind="command"). Co-operative: the VM stops at its next safe point. Mirrors
+// ApproveButton's pill styling + useTransition + router.refresh().
+export default function CancelButton({ id, kind = "request" }: { id: string; kind?: "request" | "command" }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const cancel = () =>
     start(async () => {
-      const r = await cancelGenerationRequest(id);
+      const r = kind === "command" ? await cancelEngineCommand(id) : await cancelGenerationRequest(id);
       if (r.ok) router.refresh();
     });
   return (

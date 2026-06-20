@@ -14,6 +14,12 @@ const LABEL: Record<string, string> = {
   billing_cancel_on_delete: "Cancel on delete", admin_tier: "Admin tier",
   unpublish_report: "Unpublish report", publish_report: "Restore report",
   user_deleted: "Account deleted",
+  // Engine / box control
+  engine_request: "Engine · queue run", engine_cancel: "Engine · cancel run",
+  engine_pause: "Engine · pause", engine_resume: "Engine · resume",
+  engine_cmd_restart_poller: "Box · restart poller", engine_cmd_pull_latest: "Box · pull + restart",
+  engine_cmd_run_maintenance: "Box · re-run publish", engine_cmd_tail_logs: "Box · fetch logs",
+  engine_cmd_set_config: "Box · set config", engine_cmd_cancel: "Box · cancel command",
 };
 const label = (a: string) => LABEL[a] ?? a;
 

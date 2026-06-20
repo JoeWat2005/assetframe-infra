@@ -44,6 +44,23 @@ export type EngineRun = {
   finishedAt: string;
 };
 
+// A box-control command (restart/pull/maintenance/logs/config) the admin enqueues for the OCI VM.
+// The poller claims it from engine_commands and runs an allow-listed handler; result/logExcerpt
+// carry the outcome back. Mirrors GenerationRequest — a second web->box channel.
+export type EngineCommand = {
+  id: string;
+  command: string; // restart_poller | pull_latest | run_maintenance | tail_logs | set_config
+  args: unknown;
+  status: string; // queued | running | done | failed | cancelled
+  requestedBy: string;
+  cancelRequested: boolean;
+  result: string; // short outcome / error summary
+  logExcerpt: string; // tail of command output (e.g. tail_logs)
+  createdAt: string; // "YYYY-MM-DD HH:MI" UTC
+  startedAt: string;
+  finishedAt: string;
+};
+
 const s = (v: unknown): string => (v == null ? "" : String(v));
 
 // Default singleton when the DB / table isn't there yet: paused=false, offline (no heartbeat).
@@ -147,6 +164,40 @@ export async function getEngineRuns(limit = 20): Promise<EngineRun[]> {
       results: r.results ?? null,
       errors: s(r.errors),
       logExcerpt: s(r.log_excerpt),
+      startedAt: s(r.started_at),
+      finishedAt: s(r.finished_at),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+// Recent box-control commands (the engine_commands queue + history), newest first. Returns []
+// when the table isn't migrated yet (so the admin page renders before migration 1750000020000).
+export async function getEngineCommands(limit = 20): Promise<EngineCommand[]> {
+  if (!sql) return [];
+  try {
+    const rows = (await sql.query(
+      `SELECT id, command, args, status, coalesce(requested_by, '') AS requested_by,
+              cancel_requested, coalesce(result, '') AS result, coalesce(log_excerpt, '') AS log_excerpt,
+              to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI') AS created_at,
+              to_char(started_at AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI') AS started_at,
+              to_char(finished_at AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI') AS finished_at
+         FROM engine_commands
+        ORDER BY created_at DESC
+        LIMIT $1`,
+      [limit]
+    )) as Record<string, unknown>[];
+    return rows.map((r) => ({
+      id: s(r.id),
+      command: s(r.command),
+      args: r.args ?? null,
+      status: s(r.status),
+      requestedBy: s(r.requested_by),
+      cancelRequested: Boolean(r.cancel_requested),
+      result: s(r.result),
+      logExcerpt: s(r.log_excerpt),
+      createdAt: s(r.created_at),
       startedAt: s(r.started_at),
       finishedAt: s(r.finished_at),
     }));

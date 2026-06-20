@@ -4,7 +4,7 @@ import { ExternalLink, BarChart3, LineChart, Users, CreditCard, Percent, FileTex
 import { getAllEditions, getHiddenEditions } from "@/lib/content";
 import { getEntitlement } from "@/lib/entitlements";
 import { getAdminStats } from "@/lib/admin-stats";
-import { getEngineState, getGenerationRequests, getEngineRuns } from "@/lib/engine";
+import { getEngineState, getGenerationRequests, getEngineRuns, getEngineCommands } from "@/lib/engine";
 import { Badge, Hero, Note } from "@/components/ui";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,8 @@ import EditionsBrowser from "./EditionsBrowser";
 import ApproveButton from "./ApproveButton";
 import PauseToggle from "./PauseToggle";
 import GenerateForm from "./GenerateForm";
-import { RequestQueue, RunLog } from "./EnginePanels";
+import BoxControls from "./BoxControls";
+import { RequestQueue, RunLog, CommandLog } from "./EnginePanels";
 import { getAuditLog } from "@/lib/audit";
 import { getFeedback } from "@/lib/feedback";
 import FeedbackInbox from "./FeedbackInbox";
@@ -32,9 +33,9 @@ export default async function AdminPage() {
   if (!ent.signedIn) redirect("/sign-in");
   if (!ent.admin) redirect("/account");
 
-  const [stats, catalog, pending, auditLog, feedback, engineState, genRequests, engineRuns] = await Promise.all([
+  const [stats, catalog, pending, auditLog, feedback, engineState, genRequests, engineRuns, engineCommands] = await Promise.all([
     getAdminStats(), getAllEditions(), getHiddenEditions(), getAuditLog(), getFeedback(),
-    getEngineState(), getGenerationRequests(), getEngineRuns(),
+    getEngineState(), getGenerationRequests(), getEngineRuns(), getEngineCommands(),
   ]);
   const titleById = new Map(catalog.map((e) => [`${e.date}/${e.slug}`, e.instrument]));
 
@@ -287,6 +288,17 @@ export default async function AdminPage() {
               <h3 className="mb-2 text-sm font-semibold text-navy">Generate</h3>
               <GenerateForm assets={assets} />
             </div>
+
+            {/* Box control — allow-listed commands the OCI poller claims + runs (engine_commands).
+                Restart/pull self-exit + systemd relaunch; re-run publish recovers an unpublished run. */}
+            <div className="border-t border-line pt-4">
+              <h3 className="mb-1 text-sm font-semibold text-navy">Box control</h3>
+              <p className="mb-2 text-[11px] text-muted-foreground">
+                Operate the cloud instance directly: recover a stuck publish, deploy the latest code,
+                restart the poller, fetch logs, or set an allow-listed config value.
+              </p>
+              <BoxControls />
+            </div>
           </CardContent>
         </Card>
 
@@ -312,6 +324,17 @@ export default async function AdminPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Box command log — outcome of the box-control commands (restart/pull/maintenance/logs/config). */}
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle className="text-base">Box command log</CardTitle>
+            <CardDescription>Recent box-control commands and their result — expand a row for the captured output (e.g. fetched logs).</CardDescription>
+          </CardHeader>
+          <CardContent className={engineCommands.length === 0 ? undefined : "px-0"}>
+            <CommandLog rows={engineCommands} />
+          </CardContent>
+        </Card>
 
         {/* Pending approval — editions generated hidden by the engine's approval gate, awaiting publish */}
         <Card className="mt-4">
