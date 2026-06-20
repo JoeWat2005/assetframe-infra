@@ -20,12 +20,12 @@ const TIMEZONES = [
 ];
 
 type Form = {
-  id: string; name: string; instrument: string; ticker: string; yahoo: string;
+  id: string; name: string; instrument: string; ticker: string; yahoo: string; eodhd: string;
   assetClass: string; sessionProfile: string; cadence: string; timezone: string;
   rollUtc: number; related: string; forecastWindow: string; publishPolicy: string; enabled: boolean;
 };
 const BLANK: Form = {
-  id: "", name: "", instrument: "", ticker: "", yahoo: "", assetClass: "crypto",
+  id: "", name: "", instrument: "", ticker: "", yahoo: "", eodhd: "", assetClass: "crypto",
   sessionProfile: "crypto_24_7", cadence: "daily", timezone: "UTC", rollUtc: 22, related: "",
   forecastWindow: "rolling_24h", publishPolicy: "approval_required", enabled: true,
 };
@@ -46,12 +46,28 @@ function Dropdown({ value, onChange, options, label }: { value: string; onChange
   );
 }
 
-export default function AssetManager({ assets, editingAsset }: { assets: EngineAsset[]; editingAsset?: Form }) {
+export default function AssetManager({ assets }: { assets: EngineAsset[] }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<Result | null>(null);
   const [showAdd, setShowAdd] = useState(false);
-  const [form, setForm] = useState<Form>(editingAsset ?? BLANK);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<Form>(BLANK);
+
+  // Open the form pre-filled with an existing asset's real settings (edit). Upsert is keyed on id,
+  // so saving updates it in place. The id is locked while editing (renaming = delete + re-add).
+  const startEdit = (a: EngineAsset) => {
+    setForm({
+      id: a.id, name: a.name, instrument: a.instrument, ticker: a.ticker,
+      yahoo: a.providerSymbols?.yahoo ?? "", eodhd: a.providerSymbols?.eodhd ?? "",
+      assetClass: a.assetClass, sessionProfile: a.sessionProfile, cadence: a.cadence,
+      timezone: a.timezone, rollUtc: a.rollUtc, related: a.related,
+      forecastWindow: a.forecastWindow, publishPolicy: a.publishPolicy, enabled: a.enabled,
+    });
+    setEditingId(a.id);
+    setShowAdd(true);
+    setMsg(null);
+  };
 
   const requireApproval = assets.some((a) => a.publishPolicy === "approval_required");
   const lastChecked = assets.map((a) => a.dueCheckedAt).filter(Boolean).sort().pop() || "";
@@ -72,7 +88,7 @@ export default function AssetManager({ assets, editingAsset }: { assets: EngineA
   const submitAdd = () =>
     run(async () => {
       const r = await upsertEngineAsset(form);
-      if (r.ok) { setForm(BLANK); setShowAdd(false); }
+      if (r.ok) { setForm(BLANK); setShowAdd(false); setEditingId(null); }
       return r;
     });
 
@@ -99,7 +115,7 @@ export default function AssetManager({ assets, editingAsset }: { assets: EngineA
         >
           Check schedule
         </Button>
-        <Button size="sm" disabled={pending} onClick={() => { setForm(BLANK); setShowAdd((s) => !s); }}>
+        <Button size="sm" disabled={pending} onClick={() => { setForm(BLANK); setEditingId(null); setShowAdd((s) => !s); }}>
           {showAdd ? "Close" : "+ Add asset"}
         </Button>
       </div>
@@ -123,7 +139,7 @@ export default function AssetManager({ assets, editingAsset }: { assets: EngineA
                 <th className="p-2.5 text-left">Scheduled</th>
                 <th className="p-2.5 text-left">Publish</th>
                 <th className="p-2.5 text-left">In daily run</th>
-                <th className="p-2.5 text-right">Remove</th>
+                <th className="p-2.5 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -162,6 +178,14 @@ export default function AssetManager({ assets, editingAsset }: { assets: EngineA
                   <td className="p-2.5 text-right">
                     <button
                       type="button" disabled={pending}
+                      onClick={() => startEdit(a)}
+                      className="mr-1.5 rounded-full bg-tile px-2.5 py-0.5 text-[11px] font-bold text-navy transition hover:bg-line disabled:opacity-50"
+                      title="Edit this asset's settings"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button" disabled={pending}
                       onClick={() => run(() => deleteEngineAsset(a.id), `Remove ${a.ticker} from the universe?`)}
                       className="rounded-full bg-[#ffebe9] px-2.5 py-0.5 text-[11px] font-bold text-[#cf222e] transition hover:bg-[#ffd7d5] disabled:opacity-50"
                     >
@@ -178,10 +202,12 @@ export default function AssetManager({ assets, editingAsset }: { assets: EngineA
       {/* Add / edit form */}
       {showAdd && (
         <div className="rounded-xl border border-line bg-tile/30 p-4">
+          <div className="mb-3 text-sm font-bold text-navy">{editingId ? `Edit ${form.ticker || editingId}` : "Add a new asset"}</div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <div><label className="mb-1 block text-[11px] font-semibold text-muted-foreground">id (lowercase)</label><Input className="h-9" value={form.id} onChange={(e) => set("id", e.target.value)} placeholder="btc" /></div>
+            <div><label className="mb-1 block text-[11px] font-semibold text-muted-foreground">id (lowercase){editingId ? " · locked" : ""}</label><Input className="h-9" value={form.id} onChange={(e) => set("id", e.target.value)} placeholder="btc" readOnly={!!editingId} disabled={!!editingId} /></div>
             <div><label className="mb-1 block text-[11px] font-semibold text-muted-foreground">ticker</label><Input className="h-9" value={form.ticker} onChange={(e) => set("ticker", e.target.value)} placeholder="BTC" /></div>
             <div><label className="mb-1 block text-[11px] font-semibold text-muted-foreground">Yahoo symbol (price feed)</label><Input className="h-9" value={form.yahoo} onChange={(e) => set("yahoo", e.target.value)} placeholder="BTC-USD" /></div>
+            <div><label className="mb-1 block text-[11px] font-semibold text-muted-foreground">EODHD symbol (optional)</label><Input className="h-9" value={form.eodhd} onChange={(e) => set("eodhd", e.target.value)} placeholder="GBPUSD.FOREX" /></div>
             <div><label className="mb-1 block text-[11px] font-semibold text-muted-foreground">name</label><Input className="h-9" value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Bitcoin" /></div>
             <div className="sm:col-span-2"><label className="mb-1 block text-[11px] font-semibold text-muted-foreground">instrument (full name)</label><Input className="h-9" value={form.instrument} onChange={(e) => set("instrument", e.target.value)} placeholder="Bitcoin / USD (aggregate spot)" /></div>
             <Dropdown label="asset class" value={form.assetClass} onChange={(v) => set("assetClass", v)} options={ASSET_CLASSES} />
@@ -194,7 +220,7 @@ export default function AssetManager({ assets, editingAsset }: { assets: EngineA
             <div className="sm:col-span-2"><label className="mb-1 block text-[11px] font-semibold text-muted-foreground">related (comma list, optional)</label><Input className="h-9" value={form.related} onChange={(e) => set("related", e.target.value)} placeholder="ETH-USD" /></div>
           </div>
           <div className="mt-3 flex items-center gap-2">
-            <Button size="sm" disabled={pending} onClick={submitAdd}>{pending ? "Saving…" : "Save asset"}</Button>
+            <Button size="sm" disabled={pending} onClick={submitAdd}>{pending ? "Saving…" : editingId ? "Save changes" : "Save asset"}</Button>
             <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <input type="checkbox" className="size-4 accent-navy" checked={form.enabled} onChange={(e) => set("enabled", e.target.checked)} /> enabled
             </label>

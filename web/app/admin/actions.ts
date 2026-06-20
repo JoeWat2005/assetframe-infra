@@ -355,7 +355,7 @@ const TIMEZONES = [
 ];
 
 type AssetInput = {
-  id: string; name: string; instrument: string; ticker: string; yahoo: string;
+  id: string; name: string; instrument: string; ticker: string; yahoo: string; eodhd?: string;
   assetClass: string; sessionProfile: string; cadence: string; timezone: string;
   rollUtc?: number; related?: string; forecastWindow?: string; publishPolicy?: string;
   reportTier?: string; enabled?: boolean;
@@ -395,6 +395,9 @@ export async function upsertEngineAsset(input: AssetInput): Promise<Result> {
   const reportTier = REPORT_TIERS.includes(input.reportTier ?? "") ? input.reportTier! : "official";
   const roll = Math.max(0, Math.min(23, Math.round(Number(input.rollUtc) || 0)));
   const enabled = input.enabled !== false;
+  const providerSymbols: Record<string, string> = { yahoo };
+  const eodhd = (input.eodhd || "").trim();
+  if (eodhd) providerSymbols.eodhd = eodhd;
   try {
     await sql.query(
       `INSERT INTO engine_assets (id, name, instrument, ticker, provider_symbols, asset_class, session_profile,
@@ -405,7 +408,7 @@ export async function upsertEngineAsset(input: AssetInput): Promise<Result> {
          cadence=excluded.cadence, timezone=excluded.timezone, roll_utc=excluded.roll_utc, related=excluded.related,
          forecast_window=excluded.forecast_window, publish_policy=excluded.publish_policy, report_tier=excluded.report_tier,
          enabled=excluded.enabled, updated_at=now()`,
-      [id, input.name.trim(), input.instrument.trim(), ticker, JSON.stringify({ yahoo }), input.assetClass,
+      [id, input.name.trim(), input.instrument.trim(), ticker, JSON.stringify(providerSymbols), input.assetClass,
        input.sessionProfile, input.cadence, input.timezone, roll, (input.related || "").trim(),
        forecastWindow, publishPolicy, reportTier, enabled]
     );
