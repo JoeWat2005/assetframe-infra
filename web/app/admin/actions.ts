@@ -5,7 +5,7 @@ import { clerkClient, currentUser } from "@clerk/nextjs/server";
 import { getEntitlement } from "@/lib/entitlements";
 import { logAudit } from "@/lib/audit";
 import { rateLimit } from "@/lib/rate-limit";
-import { getAllEditions } from "@/lib/content";
+import { getEngineAssets } from "@/lib/engine-assets";
 import { signalEngineWake } from "@/lib/upstash";
 import { sql } from "@/lib/db";
 
@@ -169,12 +169,15 @@ export async function requestGeneration(
     // Match case-insensitively — edition slugs are upper-case (e.g. "ETH"), but the picker/user
     // input may differ in case — while keeping the canonical slug so the engine receives the exact
     // id it published the edition under.
-    const known = new Map((await getAllEditions()).map((e) => [e.slug.toLowerCase(), e.slug] as const));
+    // Validate against the ASSET UNIVERSE (engine_assets, enabled) — not the published catalog —
+    // so you can generate an instrument before its first edition exists. The engine runs
+    // `--asset <id>`, so we pass the lowercase asset ids.
+    const known = new Map((await getEngineAssets()).filter((a) => a.enabled).map((a) => [a.id.toLowerCase(), a.id] as const));
     const requested = [...new Set(scope.assets.map((a) => String(a).trim().toLowerCase()).filter(Boolean))];
     const assets = requested.map((a) => known.get(a)).filter((s): s is string => Boolean(s));
     const unknown = requested.filter((a) => !known.has(a));
-    if (assets.length === 0) return { ok: false, message: "Select at least one known asset." };
-    if (unknown.length) return { ok: false, message: `Unknown asset(s): ${unknown.join(", ")}.` };
+    if (assets.length === 0) return { ok: false, message: "Select at least one enabled asset." };
+    if (unknown.length) return { ok: false, message: `Unknown or disabled asset(s): ${unknown.join(", ")}.` };
     normalized = { assets };
     summary = assets.join(", ");
   } else {

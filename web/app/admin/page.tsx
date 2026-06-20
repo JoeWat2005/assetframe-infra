@@ -41,13 +41,14 @@ export default async function AdminPage() {
   ]);
   const titleById = new Map(catalog.map((e) => [`${e.date}/${e.slug}`, e.instrument]));
 
-  // Distinct instruments (by slug) for the Generate picker — one row per asset the engine can
-  // regenerate, taking the newest edition's instrument/ticker as the label.
-  const assetMap = new Map<string, { slug: string; instrument: string; ticker: string }>();
-  for (const e of catalog) {
-    if (!assetMap.has(e.slug)) assetMap.set(e.slug, { slug: e.slug, instrument: e.instrument, ticker: e.ticker });
-  }
-  const assets = [...assetMap.values()].sort((a, b) => a.instrument.localeCompare(b.instrument));
+  // The Generate picker uses the ASSET UNIVERSE (engine_assets, enabled), NOT the published
+  // catalog — so you can generate an instrument before its first edition exists. The value is the
+  // engine asset id ("btc"), which requestGeneration validates + the engine runs as `--asset btc`.
+  // Pick several to generate them together (the engine runs assets in parallel with 4 workers).
+  const assets = engineAssets
+    .filter((a) => a.enabled)
+    .map((a) => ({ slug: a.id, instrument: a.instrument, ticker: a.ticker }))
+    .sort((a, b) => a.instrument.localeCompare(b.instrument));
 
   const priceNum = parseFloat((SITE.proPrice.match(/[\d.]+/) || ["0"])[0]) || 0;
   const mrr = stats.subscribers * priceNum;
@@ -67,7 +68,7 @@ export default async function AdminPage() {
   return (
     <>
       <Hero title="Admin" tag="Operations overview — visible to admins only." />
-      <div className="mx-auto max-w-6xl px-5 py-8">
+      <div className="mx-auto max-w-[1800px] px-4 py-8 sm:px-6 lg:px-8">
         {/* KPI row */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {kpis.map((k) => (

@@ -124,6 +124,12 @@ export default function AssetManager({ assets }: { assets: EngineAsset[] }) {
         {lastChecked ? `Last checked ${lastChecked} UTC.` : "Not checked yet — click Check schedule."}
       </p>
 
+      {assets.length > 0 && !assets.some((a) => a.enabled) && (
+        <p className="rounded-lg border border-[#9a6700]/40 bg-[#fff7e6] px-3 py-2 text-xs text-[#7a5200]">
+          ⚠ No assets are enabled — the daily 05:00 run will generate nothing. Enable at least one.
+        </p>
+      )}
+
       {/* Universe table */}
       {assets.length === 0 ? (
         <p className="text-sm text-muted-foreground">No assets yet — add one below. (If this is unexpected, the engine-assets migration may not be applied.)</p>

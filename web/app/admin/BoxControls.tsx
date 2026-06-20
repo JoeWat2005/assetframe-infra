@@ -54,97 +54,41 @@ export default function BoxControls() {
 
   return (
     <div className="flex flex-col gap-3">
+      {/* Safe operations — read-only / recoverable, no data loss. */}
       <div className="flex flex-wrap gap-2">
-        <Button
-          size="sm" variant="outline" disabled={pending}
-          onClick={() => run("run_maintenance")}
-          title="Re-run export → publish (R2) → sync (Neon) WITHOUT generating. Recovers a run that generated locally but failed to publish (e.g. boto3 missing)."
-        >
+        <Button size="sm" variant="outline" disabled={pending} onClick={() => run("run_maintenance")}
+          title="Re-run export → publish (R2) → sync (Neon) WITHOUT generating. Recovers a run that generated locally but failed to publish.">
           Re-run publish
         </Button>
-        <Button
-          size="sm" variant="outline" disabled={pending}
-          onClick={() => run("tail_logs", { lines: 200 })}
-          title="Pull the latest ~200 poller log lines into the box command log below."
-        >
+        <Button size="sm" variant="outline" disabled={pending} onClick={() => run("tail_logs", { lines: 200 })}
+          title="Pull the latest ~200 poller log lines into the box command log below.">
           Fetch logs
         </Button>
-        <Button
-          size="sm" variant="outline" disabled={pending}
-          onClick={() => run("pull_latest", undefined,
-            "Pull the latest code from origin (git pull --ff-only), reinstall deps, and restart the poller onto it. Continue?")}
-          title="git fetch + git pull --ff-only + reinstall deps, then restart onto the new code."
-        >
-          Pull + restart
-        </Button>
-        <Button
-          size="sm" variant="outline" disabled={pending}
-          onClick={() => run("restart_poller", undefined,
-            "Restart the engine poller now? It self-exits and systemd relaunches it within a few seconds.")}
-          title="Gracefully restart the poller (picks up .env changes). systemd relaunches it."
-        >
-          Restart poller
-        </Button>
-      </div>
-
-      {/* Scoring + system refresh (the box runs as root, so these work without SSH). */}
-      <div className="flex flex-wrap gap-2">
-        <Button
-          size="sm" variant="outline" disabled={pending}
-          onClick={() => run("run_scoring")}
-          title="Grade any closed prediction windows into the ledger now (no new reports generated)."
-        >
+        <Button size="sm" variant="outline" disabled={pending} onClick={() => run("run_scoring")}
+          title="Grade any closed prediction windows into the ledger now (no new reports generated).">
           Score now
         </Button>
-        <Button
-          size="sm" variant="outline" disabled={pending}
-          onClick={() => run("reset_ledger", undefined,
-            "Reset the box's outcome ledger to empty? This clears the track-record source on the box and cannot be undone.")}
-          title="Truncate the box's outcome ledger to its header — a fresh track record."
-        >
-          Reset ledger
+        <Button size="sm" variant="outline" disabled={pending} onClick={() => run("service_check")}
+          title="Check the box can reach Neon, R2 and Upstash. Result shows in the Box command log.">
+          Service check
         </Button>
-        <Button
-          size="sm" variant="outline" disabled={pending}
-          onClick={() => run("clear_reports", undefined,
-            "Clear ALL working dirs on the box (reports, data, content, runs)? Use for a clean restart — the ledger is NOT touched.")}
-          title="Clear the box's working dirs (reports/data/content/runs) — a dashboard system refresh, no SSH."
-        >
-          Clear reports
+        <Button size="sm" variant="outline" disabled={pending} onClick={() => run("clear_wake")}
+          title="Clear a stuck Upstash wake flag.">
+          Clear wake flag
         </Button>
       </div>
 
-      {/* Services & data — Neon / R2 / Upstash. */}
+      {/* Deploy / restart — a brief outage, no data loss. */}
       <div className="flex flex-wrap gap-2">
-        <Button
-          size="sm" variant="outline" disabled={pending}
-          onClick={() => run("service_check")}
-          title="Check the box can reach Neon, R2 and Upstash. Result shows in the Box command log."
-        >
-          Service check
+        <Button size="sm" variant="outline" disabled={pending}
+          onClick={() => run("pull_latest", undefined, "Pull the latest code from origin (git pull --ff-only), reinstall deps, and restart the poller onto it. Continue?")}
+          title="git fetch + git pull --ff-only + reinstall deps, then restart onto the new code.">
+          Pull + restart
         </Button>
-        <Button
-          size="sm" variant="outline" disabled={pending}
-          onClick={() => run("clear_wake")}
-          title="Clear a stuck Upstash wake flag."
-        >
-          Clear wake flag
-        </Button>
-        <Button
-          size="sm" variant="outline" disabled={pending}
-          onClick={() => run("clear_r2", undefined,
-            "Delete ALL report files from R2? They'd need re-publishing (Re-run publish, or regenerate). Cannot be undone.")}
-          title="Delete report objects from the R2 bucket (the private report files)."
-        >
-          Clear R2 files
-        </Button>
-        <Button
-          size="sm" variant="outline" disabled={pending}
-          onClick={() => runAction(clearCatalog,
-            "Clear the public catalog in Neon (all editions + scored results)? Pair with Reset ledger + Clear reports + Clear R2 for a full reset.")}
-          title="Delete editions + scored results from Neon — the public catalog (a full reset, Neon side)."
-        >
-          Clear catalog (Neon)
+        <Button size="sm" variant="outline" disabled={pending}
+          onClick={() => run("restart_poller", undefined, "Restart the engine poller now? It self-exits and systemd relaunches it within a few seconds.")}
+          title="Gracefully restart the poller (picks up .env changes). systemd relaunches it.">
+          Restart poller
         </Button>
       </div>
 
@@ -187,6 +131,38 @@ export default function BoxControls() {
         <b>Restart</b>; <b>Re-run publish</b> recovers a generated-but-unpublished run. Watch the
         Box command log below for each command&rsquo;s result.
       </p>
+
+      {/* Danger zone — irreversible deletes, visually separated + red so they're never a misclick. */}
+      <div className="rounded-lg border border-[#cf222e]/30 bg-[#ffebe9]/40 p-3">
+        <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[#cf222e]">Danger zone — irreversible</div>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" disabled={pending}
+            className="border-[#cf222e]/40 text-[#cf222e] hover:bg-[#ffebe9]"
+            onClick={() => run("reset_ledger", undefined, "Reset the box's outcome ledger to EMPTY? This clears the track-record source on the box and cannot be undone.")}
+            title="Truncate the box's outcome ledger to its header — a fresh track record.">
+            Reset ledger
+          </Button>
+          <Button size="sm" variant="outline" disabled={pending}
+            className="border-[#cf222e]/40 text-[#cf222e] hover:bg-[#ffebe9]"
+            onClick={() => run("clear_reports", undefined, "Clear ALL working dirs on the box (reports, data, content, runs)? The ledger is NOT touched. Cannot be undone.")}
+            title="Clear the box's working dirs (reports/data/content/runs) — a dashboard system refresh, no SSH.">
+            Clear reports
+          </Button>
+          <Button size="sm" variant="outline" disabled={pending}
+            className="border-[#cf222e]/40 text-[#cf222e] hover:bg-[#ffebe9]"
+            onClick={() => run("clear_r2", undefined, "Delete ALL report files from R2? They'd need re-publishing (Re-run publish, or regenerate). Cannot be undone.")}
+            title="Delete report objects from the R2 bucket (the private report files).">
+            Clear R2 files
+          </Button>
+          <Button size="sm" variant="outline" disabled={pending}
+            className="border-[#cf222e]/40 text-[#cf222e] hover:bg-[#ffebe9]"
+            onClick={() => runAction(clearCatalog, "Clear the public catalog in Neon (all editions + scored results)? Pair with Reset ledger + Clear reports + Clear R2 for a full reset. Cannot be undone.")}
+            title="Delete editions + scored results from Neon — the public catalog.">
+            Clear catalog (Neon)
+          </Button>
+        </div>
+        <p className="mt-2 text-[11px] text-[#cf222e]/80">A full system reset = all four (box dirs + ledger + R2 files + Neon catalog).</p>
+      </div>
       {msg && <span className={`text-sm ${msg.ok ? "text-[#1a7f37]" : "text-[#cf222e]"}`}>{msg.message}</span>}
     </div>
   );

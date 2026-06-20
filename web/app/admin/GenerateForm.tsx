@@ -67,7 +67,7 @@ export default function GenerateForm({ assets }: { assets: Asset[] }) {
           The engine will generate every instrument that is <b>due</b> (per its own schedule rules).
         </p>
       ) : assets.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No assets yet — nothing to pick.</p>
+        <p className="text-sm text-muted-foreground">No enabled assets — add or enable one in the <b>Asset universe</b> below.</p>
       ) : (
         <div>
           <Input
@@ -99,7 +99,7 @@ export default function GenerateForm({ assets }: { assets: Asset[] }) {
               ))
             )}
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">{selected.size} selected</p>
+          <p className="mt-1 text-xs text-muted-foreground">{selected.size} selected — picked assets generate together (in parallel).</p>
         </div>
       )}
 
