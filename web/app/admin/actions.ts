@@ -6,6 +6,7 @@ import { getEntitlement } from "@/lib/entitlements";
 import { logAudit } from "@/lib/audit";
 import { rateLimit } from "@/lib/rate-limit";
 import { getEngineAssets } from "@/lib/engine-assets";
+import { getEngineState } from "@/lib/engine";
 import { signalEngineWake } from "@/lib/upstash";
 import { sql } from "@/lib/db";
 
@@ -163,8 +164,11 @@ export async function requestGeneration(
   let normalized: EngineScope;
   let summary: string;
   if (scope && "all_due" in scope && scope.all_due === true) {
+    // Guard the silent no-op: "All due" with nothing enabled would run + generate zero reports.
+    const enabledCount = (await getEngineAssets()).filter((a) => a.enabled).length;
+    if (enabledCount === 0) return { ok: false, message: "No assets are enabled — enable at least one in the Asset universe first." };
     normalized = { all_due: true };
-    summary = "all due";
+    summary = `all due (${enabledCount} enabled)`;
   } else if (scope && "assets" in scope && Array.isArray(scope.assets)) {
     // Match case-insensitively — edition slugs are upper-case (e.g. "ETH"), but the picker/user
     // input may differ in case — while keeping the canonical slug so the engine receives the exact
@@ -195,7 +199,16 @@ export async function requestGeneration(
     // Wake the OCI poller now (via Upstash) so it picks the request up on its next ~30s tick
     // instead of waiting for its periodic Neon safety sweep. Best-effort — the row is queued either way.
     await signalEngineWake();
-    return { ok: true, message: `Queued a run for ${summary}.`, id };
+    // Be honest if the box is offline — the row is queued either way, but it won't run until the
+    // engine reconnects (otherwise a green "Queued" looks like it's generating when nothing is).
+    const online = (await getEngineState().catch(() => ({ online: true }))).online;
+    return {
+      ok: true,
+      message: online
+        ? `Queued a run for ${summary}.`
+        : `Queued for ${summary} — but the engine is OFFLINE, so it won't run until the box reconnects.`,
+      id,
+    };
   } catch {
     return { ok: false, message: "Couldn't queue the run — has the engine migration been applied?" };
   }
