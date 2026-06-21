@@ -289,7 +289,7 @@ const ENGINE_COMMANDS: Record<string, string> = {
 // Keys set_config may write to the engine .env. Mirrors engine_ops._SETTABLE_CONFIG_KEYS — only
 // keys the engine consumes, never secrets/credentials/URLs. (The box re-validates this list too.)
 const SETTABLE_CONFIG_KEYS = [
-  "ASSETFRAME_AUTHOR_BRIEFS", "ADVISOR_DATA_PROVIDER", "ASSETFRAME_RUN_TIMEOUT",
+  "ASSETFRAME_AUTHOR_BRIEFS", "ADVISOR_DATA_PROVIDER", "ASSETFRAME_RUN_TIMEOUT", "ASSETFRAME_BRIEF_MODEL",
 ];
 
 // Enqueue an allow-listed box command. Validates the verb + args, inserts a 'queued'
@@ -318,6 +318,10 @@ export async function sendEngineCommand(
     // ASSETFRAME_RUN_TIMEOUT is int()-parsed at engine import and would crash-loop the poller.
     if (key === "ASSETFRAME_RUN_TIMEOUT" && !(/^\d+$/.test(value) && Number(value) >= 60 && Number(value) <= 86400)) {
       return { ok: false, message: "ASSETFRAME_RUN_TIMEOUT must be an integer 60–86400 (seconds)." };
+    }
+    // A brief-model typo would break every brief — require a Claude model id.
+    if (key === "ASSETFRAME_BRIEF_MODEL" && !/^claude-[a-z0-9.-]{2,52}$/.test(value)) {
+      return { ok: false, message: "ASSETFRAME_BRIEF_MODEL must be a Claude model id (e.g. claude-sonnet-4-6, claude-haiku-4-5-20251001, claude-opus-4-8)." };
     }
     cleanArgs = { key, value };
     detail = `${key}=${value}`;

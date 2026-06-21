@@ -219,7 +219,7 @@ export default function OperatorManual() {
               <li><B>Service check</B> — pings Neon, R2 and Upstash from the box.</li>
               <li><B>Clear wake flag</B> — clears a stuck wake nudge.</li>
               <li><B>Pull + restart</B> — deploy latest code + deps, then restart. <B>Restart poller</B> — bounce the process (picks up config).</li>
-              <li><B>Set config</B> — writes ONE allow-listed key (<code className="text-[11px]">ASSETFRAME_AUTHOR_BRIEFS</code>, <code className="text-[11px]">ADVISOR_DATA_PROVIDER</code>, <code className="text-[11px]">ASSETFRAME_RUN_TIMEOUT</code> = integer 60–86400). Never secrets. Applies on the next Restart.</li>
+              <li><B>Set config</B> — writes ONE allow-listed key: <code className="text-[11px]">ASSETFRAME_AUTHOR_BRIEFS</code>, <code className="text-[11px]">ADVISOR_DATA_PROVIDER</code>, <code className="text-[11px]">ASSETFRAME_RUN_TIMEOUT</code> (integer 60–86400), or <code className="text-[11px]">ASSETFRAME_BRIEF_MODEL</code> (the Claude model that writes briefs — e.g. <code className="text-[11px]">claude-sonnet-4-6</code> for value, <code className="text-[11px]">claude-haiku-4-5-20251001</code> for cheapest, <code className="text-[11px]">claude-opus-4-8</code> for best). Never secrets. Applies on the next Restart.</li>
             </Ref>
             <Ref title="Danger zone (irreversible)" danger>
               <li><B>Reset ledger</B> — empties the outcome ledger (the track-record source). Ledger only.</li>
