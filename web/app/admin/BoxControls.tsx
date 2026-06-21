@@ -16,7 +16,16 @@ import {
 // Mirrors actions.ts SETTABLE_CONFIG_KEYS / engine_ops._SETTABLE_CONFIG_KEYS (no secrets).
 const SETTABLE_KEYS = [
   "ASSETFRAME_AUTHOR_BRIEFS", "ADVISOR_DATA_PROVIDER", "ASSETFRAME_RUN_TIMEOUT", "ASSETFRAME_BRIEF_MODEL",
+  "ASSETFRAME_RETENTION_DAYS",
 ];
+// One-line help shown under the value box when a key is selected, so the operator knows the shape.
+const CONFIG_KEY_HINTS: Record<string, string> = {
+  ASSETFRAME_AUTHOR_BRIEFS: "1 = AI authors briefs (needs ANTHROPIC_API_KEY); 0 = operator-written only.",
+  ADVISOR_DATA_PROVIDER: "Price feed: yahoo (default, keyless) or eodhd (needs EODHD_API_KEY).",
+  ASSETFRAME_RUN_TIMEOUT: "Seconds a daily run may take before it's killed (60–86400).",
+  ASSETFRAME_BRIEF_MODEL: "Claude model id for briefs, e.g. claude-sonnet-4-6 / claude-haiku-4-5-20251001.",
+  ASSETFRAME_RETENTION_DAYS: "Days of local reports/runs to keep on the box (0 = keep forever). Old editions stay in R2.",
+};
 
 type Result = { ok: boolean; message: string };
 
@@ -158,6 +167,9 @@ export default function BoxControls({ hideScoreNow = false }: { hideScoreNow?: b
           Set config
         </Button>
       </div>
+      {CONFIG_KEY_HINTS[cfgKey] && (
+        <p className="-mt-1 text-[11px] text-muted-foreground"><b>{cfgKey}</b> — {CONFIG_KEY_HINTS[cfgKey]}</p>
+      )}
 
       <p className="text-[11px] text-muted-foreground">
         Commands run on the box at its next ~30s poll. <b>Set config</b> changes apply after a{" "}

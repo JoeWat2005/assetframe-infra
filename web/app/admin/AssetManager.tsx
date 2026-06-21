@@ -12,8 +12,8 @@ import {
 // Mirrors actions.ts / scripts/config_loader.py. The engine re-validates, so these are for the UI.
 const ASSET_CLASSES = ["crypto", "equity", "fx", "futures", "index", "commodity"];
 const SESSION_PROFILES = ["crypto_24_7", "fx_spot", "us_equity_rth", "cme_futures"];
-const CADENCES = ["daily", "weekday", "trading_day", "weekday_or_market_open"];
-const FORECAST_WINDOWS = ["rolling_24h", "next_liquid_session", "next_regular_session", "next_session"];
+const CADENCES = ["daily", "weekday", "trading_day", "weekday_or_market_open", "weekly", "monthly"];
+const FORECAST_WINDOWS = ["rolling_24h", "next_liquid_session", "next_regular_session", "next_session", "next_week", "next_5_sessions"];
 const TIMEZONES = [
   "UTC", "Europe/London", "America/New_York", "America/Chicago", "America/Los_Angeles",
   "Asia/Tokyo", "Asia/Shanghai", "Asia/Hong_Kong", "Asia/Singapore", "Australia/Sydney",

@@ -290,6 +290,7 @@ const ENGINE_COMMANDS: Record<string, string> = {
 // keys the engine consumes, never secrets/credentials/URLs. (The box re-validates this list too.)
 const SETTABLE_CONFIG_KEYS = [
   "ASSETFRAME_AUTHOR_BRIEFS", "ADVISOR_DATA_PROVIDER", "ASSETFRAME_RUN_TIMEOUT", "ASSETFRAME_BRIEF_MODEL",
+  "ASSETFRAME_RETENTION_DAYS",
 ];
 
 // Enqueue an allow-listed box command. Validates the verb + args, inserts a 'queued'
@@ -322,6 +323,10 @@ export async function sendEngineCommand(
     // A brief-model typo would break every brief — require a Claude model id.
     if (key === "ASSETFRAME_BRIEF_MODEL" && !/^claude-[a-z0-9.-]{2,52}$/.test(value)) {
       return { ok: false, message: "ASSETFRAME_BRIEF_MODEL must be a Claude model id (e.g. claude-sonnet-4-6, claude-haiku-4-5-20251001, claude-opus-4-8)." };
+    }
+    // Local reports/runs retention in days (0 = keep everything). Bounded so a typo can't be wild.
+    if (key === "ASSETFRAME_RETENTION_DAYS" && !(/^\d+$/.test(value) && Number(value) >= 0 && Number(value) <= 3650)) {
+      return { ok: false, message: "ASSETFRAME_RETENTION_DAYS must be an integer 0–3650 (days; 0 = keep everything)." };
     }
     cleanArgs = { key, value };
     detail = `${key}=${value}`;
@@ -374,8 +379,8 @@ export async function cancelEngineCommand(id: string): Promise<Result> {
 // values mirror scripts/config_loader.py; the engine re-validates, so this is the convenience copy.
 const ASSET_CLASSES = ["equity", "crypto", "fx", "futures", "index", "commodity"];
 const SESSION_PROFILES = ["fx_spot", "crypto_24_7", "us_equity_rth", "cme_futures"];
-const CADENCES = ["daily", "weekday", "trading_day", "weekday_or_market_open"];
-const FORECAST_WINDOWS = ["next_liquid_session", "next_regular_session", "rolling_24h", "next_session"];
+const CADENCES = ["daily", "weekday", "trading_day", "weekday_or_market_open", "weekly", "monthly"];
+const FORECAST_WINDOWS = ["next_liquid_session", "next_regular_session", "rolling_24h", "next_session", "next_week", "next_5_sessions"];
 const PUBLISH_POLICIES = ["approval_required", "auto"];
 const REPORT_TIERS = ["official", "watchlist", "staged", "backtest"];
 const TIMEZONES = [
