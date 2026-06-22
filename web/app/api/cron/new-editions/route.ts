@@ -138,6 +138,7 @@ export async function GET(req: Request) {
           bodyHtml:
             `<p style="font-size:14px;">Today&rsquo;s published editions:</p>` +
             `<ul style="padding-left:18px;font-size:14px;">${itemsHtml}</ul>` +
+            `<p style="margin-top:12px;font-size:13px;color:#5b6b80;">Each report can span multiple timeframes — see how the calls perform per horizon in the <a href="${BASE}/track-record" style="color:#0b2545;font-weight:600;">per-timeframe track record</a>.</p>` +
             `<p style="margin-top:12px;font-size:14px;"><a href="${BASE}/reports" style="color:#0b2545;font-weight:600;">Browse all reports →</a></p>`,
           footerNote: `You subscribed to AssetFrame alerts. <a href="${BASE}/api/unsubscribe?token=${String(s.unsub_token)}">Unsubscribe</a>.`,
         }),

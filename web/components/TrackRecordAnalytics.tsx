@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/chart";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import type {
-  InstrumentPerf, AssetClassPerf, PredTypePerf, RegimePerf, TimelinePoint, CalibrationBin,
+  InstrumentPerf, AssetClassPerf, PredTypePerf, RegimePerf, HorizonPerf, TimelinePoint, CalibrationBin,
   ComponentOutcome,
 } from "@/lib/content";
 
@@ -140,17 +140,17 @@ function HitRateOverTime({ data }: { data: TimelinePoint[] }) {
 }
 
 export default function TrackRecordAnalytics({
-  byInstrument = [], byAssetClass = [], byPredictionType = [], byRegime = [],
+  byInstrument = [], byAssetClass = [], byPredictionType = [], byRegime = [], byHorizon = [],
   timeline = [], calibrationCurve = [], componentVsOutcome = [],
 }: {
   byInstrument?: InstrumentPerf[]; byAssetClass?: AssetClassPerf[];
-  byPredictionType?: PredTypePerf[]; byRegime?: RegimePerf[];
+  byPredictionType?: PredTypePerf[]; byRegime?: RegimePerf[]; byHorizon?: HorizonPerf[];
   timeline?: TimelinePoint[]; calibrationCurve?: CalibrationBin[];
   componentVsOutcome?: ComponentOutcome[];
 }) {
   const hasAny =
     byInstrument.length || byAssetClass.length || byPredictionType.length ||
-    byRegime.length || timeline.length || calibrationCurve.length || componentVsOutcome.length;
+    byRegime.length || byHorizon.length || timeline.length || calibrationCurve.length || componentVsOutcome.length;
   if (!hasAny) return null;
 
   return (
@@ -212,6 +212,21 @@ export default function TrackRecordAnalytics({
               <HitRateBars
                 labelKey="regime"
                 data={byRegime.map((d) => ({ label: d.regime, hitRate: d.hitRate, reportsScored: d.reportsScored }))}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {byHorizon.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">By timeframe</CardTitle>
+              <CardDescription>Hit rate per prediction horizon (intraday / next-session / multi-session) — multi-timeframe.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <HitRateBars
+                labelKey="horizon"
+                data={byHorizon.map((d) => ({ label: d.horizon, hitRate: d.hitRate, reportsScored: d.reportsScored }))}
               />
             </CardContent>
           </Card>

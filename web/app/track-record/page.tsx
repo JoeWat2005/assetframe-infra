@@ -80,6 +80,7 @@ export default async function TrackRecordPage() {
             byAssetClass={tr.byAssetClass}
             byPredictionType={tr.byPredictionType}
             byRegime={tr.byRegime}
+            byHorizon={tr.byHorizon}
             timeline={tr.timeline}
             calibrationCurve={tr.calibrationCurve}
             componentVsOutcome={tr.componentVsOutcome}

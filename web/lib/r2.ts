@@ -27,9 +27,29 @@ const client =
  * Credentials never leave the server; the client only ever sees a URL that expires
  * in two minutes. Returns null if R2 isn't configured yet (so the route can 503 cleanly).
  */
+// Retry transient R2 blips (network / 5xx). 3 attempts, 120/240ms backoff. Callers already treat
+// null as "unavailable" (503 / degrade), so exhausting retries stays graceful.
+async function r2Retry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
+  let last: unknown;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (e) {
+      last = e;
+      if (i < attempts - 1) await new Promise((r) => setTimeout(r, 120 * 2 ** i));
+    }
+  }
+  throw last;
+}
+
 export async function signedReportUrl(key: string, expiresIn = 120): Promise<string | null> {
-  if (!client || !bucket) return null;
-  return getSignedUrl(client, new GetObjectCommand({ Bucket: bucket, Key: key }), { expiresIn });
+  const c = client, b = bucket;
+  if (!c || !b) return null;
+  try {
+    return await r2Retry(() => getSignedUrl(c, new GetObjectCommand({ Bucket: b, Key: key }), { expiresIn }));
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -37,9 +57,10 @@ export async function signedReportUrl(key: string, expiresIn = 120): Promise<str
  * content to an agent). Returns null if R2 isn't configured or the object is missing.
  */
 export async function getObjectText(key: string): Promise<string | null> {
-  if (!client || !bucket) return null;
+  const c = client, b = bucket;
+  if (!c || !b) return null;
   try {
-    const res = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+    const res = await r2Retry(() => c.send(new GetObjectCommand({ Bucket: b, Key: key })));
     if (!res.Body) return null;
     return await res.Body.transformToString();
   } catch {
