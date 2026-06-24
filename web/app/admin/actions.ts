@@ -288,6 +288,7 @@ const ENGINE_COMMANDS: Record<string, string> = {
   service_check: "Health-check Neon / R2 / Upstash",
   clear_r2: "Clear report files from R2",
   clear_wake: "Clear the Upstash wake flag",
+  run_backtest: "Run sandbox backtest (isolated, no publish)",
 };
 // Keys set_config may write to the engine .env. Mirrors engine_ops._SETTABLE_CONFIG_KEYS — only
 // keys the engine consumes, never secrets/credentials/URLs. (The box re-validates this list too.)
@@ -336,6 +337,24 @@ export async function sendEngineCommand(
   } else if (command === "tail_logs") {
     const n = Number(args?.lines);
     cleanArgs = { lines: Number.isFinite(n) ? Math.max(20, Math.min(1000, Math.round(n))) : 200 };
+  } else if (command === "run_backtest") {
+    // Sandbox backtest: generate the picked assets backdated to as_of, score into a SEPARATE
+    // sandbox ledger, never publish. Validate the assets against the enabled universe (same as
+    // requestGeneration) and require a backdated as_of so the window is already closed. The box
+    // re-validates and is the real boundary; this is defence in depth.
+    const rawAssets = Array.isArray(args?.assets) ? args!.assets : [];
+    const known = new Map((await getEngineAssets()).filter((a) => a.enabled).map((a) => [a.id.toLowerCase(), a.id] as const));
+    const requested = [...new Set(rawAssets.map((a) => String(a).trim().toLowerCase()).filter(Boolean))];
+    const assets = requested.map((a) => known.get(a)).filter((s): s is string => Boolean(s));
+    const unknown = requested.filter((a) => !known.has(a));
+    if (assets.length === 0) return { ok: false, message: "Select at least one enabled asset to backtest." };
+    if (unknown.length) return { ok: false, message: `Unknown or disabled asset(s): ${unknown.join(", ")}.` };
+    // as_of is REQUIRED — a backtest needs a window that has already closed. Accept
+    // "YYYY-MM-DDTHH:MM" or with a space (same shape as the generation backdate).
+    const v = String(args?.as_of ?? "").trim().replace("T", " ").slice(0, 16);
+    if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(v)) return { ok: false, message: "Pick a valid as-of date/time (a few days ago)." };
+    cleanArgs = { assets, as_of: v };
+    detail = `${assets.join(", ")} as-of ${v} UTC`;
   }
 
   try {

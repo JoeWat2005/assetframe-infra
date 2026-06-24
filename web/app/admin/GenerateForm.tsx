@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { requestGeneration } from "./actions";
+import { requestGeneration, sendEngineCommand } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -19,6 +19,14 @@ export default function GenerateForm({ assets }: { assets: Asset[] }) {
   const [asOf, setAsOf] = useState(""); // "" = now; otherwise "YYYY-MM-DDTHH:MM" (UTC)
   const [msg, setMsg] = useState<Result | null>(null);
   const [pending, start] = useTransition();
+
+  // SANDBOX BACKTEST — fully isolated test. Its own state so it can never share a control with the
+  // real Queue run above: a separate asset selection, a REQUIRED as-of, its own message + transition.
+  const [btSelected, setBtSelected] = useState<Set<string>>(new Set());
+  const [btQ, setBtQ] = useState("");
+  const [btAsOf, setBtAsOf] = useState(""); // REQUIRED "YYYY-MM-DDTHH:MM" (UTC) — must be a closed window
+  const [btMsg, setBtMsg] = useState<Result | null>(null);
+  const [btPending, btStart] = useTransition();
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -51,6 +59,38 @@ export default function GenerateForm({ assets }: { assets: Asset[] }) {
     });
 
   const canSubmit = !pending && (allDue || selected.size > 0);
+
+  // --- Sandbox backtest helpers (mirror the picker above, but write to the sandbox state) ---
+  const btFiltered = useMemo(() => {
+    const needle = btQ.trim().toLowerCase();
+    if (!needle) return assets;
+    return assets.filter((a) => `${a.instrument} ${a.ticker} ${a.slug}`.toLowerCase().includes(needle));
+  }, [assets, btQ]);
+
+  const btToggle = (slug: string) =>
+    setBtSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(slug)) next.delete(slug);
+      else next.add(slug);
+      return next;
+    });
+
+  const btSubmit = () =>
+    btStart(async () => {
+      try {
+        const r = await sendEngineCommand("run_backtest", { assets: [...btSelected], as_of: btAsOf });
+        setBtMsg(r);
+        if (r.ok) {
+          setBtSelected(new Set());
+          setBtAsOf("");
+          router.refresh();
+        }
+      } catch {
+        setBtMsg({ ok: false, message: "Action failed — not authorized?" });
+      }
+    });
+
+  const canBacktest = !btPending && btSelected.size > 0 && btAsOf.trim().length > 0;
 
   return (
     <div className="flex flex-col gap-3">
@@ -154,6 +194,101 @@ export default function GenerateForm({ assets }: { assets: Asset[] }) {
           )}
         </div>
       </details>
+
+      {/* === SANDBOX BACKTEST — deliberately styled NOTHING like the Queue run above (amber tint +
+          dashed border) so it can never be mistaken for a live run. It enqueues a `run_backtest` box
+          command: the engine generates the picked assets backdated to as-of, scores into a SEPARATE
+          sandbox ledger, and never publishes. Zero production impact. === */}
+      <div className="rounded-xl border-2 border-dashed border-[#bf8700]/50 bg-[#fff7e6]/60 p-4">
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-[#fff0c2] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#9a6700]">
+            Sandbox
+          </span>
+          <h3 className="text-sm font-bold text-[#9a6700]">
+            Sandbox backtest — test only (no publish, separate ledger)
+          </h3>
+        </div>
+        <p className="mt-1.5 text-[11px] text-[#9a6700]/90">
+          Generates the picked assets <b>backdated</b> to an already-closed window and scores them into an
+          <b> isolated sandbox ledger</b>. Nothing is published — purely a test run.
+        </p>
+
+        {assets.length === 0 ? (
+          <p className="mt-3 text-sm text-[#9a6700]">No enabled assets — add or enable one in the <b>Asset universe</b> below.</p>
+        ) : (
+          <div className="mt-3">
+            <Input
+              aria-label="Filter assets to backtest"
+              placeholder="Filter assets…"
+              value={btQ}
+              onChange={(e) => setBtQ(e.target.value)}
+              className="mb-2 border-[#bf8700]/40 bg-white sm:max-w-xs"
+            />
+            <div className="max-h-64 overflow-y-auto rounded-xl border border-[#bf8700]/40 bg-white">
+              {btFiltered.length === 0 ? (
+                <p className="px-3 py-6 text-center text-sm text-muted-foreground">No assets match.</p>
+              ) : (
+                btFiltered.map((a) => (
+                  <label
+                    key={a.slug}
+                    className="flex cursor-pointer items-center gap-2.5 border-b border-line px-3 py-2 text-sm last:border-0 hover:bg-[#fff7e6]/60"
+                  >
+                    <input
+                      type="checkbox"
+                      className="size-4 accent-[#bf8700]"
+                      checked={btSelected.has(a.slug)}
+                      onChange={() => btToggle(a.slug)}
+                    />
+                    <span className="min-w-0 truncate">
+                      <b>{a.instrument}</b> <span className="text-muted-foreground">{a.ticker || a.slug}</span>
+                    </span>
+                  </label>
+                ))
+              )}
+            </div>
+            <p className="mt-1 text-xs text-[#9a6700]/90">{btSelected.size} selected to backtest.</p>
+          </div>
+        )}
+
+        {/* REQUIRED as-of — a backtest needs a window that has already closed. */}
+        <div className="mt-3">
+          <label htmlFor="bt-asof" className="mb-1 block text-[11px] font-semibold text-[#9a6700]">
+            As-of date/time (UTC) — required
+          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              id="bt-asof"
+              type="datetime-local"
+              aria-label="Sandbox backtest as-of (UTC)"
+              value={btAsOf}
+              onChange={(e) => setBtAsOf(e.target.value)}
+              className="h-9 rounded-lg border border-[#bf8700]/40 bg-white px-2 text-sm"
+            />
+            <span className="text-[11px] text-[#9a6700]/90">UTC</span>
+          </div>
+          <p className="mt-1 text-[11px] text-[#9a6700]/90">
+            Pick a time a few days ago — the prediction window must have <b>already closed</b> for a
+            backtest to score.
+          </p>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <Button
+            size="sm"
+            disabled={!canBacktest}
+            onClick={btSubmit}
+            className="bg-[#bf8700] text-white hover:bg-[#9a6700]"
+          >
+            {btPending ? "Queuing…" : "Run sandbox backtest"}
+          </Button>
+          {btMsg && <span className={`text-sm ${btMsg.ok ? "text-[#1a7f37]" : "text-[#cf222e]"}`}>{btMsg.message}</span>}
+        </div>
+
+        <p className="mt-2 text-[11px] text-[#9a6700]/90">
+          Results appear in <b>Recent engine runs</b> (marked as a backtest) and touch nothing public — the
+          live ledger, editions, R2 and track record are untouched.
+        </p>
+      </div>
     </div>
   );
 }
