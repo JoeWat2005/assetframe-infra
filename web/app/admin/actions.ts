@@ -295,7 +295,8 @@ const ENGINE_COMMANDS: Record<string, string> = {
 // keys the engine consumes, never secrets/credentials/URLs. (The box re-validates this list too.)
 const SETTABLE_CONFIG_KEYS = [
   "ASSETFRAME_AUTHOR_BRIEFS", "ADVISOR_DATA_PROVIDER", "ASSETFRAME_RUN_TIMEOUT", "ASSETFRAME_BRIEF_MODEL",
-  "ASSETFRAME_RETENTION_DAYS",
+  "ASSETFRAME_RETENTION_DAYS", "ASSETFRAME_BRIEF_BATCH", "ASSETFRAME_CRITIC_MODEL",
+  "ASSETFRAME_BRIEF_CONCURRENCY",
 ];
 
 // Enqueue an allow-listed box command. Validates the verb + args, inserts a 'queued'
@@ -325,9 +326,17 @@ export async function sendEngineCommand(
     if (key === "ASSETFRAME_RUN_TIMEOUT" && !(/^\d+$/.test(value) && Number(value) >= 60 && Number(value) <= 86400)) {
       return { ok: false, message: "ASSETFRAME_RUN_TIMEOUT must be an integer 60–86400 (seconds)." };
     }
-    // A brief-model typo would break every brief — require a Claude model id.
-    if (key === "ASSETFRAME_BRIEF_MODEL" && !/^claude-[a-z0-9.-]{2,52}$/.test(value)) {
-      return { ok: false, message: "ASSETFRAME_BRIEF_MODEL must be a Claude model id (e.g. claude-sonnet-4-6, claude-haiku-4-5-20251001, claude-opus-4-8)." };
+    // A brief/critic-model typo would break every brief — require a Claude model id.
+    if ((key === "ASSETFRAME_BRIEF_MODEL" || key === "ASSETFRAME_CRITIC_MODEL") && !/^claude-[a-z0-9.-]{2,52}$/.test(value)) {
+      return { ok: false, message: `${key} must be a Claude model id (e.g. claude-sonnet-4-6, claude-haiku-4-5-20251001, claude-opus-4-8).` };
+    }
+    // Batch authoring toggle (1 = Message Batches path; 0 = synchronous).
+    if (key === "ASSETFRAME_BRIEF_BATCH" && value !== "0" && value !== "1") {
+      return { ok: false, message: "ASSETFRAME_BRIEF_BATCH must be 0 (synchronous) or 1 (batch)." };
+    }
+    // Concurrent briefs on the synchronous path (1 = safe on Anthropic Tier 1).
+    if (key === "ASSETFRAME_BRIEF_CONCURRENCY" && !(/^\d+$/.test(value) && Number(value) >= 1 && Number(value) <= 16)) {
+      return { ok: false, message: "ASSETFRAME_BRIEF_CONCURRENCY must be an integer 1–16." };
     }
     // Local reports/runs retention in days (0 = keep everything). Bounded so a typo can't be wild.
     if (key === "ASSETFRAME_RETENTION_DAYS" && !(/^\d+$/.test(value) && Number(value) >= 0 && Number(value) <= 3650)) {

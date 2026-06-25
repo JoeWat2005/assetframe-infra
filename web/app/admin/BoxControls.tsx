@@ -16,7 +16,8 @@ import {
 // Mirrors actions.ts SETTABLE_CONFIG_KEYS / engine_ops._SETTABLE_CONFIG_KEYS (no secrets).
 const SETTABLE_KEYS = [
   "ASSETFRAME_AUTHOR_BRIEFS", "ADVISOR_DATA_PROVIDER", "ASSETFRAME_RUN_TIMEOUT", "ASSETFRAME_BRIEF_MODEL",
-  "ASSETFRAME_RETENTION_DAYS",
+  "ASSETFRAME_RETENTION_DAYS", "ASSETFRAME_BRIEF_BATCH", "ASSETFRAME_CRITIC_MODEL",
+  "ASSETFRAME_BRIEF_CONCURRENCY",
 ];
 // One-line help shown under the value box when a key is selected, so the operator knows the shape.
 const CONFIG_KEY_HINTS: Record<string, string> = {
@@ -25,6 +26,9 @@ const CONFIG_KEY_HINTS: Record<string, string> = {
   ASSETFRAME_RUN_TIMEOUT: "Max seconds a daily run may take before it's stopped (60–86400).",
   ASSETFRAME_BRIEF_MODEL: "Claude model for briefs, e.g. claude-sonnet-4-6 / claude-haiku-4-5-20251001.",
   ASSETFRAME_RETENTION_DAYS: "Days of local reports/runs to keep on the box (0 = keep forever). Old editions stay in R2.",
+  ASSETFRAME_BRIEF_BATCH: "1 = author + critique all briefs via the Message Batches API (no rate limit, 50% cheaper, scales); 0 = synchronous per-asset (the fallback). Restart the poller after changing.",
+  ASSETFRAME_CRITIC_MODEL: "Claude model for the adversarial critic, e.g. claude-haiku-4-5-20251001 (cheap/fast default).",
+  ASSETFRAME_BRIEF_CONCURRENCY: "Concurrent briefs on the synchronous path (1 = safe on Anthropic Tier 1; raise on a higher tier). Ignored when batch is on.",
 };
 
 // One box action: a plain-English button with a short caption underneath, so a non-technical
