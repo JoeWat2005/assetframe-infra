@@ -171,12 +171,14 @@ export default async function AdminPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-5 lg:grid-cols-2">
+            {/* Settings are a compact 1/3 column; the results table gets the wider 2/3 so its
+                instrument/thesis/predictions columns aren't cramped. */}
+            <div className="grid gap-5 lg:grid-cols-3">
               <div>
                 <h3 className="mb-2 text-sm font-bold text-[#9a6700]">Run a backtest</h3>
                 <GenerateForm assets={assets} mode="backtest" />
               </div>
-              <div className="lg:border-l lg:border-[#bf8700]/30 lg:pl-5">
+              <div className="lg:col-span-2 lg:border-l lg:border-[#bf8700]/30 lg:pl-5">
                 <h3 className="mb-2 text-sm font-bold text-[#9a6700]">Results</h3>
                 <BacktestResults rows={backtestResults} predictions={backtestPredictions} />
               </div>

@@ -171,7 +171,7 @@ export default function BacktestResults({
           </div>
 
           <div className="overflow-x-auto rounded-xl border border-line bg-white">
-            <table className="w-full min-w-[800px] text-sm">
+            <table className="w-full min-w-[640px] text-sm">
               <thead>
                 <tr className="border-b border-line text-left text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                   <th className="px-3 py-2 w-8" />
@@ -213,8 +213,10 @@ export default function BacktestResults({
                             {[r.ticker, r.assetClass].filter(Boolean).join(" · ")}
                           </div>
                         </td>
-                        <td className="px-3 py-2.5 max-w-[260px]">
-                          <span className="text-ink">{r.view || "—"}</span>
+                        <td className="px-3 py-2.5 max-w-[280px] min-w-[180px]">
+                          {/* Clamp the (often long) thesis to 2 lines so rows stay compact; the
+                              full text shows in the expanded panel below. */}
+                          <span className="line-clamp-2 text-ink">{r.view || "—"}</span>
                         </td>
                         <td className="px-3 py-2.5 tabular-nums">{r.confidence ?? "—"}</td>
                         <td className="px-3 py-2.5 text-muted-foreground">{r.horizon || "—"}</td>
@@ -249,6 +251,14 @@ export default function BacktestResults({
                         <tr id={panelId} className="border-b border-line">
                           <td className="px-0 py-0" colSpan={8}>
                             <div className="border-t border-line bg-tile/30 px-3 py-3 sm:pl-10">
+                              {r.view && (
+                                <div className="mb-3">
+                                  <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                    View / thesis
+                                  </div>
+                                  <p className="text-sm text-ink">{r.view}</p>
+                                </div>
+                              )}
                               <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                                 Individual predictions
                               </div>

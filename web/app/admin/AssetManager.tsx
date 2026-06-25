@@ -293,9 +293,9 @@ export default function AssetManager({ assets }: { assets: EngineAsset[] }) {
             <b>Cadence</b> = how often a report generates. <b>Publishing</b>: <span className="font-mono">auto</span> goes live immediately; <span className="font-mono">approval_required</span> holds each one for you in step 3.
           </p>
 
-          <Section>Forecast horizons</Section>
+          <Section>Forecast horizons <span className="font-normal normal-case text-muted-foreground">(optional — most assets need none)</span></Section>
           <p className="mb-1.5 text-[11px] text-muted-foreground">
-            One report can make several calls, each scored on its own window. <b>Click a chip to add it</b> — the first you pick (★) is the published headline; the rest are extra tracks. Pick none for a single call over the default window (in Advanced).
+            Your <b>cadence</b> above already sets the default scoring window (daily → day-end, weekly → week-end, monthly → month-end). Add a chip only for an <b>extra</b> prediction track at another horizon — the first you pick (★) becomes the published headline. Leave empty for a single call over the cadence window.
           </p>
           <div className="flex flex-wrap items-center gap-2">
             {FORECAST_WINDOWS.map((w) => {
@@ -315,7 +315,7 @@ export default function AssetManager({ assets }: { assets: EngineAsset[] }) {
           </div>
           <p className="mt-1 text-[11px] text-muted-foreground">
             {form.timeframes.length === 0
-              ? "No extra horizons — a single call over the forecast window (Advanced)."
+              ? "No extra horizons — one call scored over the cadence window."
               : `${form.timeframes.length} horizon track${form.timeframes.length > 1 ? "s" : ""} · ★ published headline = ${HORIZON_LABELS[form.timeframes[0]] ?? form.timeframes[0]}.`}
           </p>
 
@@ -381,7 +381,6 @@ export default function AssetManager({ assets }: { assets: EngineAsset[] }) {
               <p className="mb-2 mt-1 text-[11px] text-muted-foreground">Defaults come from the asset class above — only change these if you know you need to.</p>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <Dropdown label="session profile" value={form.sessionProfile} onChange={(v) => set("sessionProfile", v)} options={SESSION_PROFILES} />
-                <Dropdown label="forecast window (default horizon)" value={form.forecastWindow} onChange={(v) => set("forecastWindow", v)} options={FORECAST_WINDOWS} />
                 <Dropdown label="timezone" value={form.timezone} onChange={(v) => set("timezone", v)} options={TIMEZONES} />
                 <Dropdown label="report tier" value={form.reportTier} onChange={(v) => set("reportTier", v)} options={REPORT_TIERS} />
                 <div><label className="mb-1 block text-[11px] font-semibold text-muted-foreground">roll hour (UTC, 0–23)</label><Input className="h-9" type="number" value={form.rollUtc} onChange={(e) => set("rollUtc", Number(e.target.value))} /></div>
