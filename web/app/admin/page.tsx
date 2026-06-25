@@ -22,7 +22,6 @@ import BoxControls from "./BoxControls";
 import AssetManager from "./AssetManager";
 import PendingApprovalList from "./PendingApprovalList";
 import OperatorManual from "./OperatorManual";
-import ScoreNowButton from "./ScoreNowButton";
 import BacktestResults from "./BacktestResults";
 import CollapsibleSection from "./CollapsibleSection";
 import { RequestQueue, RunLog, CommandLog } from "./EnginePanels";
@@ -96,7 +95,7 @@ export default async function AdminPage() {
               </b>
             </span>
             <span className="text-sm text-muted-foreground">
-              Daily automation:{" "}
+              Scheduled automation:{" "}
               <b className={engineState.automationPaused ? "text-[#9a6700]" : "text-[#1a7f37]"}>
                 {engineState.automationPaused ? "Paused" : "Active"}
               </b>
@@ -120,10 +119,33 @@ export default async function AdminPage() {
         {/* === Operator manual — the spine of the page (open by default on first visit) === */}
         <OperatorManual />
 
-        {/* === 1 · Asset universe === */}
+        {/* === Engine activity — generation queue + recent runs, promoted to the top so you
+            see what the engine has been up to immediately. === */}
+        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Generation queue</CardTitle>
+              <CardDescription>Runs requested (manual or scheduled). Cancel a queued or running one to stop it at the next safe point.</CardDescription>
+            </CardHeader>
+            <CardContent className={genRequests.length === 0 ? undefined : "px-0"}>
+              <RequestQueue rows={genRequests} />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Recent engine runs</CardTitle>
+              <CardDescription>What the engine actually did, newest first — expand a row to see its log or error.</CardDescription>
+            </CardHeader>
+            <CardContent className={engineRuns.length === 0 ? undefined : "px-0"}>
+              <RunLog rows={engineRuns} />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* === Asset universe — drives the schedule (cadence + chart intervals per asset) === */}
         <Card id="sec-assets" className="mt-4 scroll-mt-24">
           <CardHeader>
-            <CardTitle className="text-base">1 · Asset universe</CardTitle>
+            <CardTitle className="text-base">Asset universe</CardTitle>
             <CardDescription>
               The instruments the engine writes reports for. <b>+ Add asset</b> to add one (fill the Basics —
               the rest defaults from its asset class), or <b>Edit</b> a row to change it. Make sure at least one
@@ -136,72 +158,36 @@ export default async function AdminPage() {
           </CardContent>
         </Card>
 
-        {/* === 2 · Generate, backdate & score === */}
-        <Card id="sec-generate" className="mt-4 scroll-mt-24">
+        {/* === Sandbox backtester — settings (left) + results (right) in ONE card. Generation and
+            scoring are now driven by the per-asset schedule + this isolated backtester; the old
+            "Generate & score" / "Score now" / seed-the-track-record controls are gone. === */}
+        <Card id="sec-backtest" className="mt-4 scroll-mt-24 border-2 border-dashed border-[#bf8700]/40 bg-[#fff7e6]/30">
           <CardHeader>
-            <CardTitle className="text-base">2 · Generate &amp; score</CardTitle>
+            <CardTitle className="text-base text-[#9a6700]">Sandbox backtester</CardTitle>
             <CardDescription>
-              Pick <b>All due</b> or specific assets and <b>Queue run</b> to generate reports now — new editions
-              land hidden for your approval in step 3. <b>Score now</b> grades any prediction windows that have
-              closed into the ledger. (To seed the track record before a window closes, use <b>Backdate</b> inside Queue run.)
+              Generate + score assets <b>backdated</b> to a closed window in an <b>isolated sandbox</b> — test
+              scoring and seed the track record safely. Nothing here touches the public ledger, editions, R2 or
+              track record.
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col gap-5">
-            <GenerateForm assets={assets} />
-            <div className="border-t border-line pt-4">
-              <h3 className="text-sm font-bold text-navy">Score now</h3>
-              <p className="mb-2 text-xs text-muted-foreground">
-                Grade any prediction windows that have closed into the ledger (your public track record).
-                Generates no new reports — use it right after a backdated run, or any time a live window has
-                closed. Once live, the engine also scores closed windows on its own.
-              </p>
-              <ScoreNowButton />
+          <CardContent>
+            <div className="grid gap-5 lg:grid-cols-2">
+              <div>
+                <h3 className="mb-2 text-sm font-bold text-[#9a6700]">Run a backtest</h3>
+                <GenerateForm assets={assets} mode="backtest" />
+              </div>
+              <div className="lg:border-l lg:border-[#bf8700]/30 lg:pl-5">
+                <h3 className="mb-2 text-sm font-bold text-[#9a6700]">Results</h3>
+                <BacktestResults rows={backtestResults} predictions={backtestPredictions} />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Backtest results (sandbox) — graded test runs from the Sandbox backtest panel above.
-            Admin-only, isolated test data that never touches the public ledger/editions. */}
-        <Card id="sec-backtest" className="mt-4 scroll-mt-24">
-          <CardHeader>
-            <CardTitle className="text-base">Backtest results (sandbox)</CardTitle>
-            <CardDescription>
-              Graded outcomes from <b>Run sandbox backtest</b> above. These are <b>isolated test runs</b> —
-              they never touch the public ledger, editions, R2 or track record.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <BacktestResults rows={backtestResults} predictions={backtestPredictions} />
-          </CardContent>
-        </Card>
-
-        {/* Queue + recent runs — the engine's own logs for step 2. */}
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Generation queue</CardTitle>
-              <CardDescription>Runs you&rsquo;ve requested. Cancel a queued or running one to stop it at the next safe point.</CardDescription>
-            </CardHeader>
-            <CardContent className={genRequests.length === 0 ? undefined : "px-0"}>
-              <RequestQueue rows={genRequests} />
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Recent engine runs</CardTitle>
-              <CardDescription>What the engine actually did, newest first — expand a row to see its log or error.</CardDescription>
-            </CardHeader>
-            <CardContent className={engineRuns.length === 0 ? undefined : "px-0"}>
-              <RunLog rows={engineRuns} />
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* === 3 · Approve to publish === */}
+        {/* === Approve to publish === */}
         <Card id="sec-approve" className="mt-4 scroll-mt-24">
           <CardHeader>
-            <CardTitle className="text-base">3 · Approve to publish</CardTitle>
+            <CardTitle className="text-base">Approve to publish</CardTitle>
             <CardDescription>
               Editions the engine generated <b>hidden</b> behind its approval gate. Preview each one, then{" "}
               <b>Approve</b> to publish it to the public site, sitemap and reader. (Independent of scoring —
@@ -233,14 +219,26 @@ export default async function AdminPage() {
           title="Operate the box (advanced)"
           description="Hands-on controls for the cloud box — only needed when something's stuck or you're deploying. Grouped into Recover & inspect, Deploy & restart, and Change a setting, plus a red Danger zone and the box command log below."
         >
-          <div className="flex flex-col gap-5">
-            <p className="text-xs text-muted-foreground">
-              Direct control of the cloud instance. Each command runs on the box&rsquo;s next ~30s poll; watch
-              the <b>Box command log</b> below for results. The red <b>Danger zone</b> holds irreversible resets
-              — see the manual before using them.
-            </p>
-            <BoxControls hideScoreNow />
-            <div className="border-t border-line pt-4">
+          <div className="grid gap-5 lg:grid-cols-2">
+            {/* Left: command inputs (recover/deploy/set-config/danger + a manual-generate override). */}
+            <div className="flex flex-col gap-4">
+              <p className="text-xs text-muted-foreground">
+                Direct control of the cloud instance. Each command runs on the box&rsquo;s next ~30s poll; watch
+                the <b>Box command log</b> on the right for results. The red <b>Danger zone</b> holds
+                irreversible resets — see the manual before using them.
+              </p>
+              <details className="rounded-lg border border-line bg-tile/30 px-3 py-2.5">
+                <summary className="cursor-pointer text-xs font-semibold text-navy">
+                  Manual generate (override the schedule)
+                </summary>
+                <div className="mt-3">
+                  <GenerateForm assets={assets} mode="queue" />
+                </div>
+              </details>
+              <BoxControls />
+            </div>
+            {/* Right: the box command log. */}
+            <div>
               <h3 className="text-sm font-bold text-navy">Box command log</h3>
               <p className="mb-2 text-xs text-muted-foreground">
                 Recent box-control commands and their result — expand a row for the captured output (e.g. fetched logs).

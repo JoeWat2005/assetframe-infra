@@ -27,6 +27,7 @@ export type EngineAsset = {
   dueCheckedAt: string; // "YYYY-MM-DD HH:MI" UTC, or ""
   cadenceDay: string; // weekly target day "0".."6" (Mon=0) or "mon".."sun"; "" = default Monday
   timeframes: string[]; // multi-timeframe tracks; [] = use forecastWindow
+  chartIntervals: string[]; // candle intervals the view is analysed from; [] = ["60m","1d"]
   includeFundamentals: boolean | null; // null = engine default (equities only)
   includeNews: boolean;
   fundamentalsSource: string; // auto | twelvedata | none
@@ -38,7 +39,7 @@ const BASE_COLS = `id, name, instrument, ticker, provider_symbols, asset_class, 
               timezone, roll_utc, related, forecast_window, publish_policy, report_tier, enabled, sort_order`;
 const DUE_COLS = `, due, coalesce(due_reason, '') AS due_reason,
               to_char(due_checked_at AT TIME ZONE 'UTC', 'YYYY-MM-DD HH24:MI') AS due_checked_at`;
-const MT_COLS = `, cadence_day, timeframes, include_fundamentals, include_news, fundamentals_source`;
+const MT_COLS = `, cadence_day, timeframes, include_fundamentals, include_news, fundamentals_source, chart_intervals`;
 
 // jsonb `timeframes` can arrive as a parsed JS array or as a string; tolerate both.
 function asArr(v: unknown): string[] {
@@ -85,6 +86,7 @@ export async function getEngineAssets(): Promise<EngineAsset[]> {
     dueCheckedAt: s(r.due_checked_at),
     cadenceDay: s(r.cadence_day),
     timeframes: asArr(r.timeframes),
+    chartIntervals: asArr(r.chart_intervals),
     includeFundamentals: r.include_fundamentals == null ? null : Boolean(r.include_fundamentals),
     includeNews: r.include_news == null ? true : Boolean(r.include_news),
     fundamentalsSource: s(r.fundamentals_source) || "auto",

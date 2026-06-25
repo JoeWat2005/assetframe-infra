@@ -1,5 +1,5 @@
 import "server-only";
-import { getCatalog, getEdition, getTrackRecord, type Edition, type TrackRecord } from "./content";
+import { getCatalog, getEdition, getTrackRecord, cadenceOf, type Edition, type TrackRecord } from "./content";
 import { getObjectText, signedReportUrl } from "./r2";
 import { SITE } from "@/site.config";
 
@@ -25,6 +25,7 @@ export type ReportSummary = {
   windowEnd: string;
   hasPro: boolean;
   url: string;
+  cadence: string;
 };
 
 function toSummary(e: Edition): ReportSummary {
@@ -43,6 +44,7 @@ function toSummary(e: Edition): ReportSummary {
     windowEnd: e.windowEnd,
     hasPro: e.hasPro,
     url: `${BASE}/reports/${e.date}/${e.slug}`,
+    cadence: e.scoredCadence || cadenceOf(e.reportId || ""),
   };
 }
 
@@ -51,8 +53,18 @@ export type ListFilters = {
   status?: string;
   date?: string;
   query?: string;
+  cadence?: string;
   limit?: number;
 };
+
+// Normalise a friendly cadence to daily|weekly|monthly.
+function normCadence(v: string): string {
+  const x = (v || "").trim().toLowerCase();
+  if (["weekly", "week"].includes(x)) return "weekly";
+  if (["monthly", "month"].includes(x)) return "monthly";
+  if (["daily", "day"].includes(x)) return "daily";
+  return x;
+}
 
 // Map a display asset class ("Crypto - major", "US equity", "Equity index future") to a short
 // key so the asset_class filter accepts crypto|fx|equity|index|commodity|rates as well as the
@@ -82,6 +94,10 @@ export async function listReports(f: ListFilters = {}) {
     items = items.filter((e) => e.status.toLowerCase() === s);
   }
   if (f.date) items = items.filter((e) => e.date === f.date);
+  if (f.cadence) {
+    const c = normCadence(f.cadence);
+    items = items.filter((e) => (e.scoredCadence || cadenceOf(e.reportId || "")) === c);
+  }
   if (f.query) {
     const q = f.query.toLowerCase();
     items = items.filter((e) => `${e.instrument} ${e.ticker} ${e.slug}`.toLowerCase().includes(q));
@@ -156,7 +172,7 @@ function normHorizon(v: string): string {
   return x;
 }
 
-export async function getTrackRecordPayload(opts: { horizon?: string } = {}) {
+export async function getTrackRecordPayload(opts: { horizon?: string; cadence?: string } = {}) {
   const tr: TrackRecord = await getTrackRecord();
   const coerceConf = (raw: string | number): number | null => {
     if (raw === "" || raw == null) return null;
@@ -164,16 +180,24 @@ export async function getTrackRecordPayload(opts: { horizon?: string } = {}) {
     return isNaN(n) ? null : n;
   };
   const hz = opts.horizon ? normHorizon(opts.horizon) : "";
-  const match = (h?: string) => !hz || (h || "next_session") === hz;
-  const open = tr.open.filter((c) => match(c.horizon)).map((c) => ({ ...c, confidence: coerceConf(c.confidence) }));
-  const scored = tr.scored.filter((x) => match(x.horizon)).map((x) => ({ ...x, confidence: coerceConf(x.confidence) }));
-  // When filtered to one horizon, surface that horizon's headline stats (from byHorizon).
+  const cad = opts.cadence ? normCadence(opts.cadence) : "";
+  const matchHz = (h?: string) => !hz || (h || "next_session") === hz;
+  const matchCad = (c?: string, rid?: string) => !cad || (c || cadenceOf(rid || "")) === cad;
+  const open = tr.open
+    .filter((c) => matchHz(c.horizon) && matchCad(c.scoredCadence, c.reportId))
+    .map((c) => ({ ...c, confidence: coerceConf(c.confidence) }));
+  const scored = tr.scored
+    .filter((x) => matchHz(x.horizon) && matchCad(x.scoredCadence, x.reportId))
+    .map((x) => ({ ...x, confidence: coerceConf(x.confidence) }));
+  // When filtered to one horizon/cadence, surface that slice's headline stats.
   const hzEntry = hz ? (tr.byHorizon || []).find((b) => b.horizon === hz) : undefined;
-  const stats = hz
+  const cadEntry = cad ? (tr.byCadence || []).find((b) => b.cadence === cad) : undefined;
+  const slice = cadEntry || hzEntry;
+  const stats = hz || cad
     ? {
         ...tr.stats, reportsScored: scored.length, openCalls: open.length,
-        predictionsGraded: hzEntry ? hzEntry.hits + hzEntry.misses : 0,
-        hitRate: hzEntry ? hzEntry.hitRate : null,
+        predictionsGraded: slice ? slice.hits + slice.misses : 0,
+        hitRate: slice ? slice.hitRate : null,
       }
     : tr.stats;
   return {
@@ -182,6 +206,7 @@ export async function getTrackRecordPayload(opts: { horizon?: string } = {}) {
     open,
     scored,
     ...(hz ? { filteredByHorizon: hz } : {}),
+    ...(cad ? { filteredByCadence: cad } : {}),
     disclaimer: DISCLAIMER,
   };
 }

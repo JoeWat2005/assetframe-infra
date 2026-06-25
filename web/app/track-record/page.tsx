@@ -6,6 +6,7 @@ import { Hero, Note } from "@/components/ui";
 import OpenCallsBrowser from "@/components/OpenCallsBrowser";
 import ScoredResults from "@/components/ScoredResults";
 import TrackRecordAnalytics from "@/components/TrackRecordAnalytics";
+import TrackRecordSummary from "@/components/TrackRecordSummary";
 import BuyButton from "@/components/BuyButton";
 import { SITE } from "@/site.config";
 
@@ -72,6 +73,16 @@ export default async function TrackRecordPage() {
           <Link href="/how-it-works" className="font-semibold text-navy underline underline-offset-2">How it works →</Link>
         </div>
 
+        {/* Free-tier micro-dashboard: per-class / per-cadence / per-instrument hit rates + charts,
+            visible to everyone as the public proof (the deeper analytics below stay Pro-gated). */}
+        <TrackRecordSummary
+          byAssetClass={tr.byAssetClass}
+          byCadence={tr.byCadence}
+          byInstrument={tr.byInstrument}
+          cumulativeHitRate={tr.stats.hitRate}
+          currentStreak={tr.stats.currentStreak}
+        />
+
         {/* Full performance analytics are a Pro benefit. Free visitors still get the proof below
             (open calls, recent scored results, calibration) plus a clear, honest upsell. */}
         {ent.subscribed ? (
@@ -81,6 +92,7 @@ export default async function TrackRecordPage() {
             byPredictionType={tr.byPredictionType}
             byRegime={tr.byRegime}
             byHorizon={tr.byHorizon}
+            byCadence={tr.byCadence}
             timeline={tr.timeline}
             calibrationCurve={tr.calibrationCurve}
             componentVsOutcome={tr.componentVsOutcome}

@@ -11,7 +11,7 @@ export default function PauseToggle({ paused }: { paused: boolean }) {
   const [pending, start] = useTransition();
   const toggle = () =>
     start(async () => {
-      if (!paused && !window.confirm("Pause daily automation? The 05:00 run will stop generating reports until you resume — manual runs still work.")) return;
+      if (!paused && !window.confirm("Pause ALL scheduled automation (daily, weekly and monthly runs) until you resume? Manual runs still work.")) return;
       const r = await setAutomationPaused(!paused);
       if (r.ok) router.refresh();
     });
@@ -21,9 +21,9 @@ export default function PauseToggle({ paused }: { paused: boolean }) {
       variant={paused ? "default" : "outline"}
       disabled={pending}
       onClick={toggle}
-      title={paused ? "Automation paused — click to resume daily runs" : "Automation active — click to pause daily runs"}
+      title={paused ? "All scheduled automation paused — click to resume" : "Scheduled automation active — click to pause all (daily/weekly/monthly)"}
     >
-      {pending ? "…" : paused ? "Resume automation" : "Pause automation"}
+      {pending ? "…" : paused ? "Resume automation" : "Pause all automation"}
     </Button>
   );
 }

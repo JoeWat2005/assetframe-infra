@@ -11,6 +11,8 @@ export type Edition = {
   reportDate: string; catalystStatus: string;
   freeHtml: string; freePdf: string; preview: string; hasPro: boolean; hidden: boolean;
   confidence?: number | null; // research confidence (0–100), joined from the open call
+  // Cadence + intervals (additive; present on DB rows with the columns and in the JSON catalog).
+  reportId?: string; scoredCadence?: string; chartIntervals?: string[]; forecastWindow?: string;
 };
 
 export type SubCall = {
@@ -25,6 +27,7 @@ export type OpenCall = {
   hits: number; scored: boolean; // tracker: hits/n, scored flips true after the engine reruns
   predictions: SubCall[];
   horizon?: string; // multi-timeframe horizon, derived from the report_id tag
+  scoredCadence?: string; // daily | weekly | monthly, derived from the report_id period stamp
 };
 export type ScoredRow = {
   instrument: string; view: string; confidence: string | number;
@@ -35,6 +38,7 @@ export type ScoredRow = {
   // Normalized taxonomy fields (JSON-fallback + DB where columns exist).
   assetClass?: string; predType?: string;
   horizon?: string; // multi-timeframe horizon, derived from the report_id tag
+  scoredCadence?: string; // daily | weekly | monthly, the scoring period
 };
 
 // ---- Derived track-record analytics (Task T12). All additive; empty arrays when the
@@ -54,6 +58,9 @@ export type RegimePerf = {
 };
 export type HorizonPerf = {
   horizon: string; reportsScored: number; hits: number; misses: number; hitRate: number | null;
+};
+export type CadencePerf = {
+  cadence: string; reportsScored: number; hits: number; misses: number; hitRate: number | null;
 };
 export type TimelinePoint = {
   reportId: string; instrument: string; windowEnd: string;
@@ -80,6 +87,7 @@ export type TrackRecord = {
   byPredictionType?: PredTypePerf[];
   byRegime?: RegimePerf[];
   byHorizon?: HorizonPerf[];
+  byCadence?: CadencePerf[];
   timeline?: TimelinePoint[];
   calibrationCurve?: CalibrationBin[];
   componentVsOutcome?: ComponentOutcome[];
@@ -124,19 +132,26 @@ function rowToEdition(r: Row): Edition {
     freeHtml: s(r.free_html_key), freePdf: s(r.free_pdf_key), preview: s(r.preview_key),
     hasPro: Boolean(r.has_pro), hidden: Boolean(r.hidden),
     confidence: r.confidence == null || r.confidence === "" ? null : Number(r.confidence),
+    reportId: s(r.report_id), scoredCadence: s(r.scored_cadence) || cadenceOf(s(r.report_id)),
+    chartIntervals: Array.isArray(r.chart_intervals) ? (r.chart_intervals as string[]) : [],
+    forecastWindow: s(r.forecast_window),
   };
 }
 
 const EDITION_COLS = `e.id, e.report_date::text AS report_date, e.slug, e.instrument, e.ticker,
   e.asset_class, e.status, e.risk, e.bias, e.data_quality, e.window_end, e.catalyst_status, e.has_pro,
   e.free_html_key, e.free_pdf_key, e.preview_key, coalesce(e.hidden, false) AS hidden,
+  e.report_id, coalesce(e.scored_cadence, '') AS scored_cadence, e.chart_intervals,
+  coalesce(e.forecast_window, '') AS forecast_window,
   oc.confidence AS confidence`;
-// Confidence isn't on the editions table — join the open call by its derived report_id
-// (edition id "2026-06-15/AAPL" -> "AF-20260615-AAPL"). LEFT JOIN so editions without a
+// Confidence isn't on the editions table — join the open call by the edition's stored report_id
+// (cadence-aware: AF-YYYYMMDD / AF-YYYYWww / AF-YYYYMM -TICKER). Falls back to the legacy daily-form
+// derivation for any pre-cadence row that lacks the column. LEFT JOIN so editions without a
 // registered call still return.
 const EDITION_FROM = `FROM editions e
   LEFT JOIN open_calls oc
-    ON oc.report_id = 'AF-' || replace(e.report_date::text, '-', '') || '-' || e.slug`;
+    ON oc.report_id = coalesce(e.report_id,
+         'AF-' || replace(e.report_date::text, '-', '') || '-' || e.slug)`;
 
 // ------------------------------------------------------------------ public API (DB-first)
 // Wrapped in unstable_cache below so reloads serve from Next's Data Cache (no re-query).
@@ -261,12 +276,14 @@ async function _getTrackRecord(): Promise<TrackRecord> {
                 sr.hits, sr.misses, sr.hit_rate, sr.window_end`;
       const SCORED_JOIN = `FROM scored_results sr
          LEFT JOIN editions e
-           ON sr.report_id = 'AF-' || replace(e.report_date::text, '-', '') || '-' || e.slug
+           ON e.report_id = sr.report_id
+           OR (e.report_id IS NULL
+               AND sr.report_id = 'AF-' || replace(e.report_date::text, '-', '') || '-' || e.slug)
          ORDER BY sr.id`;
       let scoredRows: Row[];
       try {
         scoredRows = (await sql.query(
-          `${SCORED_BASE}, e.ticker AS ticker,
+          `${SCORED_BASE}, coalesce(sr.scored_cadence, '') AS scored_cadence, e.ticker AS ticker,
               coalesce(e.asset_class_key, '') AS asset_class_key,
               coalesce(e.prediction_type, '') AS prediction_type,
               coalesce(e.market_regime, '')  AS market_regime
@@ -286,12 +303,14 @@ async function _getTrackRecord(): Promise<TrackRecord> {
         hits: Number(r.hits) || 0, scored: Boolean(r.scored),
         predictions: Array.isArray(r.predictions) ? (r.predictions as SubCall[]) : [],
         horizon: horizonOf(s(r.report_id)),
+        scoredCadence: cadenceOf(s(r.report_id)),
       }));
       const scored: ScoredRow[] = scoredRows.map((r) => ({
         instrument: s(r.instrument), view: s(r.view), confidence: s(r.confidence),
         results: s(r.results), hitRate: s(r.hit_rate), windowEnd: s(r.window_end),
         assetClass: s(r.asset_class_key), predType: s(r.prediction_type),
         reportId: s(r.report_id), horizon: horizonOf(s(r.report_id)),
+        scoredCadence: s(r.scored_cadence) || cadenceOf(s(r.report_id)),
       }));
       const hits = scoredRows.reduce((a, r) => a + (Number(r.hits) || 0), 0);
       const misses = scoredRows.reduce((a, r) => a + (Number(r.misses) || 0), 0);
@@ -313,13 +332,25 @@ async function _getTrackRecord(): Promise<TrackRecord> {
         horizon, reportsScored: b.reports, hits: b.hits, misses: b.misses,
         hitRate: b.hits + b.misses ? Math.round((1000 * b.hits) / (b.hits + b.misses)) / 10 : null,
       }));
+      // by-cadence (daily/weekly/monthly): prefer the stored scored_cadence column, else derive
+      // from the report_id period stamp. Same shape as byHorizon.
+      const cadAgg: Record<string, { reports: number; hits: number; misses: number }> = {};
+      for (const r of scoredRows) {
+        const key = s(r.scored_cadence) || cadenceOf(s(r.report_id));
+        const b = (cadAgg[key] ??= { reports: 0, hits: 0, misses: 0 });
+        b.reports++; b.hits += Number(r.hits) || 0; b.misses += Number(r.misses) || 0;
+      }
+      const byCadence: CadencePerf[] = Object.entries(cadAgg).map(([cadence, b]) => ({
+        cadence, reportsScored: b.reports, hits: b.hits, misses: b.misses,
+        hitRate: b.hits + b.misses ? Math.round((1000 * b.hits) / (b.hits + b.misses)) / 10 : null,
+      }));
       return {
         stats: {
           reportsScored: scored.length, openCalls: open.length, predictionsGraded: graded,
           hitRate: graded ? Math.round((1000 * hits) / graded) / 10 : null,
           ...streaks(open),
         },
-        open, scored, calibration: computeCalibration(scoredRows), ...aggregates, byHorizon,
+        open, scored, calibration: computeCalibration(scoredRows), ...aggregates, byHorizon, byCadence,
       };
     } catch {
       /* fall through */
@@ -347,6 +378,16 @@ export function horizonOf(reportId: string): string {
   const mid = (reportId || "").split("-")[1] || "";
   const tag = mid.replace(/[0-9]/g, "").toUpperCase();
   return tag === "MS" ? "multi_session" : tag === "H" ? "intraday" : "next_session";
+}
+
+// Scoring cadence, derived from the report_id period stamp (AF-<stamp>-<TICKER>): a "W" in the
+// stamp = weekly (AF-YYYYWww), a 6-digit stamp = monthly (AF-YYYYMM), else daily (AF-YYYYMMDD /
+// AF-YYYYMMDDHHMM). Mirror of export_content.cadence_of(). Used when scored_cadence is absent.
+export function cadenceOf(reportId: string): string {
+  const stamp = (reportId || "").split("-")[1] || "";
+  if (stamp.toUpperCase().includes("W")) return "weekly";
+  if (/^[0-9]{6}$/.test(stamp)) return "monthly";
+  return "daily";
 }
 
 function computeCalibration(rows: Row[]): TrackRecord["calibration"] {

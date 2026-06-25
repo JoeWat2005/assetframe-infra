@@ -42,7 +42,8 @@ type Form = {
   assetClass: string; sessionProfile: string; cadence: string; timezone: string;
   rollUtc: number; related: string; forecastWindow: string; publishPolicy: string;
   reportTier: string; enabled: boolean;
-  cadenceDay: string; timeframes: string[]; includeFundamentals: boolean; includeNews: boolean;
+  cadenceDay: string; timeframes: string[]; chartIntervals: string[];
+  includeFundamentals: boolean; includeNews: boolean;
   fundamentalsSource: string;
 };
 const BLANK: Form = {
@@ -50,9 +51,11 @@ const BLANK: Form = {
   sessionProfile: "crypto_24_7", cadence: "daily", timezone: "UTC", rollUtc: 22, related: "",
   forecastWindow: "rolling_24h", publishPolicy: "approval_required", reportTier: "official",
   enabled: true,
-  cadenceDay: "", timeframes: [], includeFundamentals: false, includeNews: true,
+  cadenceDay: "", timeframes: [], chartIntervals: [], includeFundamentals: false, includeNews: true,
   fundamentalsSource: "auto",
 };
+// The candle intervals an asset can be analysed from (mirror of scripts/config_loader.CHART_INTERVALS).
+const CHART_INTERVALS = ["60m", "2h", "4h", "8h", "1d", "1week", "1month"] as const;
 
 type Result = { ok: boolean; message: string };
 
@@ -94,7 +97,7 @@ export default function AssetManager({ assets }: { assets: EngineAsset[] }) {
       timezone: a.timezone, rollUtc: a.rollUtc, related: a.related,
       forecastWindow: a.forecastWindow, publishPolicy: a.publishPolicy,
       reportTier: a.reportTier || "official", enabled: a.enabled,
-      cadenceDay: a.cadenceDay, timeframes: a.timeframes,
+      cadenceDay: a.cadenceDay, timeframes: a.timeframes, chartIntervals: a.chartIntervals,
       includeFundamentals: a.includeFundamentals ?? (a.assetClass === "equity"), includeNews: a.includeNews,
       fundamentalsSource: a.fundamentalsSource,
     });
@@ -315,6 +318,30 @@ export default function AssetManager({ assets }: { assets: EngineAsset[] }) {
               ? "No extra horizons — a single call over the forecast window (Advanced)."
               : `${form.timeframes.length} horizon track${form.timeframes.length > 1 ? "s" : ""} · ★ published headline = ${HORIZON_LABELS[form.timeframes[0]] ?? form.timeframes[0]}.`}
           </p>
+
+          <Section>Chart intervals</Section>
+          <p className="mb-1.5 text-[11px] text-muted-foreground">
+            The candle intervals the engine <b>analyses</b> to form the view (distinct from the forecast
+            horizons above). <b>Click a chip to add it.</b> 60m + 1d are always included. Daily reports
+            usually want 60m/1d; weekly add 1week; monthly add 1month.
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            {CHART_INTERVALS.map((iv) => {
+              const canonical = iv === "60m" || iv === "1d";
+              const on = canonical || form.chartIntervals.includes(iv);
+              return (
+                <button
+                  key={iv} type="button"
+                  disabled={canonical}
+                  onClick={() => set("chartIntervals", on ? form.chartIntervals.filter((t) => t !== iv) : [...form.chartIntervals, iv])}
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-bold transition ${on ? "bg-navy text-white" : "bg-tile text-muted-foreground ring-1 ring-inset ring-line hover:bg-line"} ${canonical ? "opacity-70" : ""}`}
+                  title={canonical ? "Always analysed" : on ? "Selected — click to remove" : "Click to add this interval"}
+                >
+                  {on ? `${canonical ? "● " : ""}${iv}` : `+ ${iv}`}
+                </button>
+              );
+            })}
+          </div>
 
           <Section>Report content</Section>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">

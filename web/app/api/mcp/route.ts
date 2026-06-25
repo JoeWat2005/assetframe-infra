@@ -44,11 +44,12 @@ const handler = createMcpHandler(
           asset_class: z.string().optional().describe("e.g. 'equity', 'fx', 'crypto', 'commodity', 'index'"),
           status: z.string().optional().describe("directional status, e.g. 'Buy', 'Sell', 'Wait'"),
           date: z.string().optional().describe("ISO date YYYY-MM-DD"),
+          cadence: z.string().optional().describe("generation cadence: 'daily' | 'weekly' | 'monthly'"),
           limit: z.number().int().min(1).max(200).optional().describe("max rows (default 50)"),
         },
       },
-      async ({ asset_class, status, date, limit }) =>
-        json(await listReports({ assetClass: asset_class, status, date, limit }))
+      async ({ asset_class, status, date, cadence, limit }) =>
+        json(await listReports({ assetClass: asset_class, status, date, cadence, limit }))
     );
 
     server.registerTool(
@@ -94,12 +95,13 @@ const handler = createMcpHandler(
       {
         title: "Get track record",
         description:
-          "AssetFrame's public track record: scored predictions, hit rate, current/longest streak, per-confidence calibration, and a per-TIMEFRAME (horizon) breakdown (byHorizon). Optionally filter to one timeframe.",
+          "AssetFrame's public track record: scored predictions, hit rate, current/longest streak, per-confidence calibration, a per-TIMEFRAME (horizon) breakdown (byHorizon) and a per-CADENCE breakdown (byCadence: daily/weekly/monthly). Optionally filter to one timeframe and/or cadence.",
         inputSchema: {
           timeframe: z.string().optional().describe("filter to a horizon: 'daily' | 'weekly' | 'hourly' (a.k.a. next_session | multi_session | intraday)"),
+          cadence: z.string().optional().describe("filter to a scoring cadence: 'daily' | 'weekly' | 'monthly'"),
         },
       },
-      async ({ timeframe }) => json(await getTrackRecordPayload({ horizon: timeframe }))
+      async ({ timeframe, cadence }) => json(await getTrackRecordPayload({ horizon: timeframe, cadence }))
     );
 
     server.registerTool(

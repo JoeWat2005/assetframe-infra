@@ -7,8 +7,8 @@ import {
 } from "@/components/ui/chart";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import type {
-  InstrumentPerf, AssetClassPerf, PredTypePerf, RegimePerf, HorizonPerf, TimelinePoint, CalibrationBin,
-  ComponentOutcome,
+  InstrumentPerf, AssetClassPerf, PredTypePerf, RegimePerf, HorizonPerf, CadencePerf, TimelinePoint,
+  CalibrationBin, ComponentOutcome,
 } from "@/lib/content";
 
 // Pro-only deeper analytics for the track-record page. Mirrors the admin Recharts setup
@@ -141,16 +141,18 @@ function HitRateOverTime({ data }: { data: TimelinePoint[] }) {
 
 export default function TrackRecordAnalytics({
   byInstrument = [], byAssetClass = [], byPredictionType = [], byRegime = [], byHorizon = [],
-  timeline = [], calibrationCurve = [], componentVsOutcome = [],
+  byCadence = [], timeline = [], calibrationCurve = [], componentVsOutcome = [],
 }: {
   byInstrument?: InstrumentPerf[]; byAssetClass?: AssetClassPerf[];
   byPredictionType?: PredTypePerf[]; byRegime?: RegimePerf[]; byHorizon?: HorizonPerf[];
+  byCadence?: CadencePerf[];
   timeline?: TimelinePoint[]; calibrationCurve?: CalibrationBin[];
   componentVsOutcome?: ComponentOutcome[];
 }) {
   const hasAny =
     byInstrument.length || byAssetClass.length || byPredictionType.length ||
-    byRegime.length || byHorizon.length || timeline.length || calibrationCurve.length || componentVsOutcome.length;
+    byRegime.length || byHorizon.length || byCadence.length || timeline.length ||
+    calibrationCurve.length || componentVsOutcome.length;
   if (!hasAny) return null;
 
   return (
@@ -227,6 +229,21 @@ export default function TrackRecordAnalytics({
               <HitRateBars
                 labelKey="horizon"
                 data={byHorizon.map((d) => ({ label: d.horizon, hitRate: d.hitRate, reportsScored: d.reportsScored }))}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {byCadence.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">By cadence</CardTitle>
+              <CardDescription>Hit rate by the report&rsquo;s generation cadence (daily / weekly / monthly).</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <HitRateBars
+                labelKey="cadence"
+                data={byCadence.map((d) => ({ label: d.cadence, hitRate: d.hitRate, reportsScored: d.reportsScored }))}
               />
             </CardContent>
           </Card>

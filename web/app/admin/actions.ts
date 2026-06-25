@@ -408,6 +408,7 @@ const ASSET_CLASSES = ["equity", "crypto", "fx", "futures", "index", "commodity"
 const SESSION_PROFILES = ["fx_spot", "crypto_24_7", "us_equity_rth", "cme_futures"];
 const CADENCES = ["daily", "weekday", "trading_day", "weekday_or_market_open", "weekly", "monthly"];
 const FORECAST_WINDOWS = ["next_liquid_session", "next_regular_session", "rolling_24h", "next_session", "next_week", "next_5_sessions"];
+const CHART_INTERVALS = ["60m", "2h", "4h", "8h", "1d", "1week", "1month"];
 const PUBLISH_POLICIES = ["approval_required", "auto"];
 const REPORT_TIERS = ["official", "watchlist", "staged", "backtest"];
 const TIMEZONES = [
@@ -421,7 +422,7 @@ type AssetInput = {
   assetClass: string; sessionProfile: string; cadence: string; timezone: string;
   rollUtc?: number; related?: string; forecastWindow?: string; publishPolicy?: string;
   reportTier?: string; enabled?: boolean;
-  cadenceDay?: string; timeframes?: string[];
+  cadenceDay?: string; timeframes?: string[]; chartIntervals?: string[];
   includeFundamentals?: boolean | null; includeNews?: boolean; fundamentalsSource?: string;
 };
 
@@ -466,6 +467,13 @@ export async function upsertEngineAsset(input: AssetInput): Promise<Result> {
   const timeframes = Array.isArray(input.timeframes)
     ? Array.from(new Set(input.timeframes.filter((t) => FORECAST_WINDOWS.includes(t))))
     : [];
+  // chart_intervals: candle intervals the engine analyses. Default + force-include the canonical
+  // 60m+1d pair (the rest of the pipeline depends on it), mirroring config_loader normalization.
+  const chartIntervals = (() => {
+    const picked = Array.isArray(input.chartIntervals)
+      ? input.chartIntervals.filter((i) => CHART_INTERVALS.includes(i)) : [];
+    return Array.from(new Set(["60m", "1d", ...picked]));
+  })();
   const cadenceDay = ((): string | null => {
     const v = String(input.cadenceDay ?? "").trim().toLowerCase();
     if (!v) return null;
@@ -481,19 +489,20 @@ export async function upsertEngineAsset(input: AssetInput): Promise<Result> {
     await sql.query(
       `INSERT INTO engine_assets (id, name, instrument, ticker, provider_symbols, asset_class, session_profile,
          cadence, timezone, roll_utc, related, forecast_window, publish_policy, report_tier, enabled,
-         cadence_day, timeframes, include_fundamentals, include_news, fundamentals_source, updated_at)
-       VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17::jsonb,$18,$19,$20, now())
+         cadence_day, timeframes, include_fundamentals, include_news, fundamentals_source, chart_intervals, updated_at)
+       VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17::jsonb,$18,$19,$20,$21::jsonb, now())
        ON CONFLICT (id) DO UPDATE SET name=excluded.name, instrument=excluded.instrument, ticker=excluded.ticker,
          provider_symbols=excluded.provider_symbols, asset_class=excluded.asset_class, session_profile=excluded.session_profile,
          cadence=excluded.cadence, timezone=excluded.timezone, roll_utc=excluded.roll_utc, related=excluded.related,
          forecast_window=excluded.forecast_window, publish_policy=excluded.publish_policy, report_tier=excluded.report_tier,
          enabled=excluded.enabled, cadence_day=excluded.cadence_day, timeframes=excluded.timeframes,
          include_fundamentals=excluded.include_fundamentals, include_news=excluded.include_news,
-         fundamentals_source=excluded.fundamentals_source, updated_at=now()`,
+         fundamentals_source=excluded.fundamentals_source, chart_intervals=excluded.chart_intervals, updated_at=now()`,
       [id, input.name.trim(), input.instrument.trim(), ticker, JSON.stringify(providerSymbols), input.assetClass,
        input.sessionProfile, input.cadence, input.timezone, roll, (input.related || "").trim(),
        forecastWindow, publishPolicy, reportTier, enabled,
-       cadenceDay, JSON.stringify(timeframes), includeFundamentals, includeNews, fundamentalsSource]
+       cadenceDay, JSON.stringify(timeframes), includeFundamentals, includeNews, fundamentalsSource,
+       JSON.stringify(chartIntervals)]
     );
     await logAudit({ actor: ent.email, action: "asset_upsert", target: id, detail: `${ticker} (${input.assetClass})` });
     await enqueueSyncAssets();
