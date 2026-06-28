@@ -15,14 +15,15 @@ import {
 
 // Mirrors actions.ts SETTABLE_CONFIG_KEYS / engine_ops._SETTABLE_CONFIG_KEYS (no secrets).
 const SETTABLE_KEYS = [
-  "ASSETFRAME_AUTHOR_BRIEFS", "ADVISOR_DATA_PROVIDER", "ASSETFRAME_RUN_TIMEOUT", "ASSETFRAME_BRIEF_MODEL",
-  "ASSETFRAME_RETENTION_DAYS", "ASSETFRAME_BRIEF_BATCH", "ASSETFRAME_CRITIC_MODEL",
+  "ASSETFRAME_AUTHOR_BRIEFS", "ADVISOR_DATA_PROVIDER", "ASSETFRAME_DATA_LICENSE", "ASSETFRAME_RUN_TIMEOUT",
+  "ASSETFRAME_BRIEF_MODEL", "ASSETFRAME_RETENTION_DAYS", "ASSETFRAME_BRIEF_BATCH", "ASSETFRAME_CRITIC_MODEL",
   "ASSETFRAME_BRIEF_CONCURRENCY", "ASSETFRAME_BRIEF_WEB_MAX_USES",
 ];
 // One-line help shown under the value box when a key is selected, so the operator knows the shape.
 const CONFIG_KEY_HINTS: Record<string, string> = {
   ASSETFRAME_AUTHOR_BRIEFS: "1 = the AI writes the research briefs (needs ANTHROPIC_API_KEY); 0 = you write them.",
-  ADVISOR_DATA_PROVIDER: "Price feed: yahoo (default, keyless), twelvedata (Grow plan, needs TWELVEDATA_API_KEY), or eodhd (needs EODHD_API_KEY).",
+  ADVISOR_DATA_PROVIDER: "Price feed: yahoo (default, keyless), twelvedata (Grow plan, needs TWELVEDATA_API_KEY), eodhd (needs EODHD_API_KEY) or coingecko.",
+  ASSETFRAME_DATA_LICENSE: "Data license mode (personal | commercial).",
   ASSETFRAME_RUN_TIMEOUT: "Max seconds a daily run may take before it's stopped (60–86400).",
   ASSETFRAME_BRIEF_MODEL: "Claude model for briefs, e.g. claude-sonnet-4-6 / claude-haiku-4-5-20251001.",
   ASSETFRAME_RETENTION_DAYS: "Days of local reports/runs to keep on the box (0 = keep forever). Old editions stay in R2.",

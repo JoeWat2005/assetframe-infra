@@ -13,6 +13,8 @@ export type Edition = {
   confidence?: number | null; // research confidence (0–100), joined from the open call
   // Cadence + intervals (additive; present on DB rows with the columns and in the JSON catalog).
   reportId?: string; scoredCadence?: string; chartIntervals?: string[]; forecastWindow?: string;
+  // Data-license provenance (additive; nullable editions columns). Tolerate NULL/undefined.
+  dataProvider?: string; dataLicense?: string; dataLicenseDegraded?: boolean;
 };
 
 export type SubCall = {
@@ -93,15 +95,18 @@ export type TrackRecord = {
   componentVsOutcome?: ComponentOutcome[];
 };
 
-// Longest and current run of scored calls where a strict majority of the call's
-// predictions came true (hits*2 > n), in window order. Powers the homepage streak.
+// Longest and current run of scored calls that came out net-positive (more hits than misses),
+// in window order. Powers the homepage streak. No-trigger predictions are excluded — they're
+// neither hit nor miss — so the win is measured against GRADED outcomes only (mirrors how the
+// hit rate excludes No-trigger), NOT against `n`, which counts every registered prediction.
 function streaks(calls: OpenCall[]): { longestStreak: number; currentStreak: number } {
   const done = calls
     .filter((c) => c.scored)
     .sort((a, b) => a.windowEnd.localeCompare(b.windowEnd));
   let longest = 0, run = 0;
   for (const c of done) {
-    const won = c.hits * 2 > (Number(c.n) || 0);
+    const misses = (c.predictions || []).filter((p) => (p.verdict || "").trim().toUpperCase() === "N").length;
+    const won = c.hits > misses;
     if (won) { run += 1; longest = Math.max(longest, run); }
     else run = 0;
   }
@@ -127,7 +132,8 @@ function rowToEdition(r: Row): Edition {
   return {
     date, slug: s(r.slug), instrument: s(r.instrument), ticker: s(r.ticker),
     assetClass: s(r.asset_class), status: s(r.status), risk: s(r.risk), bias: s(r.bias),
-    lastPrice: "", dataQuality: r.data_quality == null ? "" : Number(r.data_quality),
+    // Coerce a non-numeric / missing quality to "" (never NaN) so the UI doesn't render "NaN/10".
+    lastPrice: "", dataQuality: Number.isFinite(Number(r.data_quality)) && r.data_quality != null ? Number(r.data_quality) : "",
     windowEnd: s(r.window_end), reportDate: date, catalystStatus: s(r.catalyst_status),
     freeHtml: s(r.free_html_key), freePdf: s(r.free_pdf_key), preview: s(r.preview_key),
     hasPro: Boolean(r.has_pro), hidden: Boolean(r.hidden),
@@ -135,6 +141,8 @@ function rowToEdition(r: Row): Edition {
     reportId: s(r.report_id), scoredCadence: s(r.scored_cadence) || cadenceOf(s(r.report_id)),
     chartIntervals: Array.isArray(r.chart_intervals) ? (r.chart_intervals as string[]) : [],
     forecastWindow: s(r.forecast_window),
+    dataProvider: s(r.data_provider), dataLicense: s(r.data_license),
+    dataLicenseDegraded: Boolean(r.data_license_degraded),
   };
 }
 
@@ -143,6 +151,8 @@ const EDITION_COLS = `e.id, e.report_date::text AS report_date, e.slug, e.instru
   e.free_html_key, e.free_pdf_key, e.preview_key, coalesce(e.hidden, false) AS hidden,
   e.report_id, coalesce(e.scored_cadence, '') AS scored_cadence, e.chart_intervals,
   coalesce(e.forecast_window, '') AS forecast_window,
+  coalesce(e.data_provider, '') AS data_provider, coalesce(e.data_license, '') AS data_license,
+  coalesce(e.data_license_degraded, false) AS data_license_degraded,
   oc.confidence AS confidence`;
 // Confidence isn't on the editions table — join the open call by the edition's stored report_id
 // (cadence-aware: AF-YYYYMMDD / AF-YYYYWww / AF-YYYYMM -TICKER). Falls back to the legacy daily-form
@@ -272,14 +282,19 @@ async function _getTrackRecord(): Promise<TrackRecord> {
       // Scored rows, enriched with edition taxonomy (asset_class_key / prediction_type /
       // market_regime) via the same report_id derivation used elsewhere. Best-effort: if
       // those columns aren't migrated, retry without them so scoring data still loads.
-      const SCORED_BASE = `SELECT sr.report_id, sr.instrument, sr.view, sr.confidence, sr.results,
+      // DISTINCT ON (sr.id): the editions join can match ONE scored row to TWO editions (the
+      // exact report_id match AND a legacy null-report_id row whose derived id collides), which
+      // would double-count that row's hits/misses. Collapse to one edition per scored row,
+      // preferring the exact report_id match (e.report_id IS NULL sorts last). Same hit-rate
+      // formula — this only removes the duplicate.
+      const SCORED_BASE = `SELECT DISTINCT ON (sr.id) sr.report_id, sr.instrument, sr.view, sr.confidence, sr.results,
                 sr.hits, sr.misses, sr.hit_rate, sr.window_end`;
       const SCORED_JOIN = `FROM scored_results sr
          LEFT JOIN editions e
            ON e.report_id = sr.report_id
            OR (e.report_id IS NULL
                AND sr.report_id = 'AF-' || replace(e.report_date::text, '-', '') || '-' || e.slug)
-         ORDER BY sr.id`;
+         ORDER BY sr.id, (e.report_id IS NULL)`;
       let scoredRows: Row[];
       try {
         scoredRows = (await sql.query(
@@ -566,7 +581,7 @@ async function _getTrending(limit = 6): Promise<Edition[]> {
        SELECT ${EDITION_COLS}
        FROM top t
        JOIN editions e ON e.id = t.edition_id
-       LEFT JOIN open_calls oc ON oc.report_id = 'AF-' || replace(e.report_date::text, '-', '') || '-' || e.slug
+       LEFT JOIN open_calls oc ON oc.report_id = coalesce(e.report_id, 'AF-' || replace(e.report_date::text, '-', '') || '-' || e.slug)
        WHERE coalesce(e.hidden, false) = false
        ORDER BY t.views DESC`,
       [limit]

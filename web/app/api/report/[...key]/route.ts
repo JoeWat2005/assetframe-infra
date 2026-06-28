@@ -71,6 +71,14 @@ export async function GET(
         /* logging is optional — a failure must not break the download */
       }
     }
+  } else {
+    // Public preview.png keys are predictable too, and the engine uploads bytes to R2 *before*
+    // inserting the (hidden=true) edition row — so without this check a predictable preview key
+    // could leak an unapproved/hidden edition's thumbnail. getEdition returns only non-hidden
+    // editions, so 404 if it's missing or still hidden.
+    const [date, slug] = objectKey.split("/");
+    const edition = await getEdition(date, slug);
+    if (!edition) return new NextResponse("Not found", { status: 404 });
   }
 
   // Public previews get a longer-lived signed URL + a cacheable redirect (they're just

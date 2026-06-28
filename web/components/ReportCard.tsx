@@ -67,7 +67,7 @@ export default function ReportCard({ e, animate = true }: { e: Edition; animate?
         <p className="mt-2 text-xs text-muted-foreground">
           Edition {e.reportDate} · window to {e.windowEnd}
         </p>
-        {e.dataQuality !== "" && (
+        {e.dataQuality !== "" && Number.isFinite(Number(e.dataQuality)) && (
           <p className="text-xs text-muted-foreground">Data quality {e.dataQuality}/10</p>
         )}
       </CardContent>

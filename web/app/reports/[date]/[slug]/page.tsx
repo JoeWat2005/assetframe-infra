@@ -23,7 +23,37 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { date, slug } = await params;
   const e = await getEdition(date, slug);
-  return { title: e ? `${e.instrument} — ${e.reportDate}` : "Report" };
+  if (!e) return { title: "Report" };
+  const base = SITE.url.replace(/\/$/, "");
+  const canonical = `/reports/${e.date}/${e.slug}`;
+  const title = `${e.instrument} — ${e.reportDate}`;
+  const description =
+    `${e.instrument} (${e.ticker}) — next-session market research for ${e.reportDate}: status, risk, ` +
+    `the expected range and the thesis, with every call scored against the tape afterwards.`;
+  // `e.preview` is a relative app route ("/api/report/<date>/<slug>/preview.png"), so make it
+  // absolute for OpenGraph/Twitter (they require absolute image URLs).
+  const image = e.preview ? (e.preview.startsWith("http") ? e.preview : `${base}${e.preview}`) : undefined;
+  return {
+    title,
+    description,
+    // Root layout sets alternates.canonical:"/" (shallow-inherited), which would canonicalise every
+    // report to the homepage — set the report's own canonical here.
+    alternates: { canonical },
+    openGraph: {
+      type: "article",
+      url: `${base}${canonical}`,
+      siteName: SITE.brand,
+      title,
+      description,
+      ...(image ? { images: [image] } : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      ...(image ? { images: [image] } : {}),
+    },
+  };
 }
 
 // Identical "open the report" controls for Free and Pro, so HTML vs PDF reads the same
@@ -66,7 +96,9 @@ export default async function ReaderPage(
     author: { "@type": "Organization", name: SITE.brand, url: SITE.url },
     publisher: { "@id": `${SITE.url}/#organization` },
     about: e.instrument,
-    ...(e.preview && e.preview.startsWith("http") ? { image: e.preview } : {}),
+    // `e.preview` is always a relative route path, so make it absolute (same `base` as the
+    // canonical/OG URLs) — Article `image` must be an absolute URL to be eligible for rich results.
+    ...(e.preview ? { image: e.preview.startsWith("http") ? e.preview : `${base}${e.preview}` } : {}),
   };
 
   return (
@@ -83,6 +115,12 @@ export default async function ReaderPage(
       <p className="mt-3 text-[15px]">{e.bias}</p>
       <p className="mt-1 text-sm text-muted-foreground">Edition {e.reportDate} · prediction window to {e.windowEnd}</p>
       {e.catalystStatus && <p className="mt-1 text-sm text-muted-foreground"><b>Catalyst:</b> {e.catalystStatus}</p>}
+      {e.dataProvider && (
+        <p className="mt-1 text-xs text-muted-foreground">
+          Data: {e.dataProvider}
+          {e.dataLicense === "commercial" && (e.dataLicenseDegraded ? " — ⚠ non-commercial fallback" : " — licensed")}
+        </p>
+      )}
 
       <div className="mt-4">
         <FollowButton

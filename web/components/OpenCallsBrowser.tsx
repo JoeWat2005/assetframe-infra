@@ -166,7 +166,10 @@ export default function OpenCallsBrowser({
             const isOpen = expanded.has(c.reportId);
             const url = reportUrl(c.reportId);
             const panelId = `call-${c.reportId}`;
-            const won = c.scored && c.hits * 2 > c.n; // strict majority → counts to the streak
+            // Win = more hits than GRADED misses (No-trigger excluded, mirroring the hit rate);
+            // never measure against `c.n`, which counts every registered prediction incl. No-trigger.
+            const misses = (c.predictions || []).filter((p) => (p.verdict || "").trim().toUpperCase() === "N").length;
+            const won = c.scored && c.hits > misses; // net-positive graded outcome → counts to the streak
             const trackColor = !c.scored ? "#9a6700" : won ? "#1a7f37" : "#57606a";
             return (
               <div key={c.reportId} className="border-b border-line last:border-0">

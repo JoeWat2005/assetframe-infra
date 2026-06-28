@@ -8,6 +8,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { getEngineAssets } from "@/lib/engine-assets";
 import { getEngineState } from "@/lib/engine";
 import { signalEngineWake } from "@/lib/upstash";
+import { isValidSlug } from "@/lib/report-key";
 import { sql } from "@/lib/db";
 
 type Result = { ok: boolean; message: string };
@@ -294,8 +295,8 @@ const ENGINE_COMMANDS: Record<string, string> = {
 // Keys set_config may write to the engine .env. Mirrors engine_ops._SETTABLE_CONFIG_KEYS — only
 // keys the engine consumes, never secrets/credentials/URLs. (The box re-validates this list too.)
 const SETTABLE_CONFIG_KEYS = [
-  "ASSETFRAME_AUTHOR_BRIEFS", "ADVISOR_DATA_PROVIDER", "ASSETFRAME_RUN_TIMEOUT", "ASSETFRAME_BRIEF_MODEL",
-  "ASSETFRAME_RETENTION_DAYS", "ASSETFRAME_BRIEF_BATCH", "ASSETFRAME_CRITIC_MODEL",
+  "ASSETFRAME_AUTHOR_BRIEFS", "ADVISOR_DATA_PROVIDER", "ASSETFRAME_DATA_LICENSE", "ASSETFRAME_RUN_TIMEOUT",
+  "ASSETFRAME_BRIEF_MODEL", "ASSETFRAME_RETENTION_DAYS", "ASSETFRAME_BRIEF_BATCH", "ASSETFRAME_CRITIC_MODEL",
   "ASSETFRAME_BRIEF_CONCURRENCY", "ASSETFRAME_BRIEF_WEB_MAX_USES",
 ];
 
@@ -321,6 +322,16 @@ export async function sendEngineCommand(
     const value = String(args?.value ?? "");
     if (!SETTABLE_CONFIG_KEYS.includes(key)) return { ok: false, message: "Not a settable config key." };
     if (/[\r\n]/.test(value) || value.length > 200) return { ok: false, message: "Value must be a single line ≤ 200 chars." };
+    // Enum keys — mirror the engine allow-list exactly (the box re-validates and is the boundary).
+    if (key === "ASSETFRAME_AUTHOR_BRIEFS" && value !== "0" && value !== "1") {
+      return { ok: false, message: "ASSETFRAME_AUTHOR_BRIEFS must be 0 (you write briefs) or 1 (AI writes them)." };
+    }
+    if (key === "ADVISOR_DATA_PROVIDER" && !["yahoo", "twelvedata", "eodhd", "coingecko"].includes(value)) {
+      return { ok: false, message: "ADVISOR_DATA_PROVIDER must be one of: yahoo, twelvedata, eodhd, coingecko." };
+    }
+    if (key === "ASSETFRAME_DATA_LICENSE" && value !== "personal" && value !== "commercial") {
+      return { ok: false, message: "ASSETFRAME_DATA_LICENSE must be personal or commercial." };
+    }
     // Per-key value validation (defence in depth; the box validates + is the boundary). A bad
     // ASSETFRAME_RUN_TIMEOUT is int()-parsed at engine import and would crash-loop the poller.
     if (key === "ASSETFRAME_RUN_TIMEOUT" && !(/^\d+$/.test(value) && Number(value) >= 60 && Number(value) <= 86400)) {
@@ -462,6 +473,13 @@ export async function upsertEngineAsset(input: AssetInput): Promise<Result> {
   const yahoo = (input.yahoo || "").trim();
   if (!/^[a-z0-9_]+$/.test(id)) return { ok: false, message: "id must be lowercase letters/numbers/underscore." };
   if (!ticker) return { ok: false, message: "ticker is required." };
+  // The ticker becomes the edition slug, which the report-key / R2 route validates against a
+  // strict charset (letters, numbers, hyphen, underscore). Reject here anything that route
+  // would reject (e.g. a '.' as in "BRK.B") so an admin can never create an asset whose reports
+  // 404 downstream — admin-accepted and routable stay in lockstep. (Same grammar, not looser.)
+  if (!isValidSlug(ticker)) {
+    return { ok: false, message: "Ticker can only contain letters, numbers, hyphens and underscores (no dots or spaces) — it's used in the report URL. Try e.g. BRK-B instead of BRK.B." };
+  }
   if (!yahoo) return { ok: false, message: "Yahoo symbol is required (the price feed)." };
   if (!input.name?.trim() || !input.instrument?.trim()) return { ok: false, message: "name and instrument are required." };
   if (!ASSET_CLASSES.includes(input.assetClass)) return { ok: false, message: "Invalid asset class." };

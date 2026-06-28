@@ -1,10 +1,12 @@
 import { createMcpHandler, experimental_withMcpAuth } from "mcp-handler";
 import { verifyClerkToken } from "@clerk/mcp-tools/next";
 import { auth, clerkClient } from "@clerk/nextjs/server";
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import { listReports, getReportDetail, getProReportDetail, getTrackRecordPayload } from "@/lib/reports-api";
 import { computeEntitlement, type PublicMeta } from "@/lib/access";
 import { isValidReportRef } from "@/lib/report-key";
+import { rateLimitResponseWithHeaders, getRequestIp } from "@/lib/rate-limit";
 import { SITE } from "@/site.config";
 
 // AssetFrame MCP server (Streamable HTTP) at /api/mcp.
@@ -148,4 +150,24 @@ const authHandler = experimental_withMcpAuth(
   { required: false }
 );
 
-export { authHandler as GET, authHandler as POST, authHandler as DELETE };
+// Per-caller rate limit, mirroring the public REST API: same @upstash/ratelimit sliding
+// window (lib/rate-limit) and the same 429 shape (error body + Retry-After / RateLimit-*
+// headers). Keyed per OAuth bearer token when present (per-credential, the MCP analogue of
+// the REST `key:` bucket), else per client IP. No-op until Upstash is configured — exactly
+// like the REST routes. We hash the token so a raw credential never lands in a Redis key.
+function rateLimitId(req: Request): string {
+  const authz = req.headers.get("authorization") ?? "";
+  if (authz.toLowerCase().startsWith("bearer ")) {
+    const token = authz.slice("bearer ".length).trim();
+    if (token) return `mcp:key:${createHash("sha256").update(token).digest("hex").slice(0, 32)}`;
+  }
+  return `mcp:ip:${getRequestIp(req)}`;
+}
+
+async function rateLimitedHandler(req: Request): Promise<Response> {
+  const limited = await rateLimitResponseWithHeaders(req, rateLimitId(req), { limit: 120, windowSec: 60 });
+  if (limited) return limited;
+  return authHandler(req);
+}
+
+export { rateLimitedHandler as GET, rateLimitedHandler as POST, rateLimitedHandler as DELETE };

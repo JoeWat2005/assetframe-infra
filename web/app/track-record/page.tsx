@@ -97,7 +97,9 @@ export default async function TrackRecordPage() {
             calibrationCurve={tr.calibrationCurve}
             componentVsOutcome={tr.componentVsOutcome}
           />
-        ) : (
+        ) : tr.stats.predictionsGraded > 0 ? (
+          // Only upsell "full performance analytics" once there's something to unlock — before any
+          // window has closed the analytics render empty, so the banner would over-promise.
           <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#9a6700]/40 bg-[#fff7e6] px-4 py-3 text-sm">
             <span className="text-[#7a5200]">
               The proof is public — registered open calls, recent scored results and calibration are
@@ -111,7 +113,7 @@ export default async function TrackRecordPage() {
               <Link href="/pricing" className="shrink-0 rounded-lg bg-navy px-4 py-2 font-bold text-white hover:bg-navy-700">See Pro</Link>
             )}
           </div>
-        )}
+        ) : null}
 
         <h2 className="mt-8 mb-1 text-xl font-bold text-navy">Prediction calls</h2>
         <p className="mb-3 text-sm text-muted-foreground">Each call registers its predictions before the window. The badge tracks how many came true (hits/total) once the engine scores it — a majority feeds the homepage streak. Filter by asset or date, then open one to see every prediction.</p>

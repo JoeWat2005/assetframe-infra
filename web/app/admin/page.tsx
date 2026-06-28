@@ -100,12 +100,19 @@ export default async function AdminPage() {
                 {engineState.automationPaused ? "Paused" : "Active"}
               </b>
             </span>
-            {engineState.currentRunId && (
+            {engineState.currentRunId && (engineState.online ? (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fff7e6] px-3 py-1 text-xs font-bold text-[#9a6700]">
                 <span className="size-2 animate-pulse rounded-full bg-[#9a6700]" />
                 Running: {engineState.currentRunId}
               </span>
-            )}
+            ) : (
+              // The box hasn't heartbeat within the window — current_run_id is stale (the run can't
+              // still be in progress if the engine is offline), so don't show a live "Running" badge.
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-tile px-3 py-1 text-xs font-bold text-[#57606a]">
+                <span className="size-2 rounded-full bg-[#57606a]" />
+                Run {engineState.currentRunId} — offline since {engineState.lastHeartbeatAt ? `${engineState.lastHeartbeatAt.replace("T", " ").slice(0, 16)} UTC` : "never"}
+              </span>
+            ))}
             <span className="ml-auto"><PauseToggle paused={engineState.automationPaused} /></span>
           </div>
           {!engineState.online && (

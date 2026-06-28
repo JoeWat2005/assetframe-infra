@@ -37,3 +37,13 @@ export function isValidReportRef(date: string, slug: string): boolean {
     SLUG_RE.test(slug)
   );
 }
+
+/**
+ * Is `slug` routable as a report object key? Uses the SAME anchored charset + max-length
+ * grammar the report-key / R2 route accepts above. Exposed so upstream producers (e.g. the
+ * admin asset editor) can reject a slug the downstream route would 404 on — keeping
+ * "admin-accepted" and "actually routable" in lockstep. Does NOT loosen the route.
+ */
+export function isValidSlug(slug: string): boolean {
+  return typeof slug === "string" && slug.length <= SLUG_MAX && SLUG_RE.test(slug);
+}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { Hero } from "@/components/ui";
+import { getTrackRecord } from "@/lib/content";
 import { SITE } from "@/site.config";
 
 export const metadata: Metadata = {
@@ -11,7 +12,13 @@ export const metadata: Metadata = {
   alternates: { canonical: "/faq" },
 };
 
-const FAQS: { q: string; a: React.ReactNode; text: string }[] = [
+function buildFaqs(scoredCount: number): { q: string; a: React.ReactNode; text: string }[] {
+  // Self-updating: state the live scored count instead of a hard-coded "0 scored results".
+  const scoredNote =
+    scoredCount > 0
+      ? `It currently shows ${scoredCount} scored result${scoredCount === 1 ? "" : "s"}, growing as more windows close.`
+      : "The first results land as the earliest windows close.";
+  return [
   {
     q: "What is AssetFrame?",
     a: <>A market-research service. For each instrument we publish a free one-page <b>Snapshot</b> and a paid <b>Pro</b> report <b>before</b> the session, then grade every call against the market afterwards and log the result in a public, append-only ledger.</>,
@@ -39,8 +46,8 @@ const FAQS: { q: string; a: React.ReactNode; text: string }[] = [
   },
   {
     q: "How are calls scored?",
-    a: <>Every Pro report registers falsifiable predictions — exact levels and an exact window — before the session. After the window closes the engine grades each one Hit / Miss / No-trigger against the price tape and appends a row that&rsquo;s never edited. The public <Link className="text-navy underline" href="/track-record">track record</Link> breaks performance down by instrument, asset class, prediction type and market regime, with a stated-vs-realised calibration curve and hit rate over time. (It currently shows 0 scored results — the first results land as the earliest windows close.)</>,
-    text: "Every Pro report registers falsifiable predictions — exact levels and an exact window — before the session. After the window closes the engine grades each one Hit, Miss or No-trigger against the price tape and appends a row that is never edited. The public track record breaks performance down by instrument, asset class, prediction type and market regime, with a stated-vs-realised calibration curve and hit rate over time. It currently shows 0 scored results; the first results land as the earliest windows close.",
+    a: <>Every Pro report registers falsifiable predictions — exact levels and an exact window — before the session. After the window closes the engine grades each one Hit / Miss / No-trigger against the price tape and appends a row that&rsquo;s never edited. The public <Link className="text-navy underline" href="/track-record">track record</Link> breaks performance down by instrument, asset class, prediction type and market regime, with a stated-vs-realised calibration curve and hit rate over time. {scoredNote}</>,
+    text: `Every Pro report registers falsifiable predictions — exact levels and an exact window — before the session. After the window closes the engine grades each one Hit, Miss or No-trigger against the price tape and appends a row that is never edited. The public track record breaks performance down by instrument, asset class, prediction type and market regime, with a stated-vs-realised calibration curve and hit rate over time. ${scoredNote}`,
   },
   {
     q: "How do I get alerts and follow instruments?",
@@ -72,26 +79,28 @@ const FAQS: { q: string; a: React.ReactNode; text: string }[] = [
     a: <>Futures, FX, crypto and US single stocks. The published menu grows over time — browse the latest editions on the <Link className="text-navy underline" href="/reports">reports page</Link>.</>,
     text: "Futures, FX, cryptocurrency and US single stocks. The published menu grows over time; browse the latest editions on the reports page.",
   },
-];
+  ];
+}
 
-const faqLd = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: FAQS.map((f) => ({
-    "@type": "Question",
-    name: f.q,
-    acceptedAnswer: { "@type": "Answer", text: f.text },
-  })),
-};
-
-export default function FaqPage() {
+export default async function FaqPage() {
+  const tr = await getTrackRecord();
+  const faqs = buildFaqs(tr.stats.reportsScored);
+  const faqLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.text },
+    })),
+  };
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
       <Hero title="Frequently asked questions" tag="What AssetFrame is, what the confidence score means, how calls are scored, and how billing works." />
       <div className="mx-auto max-w-3xl px-5 py-8">
         <div className="overflow-hidden rounded-xl border border-line bg-white" data-animate="up">
-          {FAQS.map((f) => (
+          {faqs.map((f) => (
             <details key={f.q} className="group border-b border-line last:border-0">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-4 font-semibold text-ink marker:hidden [&::-webkit-details-marker]:hidden">
                 {f.q}
