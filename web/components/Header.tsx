@@ -83,21 +83,23 @@ export default function Header() {
   // past the fold. Every other page: it's visible at the top, hides as you scroll down
   // (more reading room), and comes back as you scroll up. rAF-throttled, passive.
   useEffect(() => {
-    // Initial state is set by the immediate apply() below (from the real scroll position), so no
-    // separate setShown(!isHome) is needed here — it would just be overwritten on the same tick.
+    // The immediate apply(true) below sets the initial state from the real scroll position, so no
+    // separate setShown(!isHome) is needed. `initial` makes a non-home page that loads already
+    // scrolled past the fold (reload / back-nav restores scrollY, no scroll event fires) start
+    // SHOWN — matching the old setShown(!isHome) seed, which the relative-direction branches miss.
     let lastY = window.scrollY;
     let ticking = false;
-    const apply = () => {
+    const apply = (initial = false) => {
       const y = window.scrollY;
       if (isHome) setShown(y > window.innerHeight - 64); // reveal only after the full-screen hero, so the white navbar never sits over it
-      else if (y <= 64) setShown(true); // near the top (within the reserved header zone): always shown
+      else if (initial || y <= 64) setShown(true); // initial paint, or near the top (reserved header zone): shown
       else if (y > lastY + 4) setShown(false); // scrolling down past the fold: hide
       else if (y < lastY - 4) setShown(true); // scrolling up: show
       lastY = y;
       ticking = false;
     };
-    apply();
-    const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(apply); } };
+    apply(true);
+    const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(() => apply()); } };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, [isHome]);

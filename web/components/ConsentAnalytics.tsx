@@ -16,13 +16,17 @@ const GA_ID =
 // cookies, so under UK/EU rules it must be consented to first). The banner is shown
 // only when a GA id is configured — Clerk's auth cookies are strictly necessary and
 // need no consent, so with no GA there's nothing to ask about.
+// In-memory fallback so a consent choice still sticks for the session when localStorage is
+// blocked (private mode) — mirrors the original, where decide() updated React state directly.
+let memConsent: "granted" | "denied" | null = null;
 function readConsent(): "granted" | "denied" | null {
   try {
     const v = localStorage.getItem(KEY);
-    return v === "granted" || v === "denied" ? v : null;
+    if (v === "granted" || v === "denied") return v;
   } catch {
-    return null; // storage blocked — treat as undecided
+    /* storage blocked — fall through to the in-memory value */
   }
+  return memConsent;
 }
 function subscribeConsent(cb: () => void) {
   window.addEventListener("af-consent", cb);
@@ -41,6 +45,7 @@ export default function ConsentAnalytics() {
   const consent = useSyncExternalStore(subscribeConsent, readConsent, () => null);
 
   const decide = (v: "granted" | "denied") => {
+    memConsent = v;
     try { localStorage.setItem(KEY, v); } catch {}
     window.dispatchEvent(new Event("af-consent"));
   };

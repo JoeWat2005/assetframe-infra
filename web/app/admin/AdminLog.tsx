@@ -50,9 +50,10 @@ export default function AdminLog({ rows }: { rows: AuditRow[] }) {
   const [range, setRange] = useState("all");
   const [sort, setSort] = useState("newest");
   const [page, setPage] = useState(0);
-  // Capture "now" once at mount (a lazy initializer is pure-exempt) so the range filter's cutoff
-  // is computed without calling Date.now() during render. Refreshes on remount/navigation.
-  const [now] = useState(() => Date.now());
+  // Capture "now" when the range filter changes (in the picker handler — an event, not during
+  // render), matching the original Date.now()-recomputed-on-range-change semantics without
+  // calling Date.now() during render. Seeded once at mount via the lazy initializer.
+  const [now, setNow] = useState(() => Date.now());
   const actions = useMemo(() => Array.from(new Set(rows.map((r) => r.action))).sort(), [rows]);
 
   const cutoff = useMemo(() => {
@@ -111,7 +112,7 @@ export default function AdminLog({ rows }: { rows: AuditRow[] }) {
             </SelectGroup>
           </SelectContent>
         </Select>
-        <Select value={range} onValueChange={setRange}>
+        <Select value={range} onValueChange={(v) => { setNow(Date.now()); setRange(v); }}>
           <SelectTrigger aria-label="Time range" className="w-full sm:w-auto sm:min-w-[140px]">
             <SelectValue placeholder="All time" />
           </SelectTrigger>
