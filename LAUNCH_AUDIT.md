@@ -76,7 +76,7 @@ while preserving existing functionality.
 ## Auth & Billing
 
 * Clerk
-* Lemon Squeezy
+* Clerk Billing (Stripe under the hood — NOT Lemon Squeezy)
 * subscriptions
 * entitlements
 * admin access
@@ -144,7 +144,7 @@ Confirm:
 Review:
 
 * Clerk integration
-* Lemon Squeezy integration
+* Clerk Billing integration (Stripe under the hood)
 * webhook handling
 * billing state transitions
 

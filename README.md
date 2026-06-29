@@ -66,14 +66,14 @@ DISTRIBUTION PLANE  (Next.js 16 app in web/, on Vercel)
 
   Reports browser · Pro-gated track record + analytics · gated Pro downloads · account + billing
   MCP server (/api/mcp) · REST API (/api/v1) · web-push + email notifications · admin console
-  Clerk (auth/entitlements) · Lemon Squeezy (MoR subscriptions) · Neon Postgres · R2 · Vercel Analytics
+  Clerk + Clerk Billing (auth/entitlements/subscriptions) · Neon Postgres · R2 · Vercel Analytics
 ```
 
 Engine artifacts under `data/` stay local/gitignored; only `web/content/*.json` and the ledger reach git/Neon. Full detail, the role-split table, and the 12-step pipeline are in the documentation vault → [architecture/system-overview.md](documentation/architecture/system-overview.md), [architecture/generation-pipeline.md](documentation/architecture/generation-pipeline.md), [architecture/distribution-pipeline.md](documentation/architecture/distribution-pipeline.md).
 
 ### Stack (web)
 
-Next.js 16 (App Router) on Vercel (root `web/`) · **Clerk** auth/entitlements · **Lemon Squeezy** merchant-of-record subscriptions · **Neon Postgres** (JSON fallback) · **Cloudflare R2** report files (Pro behind 120s signed URLs) · Tailwind v4 + shadcn/ui + GSAP · **web-push** (VAPID) + **Resend** email · Vercel Analytics + Speed Insights · `node-pg-migrate`. → [website/](documentation/website/routes.md), [auth/](documentation/auth/overview.md), [billing/](documentation/billing/overview.md), [database/](documentation/database/schema.md), [storage/](documentation/storage/overview.md), [deployment/](documentation/deployment/overview.md).
+Next.js 16 (App Router) on Vercel (root `web/`) · **Clerk** auth/entitlements + **Clerk Billing** subscriptions (Stripe under the hood) · **Neon Postgres** (JSON fallback) · **Cloudflare R2** report files (Pro behind 120s signed URLs) · Tailwind v4 + shadcn/ui + GSAP · **web-push** (VAPID) + **Resend** email · Vercel Analytics + Speed Insights · `node-pg-migrate`. → [website/](documentation/website/routes.md), [auth/](documentation/auth/overview.md), [billing/](documentation/billing/overview.md), [database/](documentation/database/schema.md), [storage/](documentation/storage/overview.md), [deployment/](documentation/deployment/overview.md).
 
 ---
 
