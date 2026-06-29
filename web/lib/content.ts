@@ -298,10 +298,13 @@ async function _getTrackRecord(): Promise<TrackRecord> {
       let scoredRows: Row[];
       try {
         scoredRows = (await sql.query(
+          // Taxonomy comes from scored_results (denormalized by the engine — see
+          // migration 1750000030000); fall back to the editions columns for any rows synced
+          // before that change. Aliases are unchanged so the downstream mapping is untouched.
           `${SCORED_BASE}, coalesce(sr.scored_cadence, '') AS scored_cadence, e.ticker AS ticker,
-              coalesce(e.asset_class_key, '') AS asset_class_key,
-              coalesce(e.prediction_type, '') AS prediction_type,
-              coalesce(e.market_regime, '')  AS market_regime
+              coalesce(nullif(sr.asset_class, ''),   e.asset_class_key, '') AS asset_class_key,
+              coalesce(nullif(sr.pred_type, ''),     e.prediction_type, '') AS prediction_type,
+              coalesce(nullif(sr.market_regime, ''), e.market_regime, '')   AS market_regime
            ${SCORED_JOIN}`
         )) as Row[];
       } catch {
