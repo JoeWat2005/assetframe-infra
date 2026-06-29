@@ -22,6 +22,15 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
       - run: npm ci
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Lint
+        # Non-blocking for now: ESLint reports pre-existing react-hooks/purity +
+        # set-state-in-effect errors in some admin components. Surfaced here so they're visible
+        # without blocking deploys; drop `continue-on-error` to make it a hard gate once the
+        # admin code-health pass clears them.
+        run: npm run lint
+        continue-on-error: true
       - name: Unit tests
         run: npm test
       - name: Production build
