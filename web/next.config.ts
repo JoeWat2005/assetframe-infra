@@ -5,9 +5,13 @@ import type { NextConfig } from "next";
 // telemetry, Cloudflare Turnstile bot-check), Clerk Billing's Stripe-Elements checkout
 // (js.stripe.com script + frame, api.stripe.com XHR), Google Analytics, Vercel Analytics/Speed
 // Insights, and Cloudflare R2 (signed report-preview images). The Clerk Billing checkout drawer
-// renders in-page, so Stripe must be allow-listed here for it to load. 'unsafe-inline' is
-// still permitted for scripts/styles (Next bootstrap + Clerk + Recharts/Tailwind inline
-// styles); the hardened follow-up is to replace it with a per-request nonce.
+// renders in-page, so Stripe must be allow-listed here for it to load. 'unsafe-inline' is still
+// permitted for scripts/styles (Next bootstrap + Clerk + Recharts/Tailwind inline styles). The XSS
+// EXECUTION path that made script 'unsafe-inline' dangerous is already closed AT THE SOURCE — every
+// JSON-LD sink is escaped via lib/jsonld.ts (tests/sec-jsonld.test.ts). A per-request nonce (proxy.ts,
+// per Next 16's CSP guide) is the defence-in-depth follow-up, but it FORCES fully-dynamic rendering
+// (no static/CDN/PPR) and `strict-dynamic` can break Clerk/Stripe/GA/Recharts — so it must be validated
+// on STAGING (report-only first), NOT flipped blind in production. Tracked as a staging task.
 // To roll back fast if something legitimate is blocked, rename the header key at the bottom
 // back to "Content-Security-Policy-Report-Only" (reports violations without blocking).
 // Vercel Toolbar (preview comments) loads feedback.js from vercel.live and uses Pusher for
