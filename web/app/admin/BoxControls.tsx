@@ -2,6 +2,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { sendEngineCommand, clearCatalog } from "./actions";
+import { ConfirmType } from "@/components/ConfirmType";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,7 +18,7 @@ import {
 const SETTABLE_KEYS = [
   "ASSETFRAME_AUTHOR_BRIEFS", "ADVISOR_DATA_PROVIDER", "ASSETFRAME_DATA_LICENSE", "ASSETFRAME_RUN_TIMEOUT",
   "ASSETFRAME_BRIEF_MODEL", "ASSETFRAME_RETENTION_DAYS", "ASSETFRAME_BRIEF_BATCH", "ASSETFRAME_CRITIC_MODEL",
-  "ASSETFRAME_BRIEF_CONCURRENCY", "ASSETFRAME_BRIEF_WEB_MAX_USES",
+  "ASSETFRAME_BRIEF_CONCURRENCY", "ASSETFRAME_BRIEF_WEB_MAX_USES", "TWELVEDATA_RATE_PER_MIN",
 ];
 // One-line help shown under the value box when a key is selected, so the operator knows the shape.
 const CONFIG_KEY_HINTS: Record<string, string> = {
@@ -31,6 +32,7 @@ const CONFIG_KEY_HINTS: Record<string, string> = {
   ASSETFRAME_CRITIC_MODEL: "Claude model for the adversarial critic, e.g. claude-haiku-4-5-20251001 (cheap/fast default).",
   ASSETFRAME_BRIEF_CONCURRENCY: "Concurrent briefs on the synchronous path (1 = safe on Anthropic Tier 1; raise on a higher tier). Ignored when batch is on.",
   ASSETFRAME_BRIEF_WEB_MAX_USES: "Web searches per news-on brief (1–15, default 6). Lower = cheaper (less input), higher = deeper research. Does not change the model.",
+  TWELVEDATA_RATE_PER_MIN: "Twelve Data API requests/minute throttle (0–1000; 0 = no throttle). Match your plan: 8 (Basic) / 55 (Grow).",
 };
 
 // One box action: a plain-English button with a short caption underneath, so a non-technical
@@ -58,6 +60,8 @@ export default function BoxControls({ hideScoreNow = false }: { hideScoreNow?: b
   const [pending, start] = useTransition();
   const [cfgKey, setCfgKey] = useState(SETTABLE_KEYS[0]);
   const [cfgVal, setCfgVal] = useState("");
+  // A pending type-to-confirm for an irreversible delete (null = none open).
+  const [confirm, setConfirm] = useState<{ phrase: string; title: string; body: string; act: () => void } | null>(null);
 
   const run = (command: string, args?: Record<string, unknown>, confirmMsg?: string) =>
     start(async () => {
@@ -84,11 +88,16 @@ export default function BoxControls({ hideScoreNow = false }: { hideScoreNow?: b
       }
     });
 
+  // Type-to-confirm gate for irreversible deletes — stronger than window.confirm, so a single
+  // misclick can never wipe data. The operator must type the phrase before Delete enables.
+  const confirmDelete = (phrase: string, title: string, body: string, act: () => void) =>
+    setConfirm({ phrase, title, body, act });
+
   // One-click FULL reset — does all four together so you never leave orphaned data by clearing
   // only one (e.g. catalog but not R2/ledger). Neon (clearCatalog) + the three box commands.
+  // (Confirmation is handled by the type-to-confirm dialog before this runs.)
   const fullReset = () =>
     start(async () => {
-      if (!window.confirm("FULL RESET — delete the Neon catalog AND clear the box's reports, ledger and R2 files? This wipes all generated data and cannot be undone. Continue?")) return;
       try {
         // Clear the Neon catalog FIRST. If that fails, stop — don't half-wipe the box and
         // leave orphaned state (the original foot-gun). Only enqueue the box commands once
@@ -185,26 +194,39 @@ export default function BoxControls({ hideScoreNow = false }: { hideScoreNow?: b
         <p className="mb-2 text-[11px] text-[#cf222e]/80">These permanently delete generated data. Each asks you to confirm first.</p>
         <div className="flex flex-wrap gap-3">
           <Action danger label="Reset ledger" disabled={pending}
-            onClick={() => run("reset_ledger", undefined, "Reset the box's outcome ledger to EMPTY? This clears the track record on the box and cannot be undone.")}
+            onClick={() => confirmDelete("reset ledger", "Reset the outcome ledger", "This empties the track-record ledger on the box (a fresh start). It cannot be undone.", () => run("reset_ledger"))}
             desc="Empty the track-record ledger on the box (a fresh start)." />
           <Action danger label="Clear reports" disabled={pending}
-            onClick={() => run("clear_reports", undefined, "Clear ALL working dirs on the box (reports, data, content, runs)? The ledger is NOT touched. Cannot be undone.")}
+            onClick={() => confirmDelete("clear reports", "Clear working dirs", "This deletes ALL working dirs on the box (reports, data, content, runs). The ledger is NOT touched. Cannot be undone.", () => run("clear_reports"))}
             desc="Delete the box's working files (reports, data, runs). Ledger untouched." />
           <Action danger label="Clear R2 files" disabled={pending}
-            onClick={() => run("clear_r2", undefined, "Delete ALL report files from R2? They'd need re-publishing (Re-publish reports, or regenerate). Cannot be undone.")}
+            onClick={() => confirmDelete("clear r2", "Clear R2 files", "This deletes ALL report files from R2. They'd need re-publishing (Re-publish reports) or regenerating. Cannot be undone.", () => run("clear_r2"))}
             desc="Delete all published report files from R2 storage." />
           <Action danger label="Clear catalog" disabled={pending}
-            onClick={() => runAction(clearCatalog, "Clear the public catalog in the database (all editions + scored results)? Pair with the other three for a full reset. Cannot be undone.")}
+            onClick={() => confirmDelete("clear catalog", "Clear the catalog", "This deletes all editions + scored results from the database. Pair with the other three for a full reset. Cannot be undone.", () => runAction(clearCatalog))}
             desc="Delete all editions + scored results from the database." />
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <Button size="sm" disabled={pending} className="bg-[#cf222e] text-white hover:bg-[#a01b23]" onClick={fullReset}>
+          <Button size="sm" disabled={pending} className="bg-[#cf222e] text-white hover:bg-[#a01b23]"
+            onClick={() => confirmDelete("full reset", "Full reset — everything", "This deletes the Neon catalog AND clears the box's reports, ledger and R2 files. It wipes ALL generated data and cannot be undone.", fullReset)}>
             Full reset (everything)
           </Button>
           <span className="text-[11px] text-[#cf222e]/80">One click = database catalog + box files + ledger + R2, all together (no orphans left behind).</span>
         </div>
       </div>
       {msg && <span className={`text-sm ${msg.ok ? "text-[#1a7f37]" : "text-[#cf222e]"}`}>{msg.message}</span>}
+
+      {confirm && (
+        <ConfirmType
+          key={confirm.phrase}
+          phrase={confirm.phrase}
+          title={confirm.title}
+          body={confirm.body}
+          confirmLabel="Delete"
+          onConfirm={() => { confirm.act(); setConfirm(null); }}
+          onCancel={() => setConfirm(null)}
+        />
+      )}
     </div>
   );
 }

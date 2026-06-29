@@ -36,7 +36,7 @@ const ENGINE_COMMANDS: Record<string, string> = {
 const SETTABLE_CONFIG_KEYS = [
   "ASSETFRAME_AUTHOR_BRIEFS", "ADVISOR_DATA_PROVIDER", "ASSETFRAME_DATA_LICENSE", "ASSETFRAME_RUN_TIMEOUT",
   "ASSETFRAME_BRIEF_MODEL", "ASSETFRAME_RETENTION_DAYS", "ASSETFRAME_BRIEF_BATCH", "ASSETFRAME_CRITIC_MODEL",
-  "ASSETFRAME_BRIEF_CONCURRENCY", "ASSETFRAME_BRIEF_WEB_MAX_USES",
+  "ASSETFRAME_BRIEF_CONCURRENCY", "ASSETFRAME_BRIEF_WEB_MAX_USES", "TWELVEDATA_RATE_PER_MIN",
 ];
 
 // Enqueue an allow-listed box command. Validates the verb + args, inserts a 'queued'
@@ -95,6 +95,10 @@ export async function sendEngineCommand(
     // Local reports/runs retention in days (0 = keep everything). Bounded so a typo can't be wild.
     if (key === "ASSETFRAME_RETENTION_DAYS" && !(/^\d+$/.test(value) && Number(value) >= 0 && Number(value) <= 3650)) {
       return { ok: false, message: "ASSETFRAME_RETENTION_DAYS must be an integer 0–3650 (days; 0 = keep everything)." };
+    }
+    // Twelve Data requests/min throttle (0 = no throttle). Mirrors the engine's 0–1000 bound.
+    if (key === "TWELVEDATA_RATE_PER_MIN" && !(/^\d+$/.test(value) && Number(value) >= 0 && Number(value) <= 1000)) {
+      return { ok: false, message: "TWELVEDATA_RATE_PER_MIN must be an integer 0–1000 (API requests/min; 0 = no throttle)." };
     }
     cleanArgs = { key, value };
     detail = `${key}=${value}`;
