@@ -135,14 +135,16 @@ export default function PushToggle() {
 
       {state === "unsupported" && (
         <p className="text-sm text-muted-foreground">
-          Your browser doesn&rsquo;t support web push notifications. We&rsquo;ll email you instead.
+          Your browser doesn&rsquo;t support web push, so per-instrument alerts aren&rsquo;t available on
+          this device. Open AssetFrame in a browser that supports notifications, or install it to your
+          home screen, to get them.
         </p>
       )}
 
       {state === "blocked" && (
         <p className="text-sm text-muted-foreground">
-          Notifications are blocked in your browser settings. Allow notifications for this site to
-          enable push — until then we&rsquo;ll email you.
+          Notifications are blocked in your browser settings. Allow notifications for this site to turn
+          on per-instrument alerts for the instruments you follow.
         </p>
       )}
 

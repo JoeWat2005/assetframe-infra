@@ -35,8 +35,13 @@ function instrumentPayload(e: Edition): PushPayload {
 }
 
 // Push = per-instrument only (watchlist followers on this device).
-// Email = newsletter digest to all confirmed 'digest' subscribers, unconditionally.
-// These are independent channels — a user can legitimately receive both.
+// Email = newsletter digest to all confirmed 'digest' subscribers.
+// Both channels are idempotent PER EDITION (notification_log keyed on edition id), so we scan a
+// small RECENT window (last ~2 days) rather than just today. That closes the late-edition gap —
+// an edition published or un-hidden AFTER an earlier run is picked up on the next run — without
+// ever re-notifying, while the bounded window stops historical editions being back-notified.
+// (Schedule the cron more than once daily so late un-hides are caught promptly.) The two channels
+// are independent — a user can legitimately receive both.
 export async function GET(req: Request) {
   if (!isAuthorizedCron(req)) return new Response("Unauthorized", { status: 401 });
   if (!sql) return Response.json({ ok: false, reason: "no-db" });
@@ -44,8 +49,8 @@ export async function GET(req: Request) {
     const eds = (await sql.query(
       `SELECT e.id, e.slug, e.instrument, e.status, e.risk, e.confidence_band
          FROM editions e
-        WHERE coalesce(e.hidden, false) = false AND e.report_date = CURRENT_DATE
-        ORDER BY e.instrument`
+        WHERE coalesce(e.hidden, false) = false AND e.report_date >= CURRENT_DATE - 2
+        ORDER BY e.report_date DESC, e.instrument`
     )) as Record<string, unknown>[];
     if (eds.length === 0) return Response.json({ ok: true, editions: 0, pushes: 0, digests: 0, alerts: 0 });
 
@@ -57,7 +62,6 @@ export async function GET(req: Request) {
       risk: e.risk == null ? "" : String(e.risk),
       confidenceBand: e.confidence_band == null ? "" : String(e.confidence_band),
     }));
-    const itemsHtml = list.map(li).join("");
     const slugs = list.map((e) => e.slug);
 
     let pushes = 0;
@@ -115,40 +119,56 @@ export async function GET(req: Request) {
 
     // 2) EMAIL — newsletter digest to all confirmed subscribers opted into 'digest'.
     //    Independent of push: every subscriber gets this regardless of push status.
+    //    Idempotency is per (edition, subscriber): each run claims the window editions this
+    //    subscriber hasn't been emailed yet and sends ONE digest listing just those. This closes
+    //    the late-edition gap (an edition that appeared after an earlier run is caught next run)
+    //    while never re-listing an edition a subscriber already received.
     const subs = (await sql.query(
       `SELECT email, unsub_token FROM subscribers WHERE status = 'confirmed' AND 'digest' = ANY(topics)`
     )) as Record<string, unknown>[];
+    const editionIds = list.map((e) => e.id);
+    const byId = new Map(list.map((e) => [e.id, e]));
     let digests = 0;
     for (const s of subs) {
       const email = String(s.email);
-      // Idempotency: one digest per subscriber per publish-day. Claim before sending; release
-      // the claim on failure so a later run can retry.
-      const claim = (await sql.query(
+      // Claim every window edition this subscriber hasn't had yet; RETURNING gives back exactly
+      // the newly-claimed ids = the editions that are new to this subscriber.
+      const claimed = (await sql.query(
         `INSERT INTO notification_log (ref, recipient, channel)
-         VALUES (to_char(CURRENT_DATE, 'YYYY-MM-DD'), $1, 'email_digest')
+         SELECT unnest($1::text[]), $2, 'email_digest'
          ON CONFLICT DO NOTHING RETURNING ref`,
-        [email]
+        [editionIds, email]
       )) as Record<string, unknown>[];
-      if (claim.length === 0) continue; // already sent today's digest to this subscriber
+      if (claimed.length === 0) continue; // subscriber already has every current edition
+      const fresh = claimed.map((c) => byId.get(String(c.ref))).filter(Boolean) as Edition[];
+      const freshHtml = fresh.map(li).join("");
+      const unsubUrl = `${BASE}/api/unsubscribe?token=${String(s.unsub_token)}`;
       const r = await sendEmail({
         to: email,
-        subject: `New AssetFrame editions — ${list.length} today`,
+        subject: `New AssetFrame editions — ${fresh.length} new`,
+        // One-click unsubscribe (RFC 8058): native unsubscribe in Gmail/Outlook + better
+        // deliverability. Same tokenised endpoint as the footer link.
+        headers: {
+          "List-Unsubscribe": `<${unsubUrl}>`,
+          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        },
         html: emailShell({
           heading: "New editions are live",
           bodyHtml:
-            `<p style="font-size:14px;">Today&rsquo;s published editions:</p>` +
-            `<ul style="padding-left:18px;font-size:14px;">${itemsHtml}</ul>` +
+            `<p style="font-size:14px;">The latest published editions:</p>` +
+            `<ul style="padding-left:18px;font-size:14px;">${freshHtml}</ul>` +
             `<p style="margin-top:12px;font-size:13px;color:#5b6b80;">Each report can span multiple timeframes — see how the calls perform per horizon in the <a href="${BASE}/track-record" style="color:#0b2545;font-weight:600;">per-timeframe track record</a>.</p>` +
             `<p style="margin-top:12px;font-size:14px;"><a href="${BASE}/reports" style="color:#0b2545;font-weight:600;">Browse all reports →</a></p>`,
-          footerNote: `You subscribed to AssetFrame alerts. <a href="${BASE}/api/unsubscribe?token=${String(s.unsub_token)}">Unsubscribe</a>.`,
+          footerNote: `You subscribed to AssetFrame alerts. <a href="${unsubUrl}">Unsubscribe</a>.`,
         }),
       });
       if (r.ok) {
         digests++;
       } else {
+        // Release this subscriber's fresh claims so a later run retries them.
         await sql.query(
-          `DELETE FROM notification_log WHERE ref = to_char(CURRENT_DATE, 'YYYY-MM-DD') AND recipient = $1 AND channel = 'email_digest'`,
-          [email]
+          `DELETE FROM notification_log WHERE channel = 'email_digest' AND recipient = $1 AND ref = ANY($2)`,
+          [email, fresh.map((e) => e.id)]
         ).catch(() => {});
       }
     }

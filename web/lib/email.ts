@@ -21,6 +21,9 @@ export async function sendEmail(opts: {
   subject: string;
   html: string;
   replyTo?: string;
+  // Extra SMTP headers (e.g. List-Unsubscribe / List-Unsubscribe-Post for one-click unsubscribe,
+  // which improves deliverability and shows a native unsubscribe in Gmail/Outlook).
+  headers?: Record<string, string>;
 }): Promise<SendResult> {
   if (!resend) return { ok: false, skipped: true };
   try {
@@ -30,6 +33,7 @@ export async function sendEmail(opts: {
       subject: opts.subject,
       html: opts.html,
       replyTo: opts.replyTo,
+      headers: opts.headers,
     });
     if (error) return { ok: false, error: String((error as { message?: string }).message ?? error) };
     return { ok: true };
