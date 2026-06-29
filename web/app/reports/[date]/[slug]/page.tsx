@@ -8,6 +8,7 @@ import { getEntitlement } from "@/lib/entitlements";
 import { isFollowing } from "@/lib/social";
 import FollowButton from "@/components/FollowButton";
 import { Badge, Btn, Note } from "@/components/ui";
+import { jsonLdHtml } from "@/lib/jsonld";
 import BuyButton from "@/components/BuyButton";
 import ViewBeacon from "@/components/ViewBeacon";
 import { SITE } from "@/site.config";
@@ -104,7 +105,7 @@ export default async function ReaderPage(
   return (
     <div className="mx-auto max-w-3xl px-5 py-10">
       <ViewBeacon id={`${e.date}/${e.slug}`} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(articleLd) }} />
       <Link href="/reports" className="text-sm text-muted-foreground hover:text-navy">← All reports</Link>
       <h1 className="mt-2 text-3xl font-bold">{e.instrument}</h1>
       <div className="text-sm font-semibold text-muted-foreground">{e.ticker} · {e.assetClass}</div>

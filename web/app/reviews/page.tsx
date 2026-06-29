@@ -4,6 +4,7 @@ import { Hero } from "@/components/ui";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getGoogleReviews } from "@/lib/google-reviews";
+import { jsonLdHtml } from "@/lib/jsonld";
 import { SITE } from "@/site.config";
 
 export const metadata: Metadata = {
@@ -58,7 +59,7 @@ export default async function ReviewsPage() {
   return (
     <>
       {reviewsLd && (
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(reviewsLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(reviewsLd) }} />
       )}
       <Hero title="Reviews" tag="What people say about AssetFrame." />
       <div className="mx-auto max-w-3xl px-5 py-10">

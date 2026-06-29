@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ChevronDown } from "lucide-react";
 import { Hero } from "@/components/ui";
 import { getTrackRecord } from "@/lib/content";
+import { jsonLdHtml } from "@/lib/jsonld";
 import { SITE } from "@/site.config";
 
 export const metadata: Metadata = {
@@ -96,7 +97,7 @@ export default async function FaqPage() {
   };
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(faqLd) }} />
       <Hero title="Frequently asked questions" tag="What AssetFrame is, what the confidence score means, how calls are scored, and how billing works." />
       <div className="mx-auto max-w-3xl px-5 py-8">
         <div className="overflow-hidden rounded-xl border border-line bg-white" data-animate="up">

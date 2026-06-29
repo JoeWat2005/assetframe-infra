@@ -8,6 +8,7 @@ import ConsentAnalytics from "@/components/ConsentAnalytics";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { SITE } from "@/site.config";
+import { jsonLdHtml } from "@/lib/jsonld";
 import "./globals.css";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
@@ -157,7 +158,7 @@ export function BreadcrumbJsonLd({ items }: { items: { name: string; path: strin
       item: `${base}${it.path === "/" ? "" : it.path}`,
     })),
   };
-  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }} />;
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(ld) }} />;
 }
 
 const clerkAppearance = {
@@ -232,7 +233,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           />
           <script
             type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
+            dangerouslySetInnerHTML={{ __html: jsonLdHtml(orgJsonLd) }}
           />
           <AppFrame header={<Header />} footer={<Footer />}>{children}</AppFrame>
           <Motion />
