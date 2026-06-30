@@ -5,6 +5,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { getEngineAssets } from "@/lib/engine-assets";
 import { signalEngineWake } from "@/lib/upstash";
 import { sql } from "@/lib/db";
+import { controlEligible, boxControl } from "@/lib/control-client";
 import { requireAdmin } from "./admin-auth";
 import type { Result } from "@/lib/admin-types";
 
@@ -127,6 +128,19 @@ export async function sendEngineCommand(
     const days = Number.isFinite(daysNum) ? Math.max(1, Math.min(90, daysNum)) : 1;
     cleanArgs = { assets, as_of: v, days };
     detail = `${assets.join(", ")} as-of ${v} UTC${days > 1 ? ` ×${days}d` : ""}`;
+  }
+
+  // Control-plane cutover (flag-gated). When the box HTTP control server is configured and the
+  // command is HTTP-eligible (restart_poller/pull_latest stay on the poller path), deliver it
+  // INSTANTLY over the Cloudflare Tunnel instead of the ~30s Neon poll. On any box failure we fall
+  // through to the durable Neon queue below, so this is safe to enable incrementally. → control-plane.md
+  if (controlEligible(command)) {
+    const r = await boxControl(command, cleanArgs);
+    if (r.ok) {
+      await logAudit({ actor: ent.email, action: `engine_cmd_${command}`, target: r.id ?? "control-api", detail: `${detail} (control API)` }).catch(() => {});
+      return { ok: true, message: `${ENGINE_COMMANDS[command]} — sent to the box.`, id: r.id };
+    }
+    // box unreachable / rejected -> fall through to the durable Neon path (nothing queued yet, so no double-send)
   }
 
   try {
