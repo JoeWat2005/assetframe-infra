@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+/* DaisyUI: opt-in component classes (stats/badge/…) used alongside shadcn. It only styles elements
+   that carry daisy classes — its theme vars are namespaced apart from shadcn's, so the global look is
+   unchanged; we colour the few daisy components we use with the brand utilities directly. */
+@plugin "daisyui" { themes: light --default; }
 
 @custom-variant dark (&:is(.dark *));
 

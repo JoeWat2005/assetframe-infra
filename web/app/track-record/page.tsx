@@ -18,12 +18,6 @@ export const metadata: Metadata = {
   alternates: { canonical: "/track-record" },
 };
 
-const stat = (n: React.ReactNode, l: string) => (
-  <div className="rounded-xl border border-line bg-white p-4">
-    <div className="text-3xl font-extrabold text-navy">{n}</div>
-    <div className="mt-1 text-[13px] text-muted-foreground">{l}</div>
-  </div>
-);
 
 export default async function TrackRecordPage() {
   const ent = await getEntitlement();
@@ -57,8 +51,14 @@ export default async function TrackRecordPage() {
     <>
       <Hero title="Track record" tag="The scored-after-the-fact promise, made mechanical." />
       <div className="mx-auto max-w-5xl px-5 py-8">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          {headline.map(([n, l]) => stat(n, l))}
+        {/* DaisyUI stats block (used alongside shadcn) — brand-coloured: structure from daisy, colour from the palette. */}
+        <div className="stats stats-vertical w-full overflow-hidden rounded-xl border border-line bg-white shadow-sm sm:stats-horizontal">
+          {headline.map(([n, l]) => (
+            <div key={l} className="stat">
+              <div className="stat-value text-3xl font-extrabold text-navy">{n}</div>
+              <div className="stat-title mt-1 text-[13px] font-normal text-muted-foreground">{l}</div>
+            </div>
+          ))}
         </div>
         <p className="mt-3 text-sm text-muted-foreground">
           {editions.length} reports published · {registered} forecasts registered before their window
