@@ -90,3 +90,15 @@ export async function waitForBoxJob(id: string, timeoutMs = 12_000): Promise<Rec
   }
   return last;
 }
+
+// GET /status -> the box snapshot (online/paused/current-run + runs + requests + commands + schedule),
+// or null when the control plane is unconfigured / the box is unreachable (caller falls back to Neon).
+export async function boxStatus(): Promise<Record<string, unknown> | null> {
+  if (!controlConfigured()) return null;
+  try {
+    const res = await timed("/status", { headers: accessHeaders() }, 8000);
+    return res.ok ? ((await res.json()) as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+}

@@ -16,6 +16,9 @@ import PendingApprovalList from "./PendingApprovalList";
 import OperatorManual from "./OperatorManual";
 import CollapsibleSection from "./CollapsibleSection";
 import { RequestQueue, RunLog, CommandLog } from "./EnginePanels";
+import { ScheduleView } from "./ScheduleView";
+import { controlConfigured } from "@/lib/control-client";
+import { getEngineConsoleFromBox } from "@/lib/engine-box";
 import { getAuditLog } from "@/lib/audit";
 import { getFeedback } from "@/lib/feedback";
 import EngineStatusBar from "./EngineStatusBar";
@@ -36,10 +39,19 @@ export default async function AdminPage() {
   if (!ent.signedIn) redirect("/sign-in");
   if (!ent.admin) redirect("/account");
 
-  const [stats, catalog, pending, auditLog, feedback, engineState, genRequests, engineRuns, engineCommands, engineAssets, backtestResults, backtestPredictions] = await Promise.all([
+  // Engine console: when the control plane is up, read state/runs/queue/commands/schedule from the
+  // box /status over the tunnel (so Neon can sleep when nobody's watching); otherwise fall back to the
+  // Neon readers. Non-engine admin data always comes from Neon.
+  const box = controlConfigured() ? await getEngineConsoleFromBox() : null;
+  const [stats, catalog, pending, auditLog, feedback, engineAssets, backtestResults, backtestPredictions] = await Promise.all([
     getAdminStats(), getAllEditions(), getHiddenEditions(), getAuditLog(), getFeedback(),
-    getEngineState(), getGenerationRequests(), getEngineRuns(), getEngineCommands(), getEngineAssets(), getBacktestResults(), getBacktestPredictions(),
+    getEngineAssets(), getBacktestResults(), getBacktestPredictions(),
   ]);
+  const engineState = box?.state ?? (await getEngineState());
+  const genRequests = box?.requests ?? (await getGenerationRequests());
+  const engineRuns = box?.runs ?? (await getEngineRuns());
+  const engineCommands = box?.commands ?? (await getEngineCommands());
+  const schedule = box?.schedule ?? [];
   const titleById = new Map(catalog.map((e) => [`${e.date}/${e.slug}`, e.instrument]));
 
   // The Generate picker uses the ASSET UNIVERSE (engine_assets, enabled), NOT the published
@@ -82,10 +94,17 @@ export default async function AdminPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Generation queue</CardTitle>
-              <CardDescription>Runs requested (manual or scheduled). Cancel a queued or running one to stop it at the next safe point.</CardDescription>
+              <CardDescription>Each enabled asset and when it next generates; plus any manual or scheduled run in flight.</CardDescription>
             </CardHeader>
-            <CardContent className={genRequests.length === 0 ? undefined : "px-0"}>
-              <RequestQueue rows={genRequests} />
+            <CardContent className="px-0">
+              {genRequests.length > 0 && (
+                <div className="mb-3">
+                  <p className="px-6 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">In flight</p>
+                  <RequestQueue rows={genRequests} />
+                </div>
+              )}
+              <p className="px-6 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Waiting for next generation</p>
+              <ScheduleView rows={schedule} />
             </CardContent>
           </Card>
           <Card>
