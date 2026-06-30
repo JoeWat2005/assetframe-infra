@@ -46,9 +46,9 @@ export default async function Home() {
   // the open calls close, so the strip is a live audit trail, not a marketing stat block.
   const proof: { value: React.ReactNode; label: string }[] = [
     { value: editions.length, label: "Reports published" },
-    { value: tr.stats.hitRate === null ? "—" : `${tr.stats.hitRate}%`, label: "Directional accuracy" },
-    { value: "100%", label: "Public archive" },
-    { value: tr.stats.predictionsGraded, label: "Forecasts scored" },
+    { value: tr.stats.hitRate === null ? "—" : `${tr.stats.hitRate}%`, label: "Hit rate" },
+    { value: "100%", label: "Publicly archived" },
+    { value: tr.stats.predictionsGraded, label: "Calls graded" },
   ];
 
   // Social-proof inputs (real platform data only). The scored-calls teaser shows the most
@@ -69,18 +69,18 @@ export default async function Home() {
         <div className="relative z-10 mx-auto w-full max-w-5xl px-4 py-10 sm:px-5 sm:py-14 xl:max-w-6xl 2xl:max-w-7xl" data-animate="hero">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-white/80 backdrop-blur">
             <ShieldCheck className="size-3.5 text-[#7fb0ff]" />
-            Agentic research desk · human oversight
+            AI research desk · human oversight
           </span>
           <h1 className="mt-5 max-w-3xl text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
-            Next-session market intelligence,{" "}
+            Market research,{" "}
             <span className="text-[#7fb0ff]">scored after the fact.</span>
           </h1>
           <p className="mt-5 max-w-xl text-lg text-[#c9d6e8]">
-            Daily pre-session research across key financial assets. Every report is published before the
-            move and scored publicly afterwards.
+            Every day we publish a clear read on the markets before they move — then grade every call
+            against what actually happened.
           </p>
           <p className="mt-3 text-sm text-white/70">
-            Coverage across stocks, crypto, FX and commodities.
+            Stocks, crypto, forex and commodities.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild className="h-11 bg-white px-6 text-base text-navy shadow-sm hover:bg-white/90">
@@ -101,7 +101,7 @@ export default async function Home() {
           {/* Public forecast ledger — compact audit strip, real numbers only (no invented figures) */}
           <div className="mt-8 border-t border-white/10 pt-5">
             <div className="text-[11px] font-semibold uppercase tracking-wider text-white/70">
-              Public forecast ledger
+              Our public record
             </div>
             <div className="mt-2.5 flex flex-wrap items-baseline gap-x-7 gap-y-2.5">
               {proof.map((p) => (
