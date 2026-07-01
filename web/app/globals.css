@@ -1,10 +1,15 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-/* DaisyUI (used alongside shadcn): a custom theme in the AssetFrame palette so every daisy component
-   (badge/stat/alert/steps/timeline…) is on-brand via semantic colours — primary = navy, success =
-   green, etc. Only elements carrying daisy classes are affected; the global look is unchanged. */
-@plugin "daisyui";
+/* DaisyUI (used alongside shadcn), fully ISOLATED so it can't bleed into third-party inline-rendered
+   components (Clerk's SignIn/UserButton inherit global CSS): `exclude: base` skips DaisyUI's global
+   base reset, and `prefix: daisy-` namespaces EVERY daisy class (daisy-badge, daisy-stat…) so a bare
+   class name (.badge/.input/.card/.link…) can never collide with another library's markup. The
+   custom theme keeps daisy components on-brand (primary = navy, success = green, …). */
+@plugin "daisyui" {
+  exclude: base, rootscrollgutter;
+  prefix: daisy-;
+}
 @plugin "daisyui/theme" {
   name: "assetframe";
   default: true;

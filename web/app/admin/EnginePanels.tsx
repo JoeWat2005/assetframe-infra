@@ -89,7 +89,7 @@ function partialFailure(status: string, results: EngineRunResults | null): RunSi
   const otherFailed = failedAssets
     .map((a) => String(a.ticker ?? a.asset_id ?? "?"))
     .filter((t) => !named.has(t.toUpperCase()));
-  if (otherFailed.length) parts.push(`failed: ${otherFailed.join(", ")}`);
+  if (otherFailed.length) parts.push(`not published: ${otherFailed.join(", ")}`);
 
   return { headline: parts.join(" · ") || "partial failure", assets };
 }

@@ -15,15 +15,18 @@ const ROWS = [
   { sym: "NVDA", px: "120.45", chg: "-1.55%", up: false },
 ];
 
+// Each column repeats the rows enough times that ONE column is taller than any realistic auth-panel
+// height — otherwise, at the loop extreme the translateY(-50%) exposes empty space below the content
+// (the "the stocks disappear / it ends" bug). mb-3 on EVERY row (not a parent `gap`) keeps the
+// repeating unit exactly row+gap, so two stacked columns loop seamlessly under translateY(-50%).
+const TAPE = [...ROWS, ...ROWS, ...ROWS];
+
 function TapeColumn() {
-  // mb-3 on EVERY row (not a parent `gap`) so the repeating unit is exactly row+gap — including the
-  // last row's trailing gap. Two stacked copies then loop seamlessly under translateY(-50%) (a parent
-  // `gap` would leave the last row gap-less, landing the loop half-a-gap short — the "weird end").
   return (
     <div className="flex flex-col">
-      {ROWS.map((r) => (
+      {TAPE.map((r, i) => (
         <div
-          key={r.sym}
+          key={i}
           className="mb-3 flex items-center justify-between gap-5 rounded-lg border border-white/10 bg-white/5 px-3 py-2 font-mono text-sm"
         >
           <span className="font-semibold text-white/85">{r.sym}</span>
