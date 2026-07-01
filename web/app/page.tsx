@@ -6,6 +6,7 @@ import { Section } from "@/components/ui";
 import ReportCard from "@/components/ReportCard";
 import Countdown from "@/components/Countdown";
 import HeroBackdrop from "@/components/HeroBackdrop";
+import LivePrice from "@/components/LivePrice";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { SITE } from "@/site.config";
@@ -66,6 +67,10 @@ export default async function Home() {
       <div className="-mt-14 flex flex-col sm:min-h-[100dvh]">
       <section className="relative isolate flex flex-1 items-center overflow-hidden bg-navy text-white">
         <HeroBackdrop />
+        {/* live-quote panel, floating over the right-hand chart on large screens */}
+        <div className="pointer-events-none absolute right-8 top-24 z-20 hidden xl:block 2xl:right-20">
+          <LivePrice />
+        </div>
         <div className="relative z-10 mx-auto w-full max-w-5xl px-4 py-10 sm:px-5 sm:py-14 xl:max-w-6xl 2xl:max-w-7xl" data-animate="hero">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-white/80 backdrop-blur">
             <ShieldCheck className="size-3.5 text-[#7fb0ff]" />

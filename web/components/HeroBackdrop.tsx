@@ -41,28 +41,10 @@ function sma(period: number, i: number): number {
 const TILED = Array.from({ length: 2 * N }, (_, i) => i);
 const cx = (i: number) => i * slot + slot / 2;
 const smaPts = (period: number) => TILED.map((i) => `${cx(i)},${y(sma(period, i % N)).toFixed(1)}`).join(" ");
-const _closePts = TILED.map((i) => `${cx(i).toFixed(1)},${y(CLOSES[i % N]).toFixed(1)}`);
-const CLOSE_PTS = _closePts.join(" ");
-const AREA_PATH = `M ${slot / 2},${BOT} L ${_closePts.join(" L ")} L ${cx(2 * N - 1).toFixed(1)},${BOT} Z`;
 const SMA21 = smaPts(21);
 const SMA8 = smaPts(8);
 
 const svgProps = { viewBox: `0 0 ${2 * W} ${H}`, preserveAspectRatio: "none" as const };
-
-function AreaLayer() {
-  return (
-    <svg className="af-drift-slow h-full w-[200%]" {...svgProps}>
-      <defs>
-        <linearGradient id="af-area" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#4d8bff" stopOpacity="0.30" />
-          <stop offset="100%" stopColor="#4d8bff" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={AREA_PATH} fill="url(#af-area)" />
-      <polyline points={CLOSE_PTS} fill="none" stroke="#7fb0ff" strokeOpacity="0.5" strokeWidth="2" vectorEffect="non-scaling-stroke" />
-    </svg>
-  );
-}
 
 function CandleLayer() {
   return (
@@ -110,10 +92,8 @@ export default function HeroBackdrop() {
           backgroundSize: "48px 48px",
         }}
       />
-      {/* parallax: soft filled area behind, drifting slowly */}
-      <div className="absolute inset-0 opacity-45"><AreaLayer /></div>
-      {/* candles + moving averages in front */}
-      <div className="absolute inset-0 opacity-[0.6]"><CandleLayer /></div>
+      {/* candles + moving averages, drifting */}
+      <div className="absolute inset-0 opacity-[0.55]"><CandleLayer /></div>
       {/* subtle diagonal sheen sweeping across */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
