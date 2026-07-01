@@ -15,7 +15,7 @@ const TICK_MS = 240;         // order flow: the forming candle updates a few tim
 const W = 1200, H = 460, TOP = 30, BOT = 430;
 const slot = W / VISIBLE;
 const bodyW = slot * 0.6;
-const SPAN = 235;            // tighter range -> taller, more DRAMATIC candles filling the view
+const SPAN = 250;            // price range shown (candle sizes vary a LOT within it -> dramatic)
 
 function mulberry32(seed: number): () => number {
   return function () {
@@ -31,8 +31,9 @@ function seedCandles(): { candles: C[]; price: number } {
   let prev = 2400;
   const cs: C[] = [];
   for (let i = 0; i < VISIBLE; i++) {
-    const c = prev + (rnd() - 0.5) * 66;
-    cs.push({ o: prev, c, h: Math.max(prev, c) + rnd() * 22, l: Math.min(prev, c) - rnd() * 22 });
+    const vol = 10 + Math.pow(rnd(), 2.6) * 62; // per-candle volatility -> some big, some small
+    const c = prev + (rnd() - 0.5) * vol * 2.4;
+    cs.push({ o: prev, c, h: Math.max(prev, c) + rnd() * vol * 0.9, l: Math.min(prev, c) - rnd() * vol * 0.9 });
     prev = c;
   }
   return { candles: cs, price: prev };
@@ -59,6 +60,7 @@ export default function LiveChart() {
       price: SEED.price,
       mid: SEED.price,
       barStart: 0,
+      barVol: 26,
     };
     let raf = 0;
     let alive = true;
@@ -77,7 +79,7 @@ export default function LiveChart() {
       w.mid += (target - w.mid) * 0.02;
       if (t - lastTick >= TICK_MS) {
         lastTick = t;
-        w.price += (Math.random() - 0.5) * 17 + (target - w.price) * 0.008; // bigger, more dramatic steps
+        w.price += (Math.random() - 0.5) * w.barVol + (target - w.price) * 0.006; // per-bar volatility -> varied candles
         w.forming.c = w.price;
         if (w.price > w.forming.h) w.forming.h = w.price;
         if (w.price < w.forming.l) w.forming.l = w.price;
@@ -87,6 +89,7 @@ export default function LiveChart() {
         w.candles.push({ ...w.forming });
         if (w.candles.length > VISIBLE) w.candles.shift();
         w.forming = { o: w.price, h: w.price, l: w.price, c: w.price };
+        w.barVol = 10 + Math.pow(Math.random(), 2.6) * 62; // next candle's volatility (some big, some small)
         w.barStart = t;
         gRef.current?.setAttribute("transform", "translate(0 0)");
         publish();
