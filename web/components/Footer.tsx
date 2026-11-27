@@ -70,6 +70,10 @@ export default function Footer() {
           {SITE.disclaimer}
         </p>
         <p className="mt-3 text-xs text-[#7e93b3]">© {year} {SITE.brand}. All rights reserved.</p>
+        <p className="mt-1 text-xs text-[#7e93b3]">
+          {SITE.brand} is operated by{" "}
+          <a href="https://www.lascel.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-white">Lascel</a>, a software engineering company in London.
+        </p>
       </div>
     </footer>
   );
