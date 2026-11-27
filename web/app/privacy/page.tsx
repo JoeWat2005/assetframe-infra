@@ -41,7 +41,7 @@ export default function PrivacyPage() {
         </p>
 
         <Clause title="Who we are (controller)">
-          <p>{SITE.brand} is the <b>data controller</b> for personal data processed through this site. For any privacy question, or to exercise your rights, contact us at <a className="text-navy underline" href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a>. Where we act as controller, the providers listed in the sub-processors table below act as our <b>processors</b> (or, for card payments, as an independent controller in their own right).</p>
+          <p>{SITE.brand} is operated by Lascel, a software engineering company in London. {SITE.brand} is the <b>data controller</b> for personal data processed through this site. For any privacy question, or to exercise your rights, contact us at <a className="text-navy underline" href={`mailto:${SITE.contactEmail}`}>{SITE.contactEmail}</a>. Where we act as controller, the providers listed in the sub-processors table below act as our <b>processors</b> (or, for card payments, as an independent controller in their own right).</p>
         </Clause>
 
         <Clause title="What we collect">
